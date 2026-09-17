@@ -151,6 +151,31 @@ function makePh(container, name) {
   container.appendChild(span);
 }
 
+/* ---------- FEEDBACK APTICI (vibrazione) ---------- */
+
+// Vibra leggermente al tocco. Funziona su Android (navigator.vibrate);
+// su iPhone Safari Apple non lo espone, quindi lì si limita al feedback visivo.
+function haptic(pulse) {
+  if (typeof navigator !== "undefined" && navigator.vibrate) {
+    try { navigator.vibrate(pulse || 10); } catch (e) {}
+  }
+}
+
+// Al tocco di un tasto/riga/seek: micro-vibrazione. La durata dipende
+// dall'importanza dell'azione (play più deciso, tasti normali leggeri).
+document.addEventListener("pointerdown", (e) => {
+  if (e.pointerType !== "touch") return;      // vibrazione solo su touch
+  const t = e.target.closest("button, .track-row, .album-card, .seek");
+  if (!t) return;
+  if (t.classList.contains("btn-play") || t.classList.contains("fp-play")) {
+    haptic(18);
+  } else if (t.classList.contains("track-row") || t.classList.contains("album-card")) {
+    haptic(14);
+  } else {
+    haptic(8);
+  }
+});
+
 /* ---------- 5. CARICAMENTO ---------- */
 
 async function loadPlaylist() {
@@ -490,19 +515,39 @@ function updateProgress() {
   }
 }
 
-/* Clic su una barra di avanzamento = seek */
-function bindSeek(seekEl, fillEl) {
-  seekEl.addEventListener("click", (e) => {
+/* Clic o TRASCINAMENTO sulla barra = seek (scrub live). Funziona con
+   mouse e con il dito: si preme e si trascina per spostarsi nel brano. */
+function bindSeek(seekEl) {
+  let dragging = false;
+
+  const scrub = (e) => {
     if (!isFinite(audio.duration)) return;
     const rect = seekEl.getBoundingClientRect();
     const ratio = (e.clientX - rect.left) / rect.width;
     audio.currentTime = Math.max(0, Math.min(1, ratio)) * audio.duration;
     updateProgress();
+  };
+
+  seekEl.addEventListener("pointerdown", (e) => {
+    if (!isFinite(audio.duration)) return;
+    dragging = true;
+    seekEl.classList.add("dragging");
+    seekEl.setPointerCapture(e.pointerId);
+    scrub(e);
   });
+
+  seekEl.addEventListener("pointermove", (e) => { if (dragging) scrub(e); });
+
+  const stop = () => {
+    dragging = false;
+    seekEl.classList.remove("dragging");
+  };
+  seekEl.addEventListener("pointerup", stop);
+  seekEl.addEventListener("pointercancel", stop);
 }
 
-bindSeek(els.seek, els.seekFill);
-if (els.fpSeek) bindSeek(els.fpSeek, els.fpSeekFill);
+bindSeek(els.seek);
+if (els.fpSeek) bindSeek(els.fpSeek);
 
 let lastVolume = null;
 

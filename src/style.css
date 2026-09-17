@@ -51,6 +51,16 @@ body::before {
 
 .hidden { display: none !important; }
 
+/* Al tocco: niente alone blu, niente selezione del testo, lampo di luce
+   alla pressione (feedback visivo anche dove le vibrazioni non ci sono) */
+button {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+button:active { filter: brightness(1.35); }
+
 /* ---------- Barra superiore ---------- */
 
 .topbar {
@@ -505,6 +515,17 @@ body::before {
   border-radius: 2px;
   cursor: pointer;
   position: relative;
+  touch-action: none;          /* trascina senza far scorrere la pagina */
+}
+
+/* Zona di tocco più larga della barra visibile (comoda col dito) */
+.seek::after {
+  content: "";
+  position: absolute;
+  top: -12px;
+  bottom: -12px;
+  left: -4px;
+  right: -4px;
 }
 
 .seek-fill {
@@ -513,6 +534,31 @@ body::before {
   width: 0%;
   background: var(--grad);
   border-radius: 2px;
+}
+
+/* Pallino sulla punta del riempimento: visibile all'hover o durante il drag */
+.seek-fill::after {
+  content: "";
+  position: absolute;
+  right: -7px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, .5);
+  opacity: 0;
+  transition: opacity .15s ease;
+  pointer-events: none;
+}
+
+.seek:hover .seek-fill::after,
+.seek.dragging .seek-fill::after { opacity: 1; }
+
+/* Su schermi touch il pallino è sempre visibile */
+@media (hover: none) {
+  .seek-fill::after { opacity: 1; }
 }
 
 .volume-area {
