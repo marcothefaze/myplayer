@@ -61,6 +61,17 @@
   <!-- ============ PLAYER FISSO IN BASSO ============ -->
   <footer id="player" class="player-bar">
 
+    <!-- Barra di avanzamento: in alto, sopra i controlli -->
+    <div class="progress-area player-progress">
+      <span id="time-current" class="time">0:00</span>
+      <div id="seek" class="seek">
+        <div id="seek-fill" class="seek-fill"></div>
+      </div>
+      <span id="time-duration" class="time">0:00</span>
+    </div>
+
+    <div class="player-row">
+
     <!-- Info brano in riproduzione (clic = apre il full player) -->
     <div id="track-info" class="track-info" title="Apri a schermo intero">
       <div id="cover" class="cover"></div>
@@ -108,15 +119,8 @@
       </button>
     </div>
 
-    <!-- Avanzamento + volume -->
+    <!-- Volume -->
     <div class="right-side">
-      <div class="progress-area">
-        <span id="time-current" class="time">0:00</span>
-        <div id="seek" class="seek">
-          <div id="seek-fill" class="seek-fill"></div>
-        </div>
-        <span id="time-duration" class="time">0:00</span>
-      </div>
       <div class="volume-area">
         <svg id="volume-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" class="volume-icon" aria-hidden="true">
           <path d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.06a7 7 0 0 1 0 13.48v2.06a9 9 0 0 0 0-17.6z"/>
@@ -124,6 +128,7 @@
         <input id="volume" type="range" min="0" max="1" step="0.01" value="0.8" aria-label="Volume">
       </div>
     </div>
+    </div><!-- /player-row -->
 
   </footer>
 

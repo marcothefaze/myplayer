@@ -389,12 +389,22 @@ button:active { filter: brightness(1.35); }
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 20px 12px;
+}
+
+/* Riga interna: info brano | controlli | volume */
+.player-row {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 18px;
-  padding: 10px 20px;
 }
+
+/* Barra di avanzamento a tutta larghezza, in cima al miniplayer */
+.player-progress .seek { flex: 1; }
 
 .track-info {
   display: flex;
@@ -488,10 +498,7 @@ button:active { filter: brightness(1.35); }
 
 .right-side {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 200px;
-  align-items: flex-end;
+  justify-content: flex-end;
 }
 
 .progress-area {
@@ -772,15 +779,17 @@ input[type="range"] {
   .track-row { min-height: 48px; }          /* bersaglio tattile comodo */
 
   .player-bar {
+    gap: 6px;
+    padding: 10px 14px calc(14px + env(safe-area-inset-bottom)); /* incasso barra gestuale */
+  }
+  .player-row {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding: 10px 14px calc(14px + env(safe-area-inset-bottom)); /* incasso barra gestuale */
+    gap: 2px;
   }
   .controls { order: -1; gap: 6px; }
   .track-info { order: 0; align-self: flex-start; max-width: 100%; }
-  .right-side { order: 1; min-width: 0; width: 100%; align-items: stretch; }
-  .volume-area { display: none; }
+  .right-side { display: none; }   /* volume nascosto su telefono */
   .cover { width: 42px; height: 42px; }
 
   /* Pulsanti più grandi, facili da toccare col dito */
