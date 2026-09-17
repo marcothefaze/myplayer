@@ -2,94 +2,120 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <!-- viewport: indispensabile per il layout responsivo su mobile -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MyPlayer - Il tuo player musicale</title>
+  <meta name="theme-color" content="#0a0a10">
+  <title>SSG Universe</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="%237c6cff"/><text x="32" y="43" font-size="32" font-weight="800" text-anchor="middle" fill="white" font-family="Arial,Helvetica,sans-serif">S</text></svg>'>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- Tag <audio> nascosto: tutta la riproduzione passa da questo unico
-       elemento HTML5, riusato per tutte le canzoni.
-       (display:none NON impedisce la riproduzione) -->
+  <!-- Unico elemento audio: tutta la riproduzione passa di qui -->
   <audio id="audio" preload="metadata"></audio>
 
-  <div class="app">
+  <!-- ============ BARRA SUPERIORE ============ -->
+  <header class="topbar">
+    <button id="btn-back" class="back-btn hidden" title="Torna alla home" aria-label="Torna alla home">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+        <path d="M15.4 7.4 14 6l-6 6 6 6 1.4-1.4L10.8 12z"/>
+      </svg>
+    </button>
+    <div class="brand">
+      <div class="brand-mark">SSG</div>
+      <div class="brand-text">
+        <div class="brand-name">SSG Universe</div>
+        <div id="brand-count" class="brand-sub">Caricamento...</div>
+      </div>
+    </div>
+  </header>
 
-    <!-- ============ BARRA LATERALE ============ -->
-    <aside class="sidebar">
-      <div class="logo">MyPlayer</div>
-      <p class="sidebar-label">La tua libreria</p>
-      <div id="song-count" class="sidebar-count">0 canzoni</div>
-    </aside>
+  <!-- ============ CONTENUTI ============ -->
+  <main id="main" class="main">
 
-    <!-- ============ ELENCO CANZONI ============ -->
-    <main class="main">
-      <header class="main-header">
-        <h1>Le tue canzoni</h1>
-      </header>
-      <!-- La lista viene riempita dinamicamente da player.js -->
-      <ul id="playlist" class="playlist"></ul>
-    </main>
+    <!-- Vista 1: HOME -> griglia di copertine degli album -->
+    <section id="view-home" class="view">
+      <div id="album-grid" class="album-grid"></div>
+    </section>
 
-  </div>
+    <!-- Vista 2: ALBUM -> copertina grande + lista brani -->
+    <section id="view-album" class="view hidden">
+      <div id="album-hero" class="album-hero">
+        <div id="hero-bg" class="hero-bg"></div>
+        <div id="album-cover-wrap" class="album-cover-wrap"></div>
+        <div class="album-head">
+          <span class="eyebrow">Album</span>
+          <h1 id="album-title" class="album-title"></h1>
+          <p id="album-meta" class="album-meta"></p>
+        </div>
+      </div>
+      <div id="track-list" class="track-list"></div>
+    </section>
+
+  </main>
 
   <!-- ============ PLAYER FISSO IN BASSO ============ -->
-  <footer class="player-bar">
+  <footer id="player" class="player-bar">
 
-    <!-- Colonna 1: copertina + titolo + artista -->
+    <!-- Info brano in riproduzione -->
     <div class="track-info">
       <div id="cover" class="cover"></div>
       <div class="track-meta">
-        <div id="song-title" class="track-title">Nessuna canzone</div>
-        <div id="song-artist" class="track-artist">Scegli un brano per iniziare</div>
+        <div id="song-title" class="track-title">SSG Universe</div>
+        <div id="song-artist" class="track-artist">Scegli un album per iniziare</div>
       </div>
     </div>
 
-    <!-- Colonna 2: controlli play / pausa / avanti / indietro -->
+    <!-- Controlli: shuffle, precedente, play, successiva, repeat -->
     <div class="controls">
-      <button id="btn-prev" class="ctrl-btn" title="Precedente" aria-label="Precedente">
+      <button id="btn-shuffle" class="ctrl-btn" title="Riproduzione casuale" aria-label="Riproduzione casuale">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
-          <polygon points="6,5 8,5 8,19 6,19"/>
-          <polygon points="19,5 9,12 19,19"/>
+          <path d="M10.59 9.17 5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/>
         </svg>
       </button>
 
-      <button id="btn-play" class="ctrl-btn btn-play" title="Play" aria-label="Play o pausa">
-        <!-- Le due icone vengono mostrate/sostituite da player.js -->
-        <svg id="icon-play" viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true">
-          <path d="M8,5 L19,12 L8,19 Z"/>
+      <button id="btn-prev" class="ctrl-btn" title="Precedente" aria-label="Precedente">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
+          <path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/>
         </svg>
-        <svg id="icon-pause" viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true" style="display:none">
-          <rect x="6" y="5" width="4" height="14"/>
-          <rect x="14" y="5" width="4" height="14"/>
+      </button>
+
+      <button id="btn-play" class="ctrl-btn btn-play" title="Play/Pausa" aria-label="Play o pausa">
+        <svg id="icon-play" class="ctrl-icon" viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true">
+          <path d="M8 5v14l11-7z"/>
+        </svg>
+        <svg id="icon-pause" class="ctrl-icon" viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true" style="display:none">
+          <rect x="6" y="5" width="4" height="14" rx="1"/>
+          <rect x="14" y="5" width="4" height="14" rx="1"/>
         </svg>
       </button>
 
       <button id="btn-next" class="ctrl-btn" title="Successiva" aria-label="Successiva">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
+          <path d="M16 6h2v12h-2zM6 18l8.5-6L6 6z"/>
+        </svg>
+      </button>
+
+      <button id="btn-repeat" class="ctrl-btn" title="Ripeti" aria-label="Ripeti">
+        <span id="rep-badge" class="rep-badge hidden">1</span>
         <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
-          <polygon points="18,5 16,5 16,19 18,19"/>
-          <polygon points="5,5 15,12 5,19"/>
+          <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/>
         </svg>
       </button>
     </div>
 
-    <!-- Colonna 3: barra di avanzamento (con seek) + volume -->
+    <!-- Avanzamento + volume -->
     <div class="right-side">
       <div class="progress-area">
         <span id="time-current" class="time">0:00</span>
-        <!-- Barra cliccabile: player.js gestisce il click per fare "seek" -->
         <div id="seek" class="seek">
           <div id="seek-fill" class="seek-fill"></div>
         </div>
         <span id="time-duration" class="time">0:00</span>
       </div>
-
       <div class="volume-area">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" class="volume-icon" aria-hidden="true">
-          <path d="M3,9 v6 h4 l5,4 V5 L7,9 Z"/>
+        <svg id="volume-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" class="volume-icon" aria-hidden="true">
+          <path d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.06a7 7 0 0 1 0 13.48v2.06a9 9 0 0 0 0-17.6z"/>
         </svg>
-        <!-- Slider del volume: il colore è gestito con CSS accent-color -->
         <input id="volume" type="range" min="0" max="1" step="0.01" value="0.8" aria-label="Volume">
       </div>
     </div>

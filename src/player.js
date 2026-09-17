@@ -1,64 +1,70 @@
 "use strict";
 
 /* =========================================================
-   MyPlayer - logica del player musicale
-   Ragionamento generale (leggi in ordine):
+   SSG Universe - logica del player
      1) CARICAMENTO: fetch di playlist.json
-     2) DISEGNO:     costruisce dinamicamente la lista canzoni nel DOM
-     3) RIPRODUZIONE: play / pausa / avanti / indietro + avanzamento auto
-     4) AGGIORNAMENTO: barra di avanzamento, seek cliccabile, volume
+     2) HOME:        griglia album (copertine + titolo)
+     3) ALBUM:       schermata con i brani dell'album scelto
+     4) PLAYER:      play/pausa, precedente/successiva,
+                     SHUFFLE (casuale) e RIPETI (off/all/one)
+     5) PERSISTENZA: volume, shuffle e repeat salvati localmente
    ========================================================= */
-
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-// Percorso di playlist.json, RELATIVO alla pagina (index.html è in /src)
 const PLAYLIST_URL = "playlist.json";
+const BASE_PATH = "../";          // index.html sta in /src, i file in /
+const $ = (id) => document.getElementById(id);
 
-// I percorsi dentro playlist.json sono relativi alla radice del progetto
-// (es. "assets/audio/brano.mp3"). Siccome index.html sta in /src, per
-// raggiungerli serve risalire di una cartella -> prefisso "../"
-const BASE_PATH = "../";
+/* ---------- 2. ELEMENTI DEL DOM ---------- */
 
+const audio = $("audio");
 
-/* ---------- 2. RIFERIMENTI AGLI ELEMENTI DEL DOM ---------- */
-/* Raccogliamo qui tutti gli elementi della pagina che ci servono, così
-   il resto del codice è più leggibile. */
+const els = {
+  home: $("view-home"),
+  albumView: $("view-album"),
+  albumGrid: $("album-grid"),
+  trackList: $("track-list"),
+  albumHero: $("album-hero"),
+  heroBg: $("hero-bg"),
+  albumCoverWrap: $("album-cover-wrap"),
+  albumTitle: $("album-title"),
+  albumMeta: $("album-meta"),
+  btnBack: $("btn-back"),
+  brandCount: $("brand-count"),
+  cover: $("cover"),
+  songTitle: $("song-title"),
+  songArtist: $("song-artist"),
+  timeCurrent: $("time-current"),
+  timeDuration: $("time-duration"),
+  seek: $("seek"),
+  seekFill: $("seek-fill"),
+  volume: $("volume"),
+  volumeIcon: $("volume-icon"),
+  btnPlay: $("btn-play"),
+  btnPrev: $("btn-prev"),
+  btnNext: $("btn-next"),
+  btnShuffle: $("btn-shuffle"),
+  btnRepeat: $("btn-repeat"),
+  iconPlay: $("icon-play"),
+  iconPause: $("icon-pause"),
+  repBadge: $("rep-badge"),
+  main: $("main")
+};
 
-const audio = document.getElementById("audio");
+/* ---------- 3. STATO ---------- */
 
-const playlistEl  = document.getElementById("playlist");
-const songCountEl = document.getElementById("song-count");
-
-const btnPlay = document.getElementById("btn-play");
-const btnPrev = document.getElementById("btn-prev");
-const btnNext = document.getElementById("btn-next");
-
-const iconPlay  = document.getElementById("icon-play");
-const iconPause = document.getElementById("icon-pause");
-
-const coverEl       = document.getElementById("cover");
-const songTitleEl   = document.getElementById("song-title");
-const songArtistEl  = document.getElementById("song-artist");
-
-const seekEl         = document.getElementById("seek");
-const seekFillEl     = document.getElementById("seek-fill");
-const timeCurrentEl  = document.getElementById("time-current");
-const timeDurationEl = document.getElementById("time-duration");
-
-const volumeEl = document.getElementById("volume");
-
-
-/* ---------- 3. STATO DELL'APP ---------- */
-
-let songs = [];          // array delle canzoni lette da playlist.json
-let currentIndex = 0;    // indice della canzone attualmente selezionata
-let isPlaying = false;   // comodità: "stiamo riproducendo?" (aggiornato dagli eventi)
-
+const state = {
+  songs: [],        // brani letti da playlist.json (già ordinati per album/titolo)
+  albums: [],       // [{ title, artist, cover, totalSec, songs:[indici] }]
+  queue: [],        // ordine di riproduzione corrente (indici in songs[])
+  queuePos: -1,     // posizione corrente dentro queue
+  shuffle: localStorage.getItem("ssg-shuffle") === "1",
+  repeat: localStorage.getItem("ssg-repeat") || "off"    // off | all | one
+};
 
 /* ---------- 4. FUNZIONI DI SUPPORTO ---------- */
 
-// Converte i secondi nel formato "m:ss" (es. 205 -> "3:25")
 function formatTime(seconds) {
   if (isNaN(seconds) || seconds < 0) seconds = 0;
   const min = Math.floor(seconds / 60);
@@ -66,339 +72,443 @@ function formatTime(seconds) {
   return min + ":" + String(sec).padStart(2, "0");
 }
 
-// Rende "assoluto" un percorso relativo alla radice del progetto
-function resolvePath(file) {
-  if (!file) return "";
-  // Già assoluto (URL completo, percorso "/..." o immagine in data:)
-  if (file.startsWith("http") || file.startsWith("/") || file.startsWith("data:")) {
-    return file;
-  }
-  return BASE_PATH + file;    // antepone "../"
+function formatMinutes(seconds) {
+  return Math.max(1, Math.round(seconds / 60)) + " min";
 }
 
-// Se nel JSON manca il titolo, usa il nome del file senza estensione
+function resolvePath(file) {
+  if (!file) return "";
+  if (file.startsWith("http") || file.startsWith("/") || file.startsWith("data:")) return file;
+  return BASE_PATH + file;
+}
+
 function fileTitle(file) {
   const parts = String(file).split("/");
   const name = parts[parts.length - 1] || file;
   return name.replace(/\.[^.]+$/, "");
 }
 
+function isRealArtist(name) {
+  return name && name !== "Artista sconosciuto" && name.trim() !== "";
+}
 
-/* ---------- 5. CARICAMENTO DELLA PLAYLIST ---------- */
+/* Iniziali per copertine segnaposto (es. "Testamento" -> "T") */
+function initials(name) {
+  const words = String(name).split(/[\s\-]+/).filter(Boolean);
+  return words.slice(0, 3).map((w) => w[0]).join("").toUpperCase();
+}
+
+/* Riempie un contenitore con la copertina o un segnaposto con le iniziali */
+function buildCover(container, src, name) {
+  container.innerHTML = "";
+  container.classList.remove("ph");
+  if (src) {
+    const img = document.createElement("img");
+    img.src = resolvePath(src);
+    img.alt = "";
+    img.onerror = () => { container.classList.add("ph"); img.remove(); makePh(container, name); };
+    container.appendChild(img);
+  } else {
+    container.classList.add("ph");
+    makePh(container, name);
+  }
+}
+
+function makePh(container, name) {
+  const span = document.createElement("span");
+  span.className = "ph-title";
+  span.textContent = name ? initials(name) : "?";
+  container.appendChild(span);
+}
+
+/* ---------- 5. CARICAMENTO ---------- */
 
 async function loadPlaylist() {
   try {
     const response = await fetch(PLAYLIST_URL);
     if (!response.ok) throw new Error("HTTP " + response.status);
-    songs = await response.json();       // [{id, titolo, artista, album, durata, file, copertina}, ...]
-    renderPlaylist();
+    state.songs = await response.json();
+    buildAlbums();
+    state.queue = state.flat.slice();        // ordine normale all'avvio
+    applySavedState();
+    renderHome();
+    updateBrandCount();
   } catch (err) {
-    // Caso tipico: pagina aperta direttamente da doppio click (protocollo file://)
-    // -> il browser blocca il fetch dei file locali. Serve un server locale.
-    playlistEl.innerHTML =
-      '<li class="error">Impossibile caricare playlist.json.<br>' +
-      "Avvia un server locale (<code>python3 -m http.server</code> nella cartella " +
-      "del progetto) e apri la pagina da lì.</li>";
+    els.albumGrid.innerHTML =
+      '<div class="error">Impossibile caricare playlist.json.<br>' +
+      "Avvia il server locale (<code>python3 -m http.server</code> nella " +
+      "cartella del progetto) e ricarica la pagina.</div>";
     console.error("Errore nel caricamento della playlist:", err);
   }
 }
 
-
-/* ---------- 6. DISEGNO DELLA LISTA ---------- */
-
-function renderPlaylist() {
-  playlistEl.innerHTML = "";             // svuoto la lista
-
-  // Raggruppo le canzoni per album mantenendo l'ordine di apparizione.
-  // La mappa ha come chiave il nome dell'album e come valore la lista
-  // degli indici (dentro `songs`) delle canzoni che vi appartengono.
-  const groups = new Map();
-  songs.forEach((song, index) => {
-    const album = song.album || "Senza album";
-    if (!groups.has(album)) groups.set(album, []);
-    groups.get(album).push(index);
+function buildAlbums() {
+  const map = new Map();
+  state.songs.forEach((song, i) => {
+    const key = song.album || "Senza album";
+    if (!map.has(key)) {
+      map.set(key, { title: key, artist: song.artista || "", cover: null, totalSec: 0, songs: [] });
+    }
+    const album = map.get(key);
+    album.songs.push(i);
+    album.totalSec += song.durata || 0;
+    if (!album.cover && song.copertina) album.cover = song.copertina;
   });
+  state.albums = [...map.values()];
 
-  // Aggiorno i contatori nella sidebar: canzoni totali e album
-  songCountEl.textContent = songs.length + " canzoni · " + groups.size + " album";
+  state.flat = [];
+  state.albums.forEach((album) => album.songs.forEach((i) => state.flat.push(i)));
+}
 
-  // Disegno ogni album: prima l'intestazione, poi le sue canzoni
-  groups.forEach((indexes, albumName) => {
-    const firstSong = songs[indexes[0]];
+/* Ripristina shuffle/repeat salvati e volume */
+function applySavedState() {
+  els.btnShuffle.classList.toggle("on", state.shuffle);
+  els.btnRepeat.classList.toggle("on", state.repeat !== "off");
+  els.btnRepeat.classList.toggle("one", state.repeat === "one");
+  els.repBadge.classList.toggle("hidden", state.repeat !== "one");
 
-    // ---- Intestazione dell'album (riga NON cliccabile) ----
-    const header = document.createElement("li");
-    header.className = "song section";
+  const savedVolume = localStorage.getItem("mp-volume");
+  if (savedVolume !== null) {
+    els.volume.value = savedVolume;
+    audio.volume = Number(savedVolume);
+  }
+}
 
-    const headerThumb = document.createElement("div");
-    headerThumb.className = "section-thumb";
-    if (firstSong.copertina) {
-      const img = document.createElement("img");
-      img.src = resolvePath(firstSong.copertina);
-      img.alt = albumName;
-      img.onerror = () => { headerThumb.classList.add("placeholder"); img.remove(); };
-      headerThumb.appendChild(img);
-    } else {
-      headerThumb.classList.add("placeholder");
-    }
+function updateBrandCount() {
+  els.brandCount.textContent =
+    state.songs.length + " brani · " + state.albums.length + " album";
+}
 
-    const headerText = document.createElement("div");
-    headerText.className = "song-text";
+/* ---------- 6. HOME: griglia album ---------- */
 
-    const headerTitle = document.createElement("div");
-    headerTitle.className = "section-title";
-    headerTitle.textContent = albumName;
+function renderHome() {
+  els.albumGrid.innerHTML = "";
 
-    const headerCount = document.createElement("div");
-    headerCount.className = "section-count";
-    headerCount.textContent = indexes.length + " canzoni";
-    if (firstSong.artista) {
-      headerCount.textContent += " · " + firstSong.artista;
-    }
+  state.albums.forEach((album) => {
+    const card = document.createElement("button");
+    card.className = "album-card";
 
-    headerText.appendChild(headerTitle);
-    headerText.appendChild(headerCount);
+    const cover = document.createElement("div");
+    cover.className = "card-cover";
+    buildCover(cover, album.cover, album.title);
 
-    header.appendChild(headerThumb);
-    header.appendChild(headerText);
-    playlistEl.appendChild(header);
+    const play = document.createElement("div");
+    play.className = "card-play";
+    play.innerHTML =
+      '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+    cover.appendChild(play);
 
-    // ---- Canzoni di questo album ----
-    indexes.forEach((index, posInAlbum) => {
-      const song = songs[index];
+    const caption = document.createElement("div");
+    caption.className = "card-caption";
 
-      const li = document.createElement("li");
-      li.className = "song";
-      li.dataset.index = index;          // salvo l'indice "reale" in songs[]
+    const title = document.createElement("div");
+    title.className = "card-title";
+    title.textContent = album.title;
 
-      // Numero progressivo DENTRO l'album (1, 2, 3, ...)
-      const num = document.createElement("span");
-      num.className = "song-index";
-      num.textContent = posInAlbum + 1;
+    const meta = document.createElement("div");
+    meta.className = "card-meta";
+    meta.textContent = album.songs.length + " brani · " + formatMinutes(album.totalSec);
 
-      // Mini-copertina (o gradiente placeholder se assente)
-      const thumb = document.createElement("div");
-      thumb.className = "thumb";
-      if (song.copertina) {
-        const img = document.createElement("img");
-        img.src = resolvePath(song.copertina);
-        img.alt = "Copertina";
-        // Se l'immagine non esiste, sostituisci col placeholder
-        img.onerror = () => { thumb.classList.add("placeholder"); img.remove(); };
-        thumb.appendChild(img);
-      } else {
-        thumb.classList.add("placeholder");
-      }
+    caption.appendChild(title);
+    caption.appendChild(meta);
+    card.appendChild(cover);
+    card.appendChild(caption);
+    card.addEventListener("click", () => openAlbum(album));
 
-      // Blocco con titolo + artista
-      const text = document.createElement("div");
-      text.className = "song-text";
-
-      const title = document.createElement("div");
-      title.className = "song-title";
-      title.textContent = song.titolo || fileTitle(song.file);
-
-      const artist = document.createElement("div");
-      artist.className = "song-artist";
-      artist.textContent = song.artista || "Artista sconosciuto";
-
-      text.appendChild(title);
-      text.appendChild(artist);
-
-      // Durata sulla destra
-      const dur = document.createElement("span");
-      dur.className = "song-duration";
-      dur.textContent = formatTime(song.durata);
-
-      // Compongo la riga: numero, copertina, testo, durata
-      li.appendChild(num);
-      li.appendChild(thumb);
-      li.appendChild(text);
-      li.appendChild(dur);
-
-      // Click sulla riga -> riproduci quella canzone
-      li.addEventListener("click", () => playIndex(index));
-
-      playlistEl.appendChild(li);
-    });
+    els.albumGrid.appendChild(card);
   });
 }
 
+/* ---------- 7. SCHERMATA ALBUM ---------- */
 
-/* ---------- 7. RIPRODUZIONE ---------- */
+function openAlbum(album) {
+  els.albumTitle.textContent = album.title;
+  els.albumMeta.textContent =
+    album.songs.length + " brani · " + formatMinutes(album.totalSec) +
+    (isRealArtist(album.artist) ? " · " + album.artist : "");
 
-// Evidenzia la riga "attiva" nella lista (solo quella in riproduzione)
-function updateActiveRow() {
-  document.querySelectorAll(".playlist .song").forEach((li) => {
-    li.classList.toggle("active", Number(li.dataset.index) === currentIndex);
+  buildCover(els.albumCoverWrap, album.cover, album.title);
+
+  // Sfondo sfocato dell'intestazione: usa la stessa copertina
+  if (album.cover) {
+    els.heroBg.style.backgroundImage = 'url("' + resolvePath(album.cover) + '")';
+  } else {
+    els.heroBg.style.backgroundImage = "";
+  }
+
+  // Lista brani dell'album
+  els.trackList.innerHTML = "";
+  album.songs.forEach((songIdx, pos) => {
+    const song = state.songs[songIdx];
+
+    const row = document.createElement("button");
+    row.className = "track-row";
+    row.dataset.idx = songIdx;
+
+    const num = document.createElement("span");
+    num.className = "track-num";
+    num.textContent = pos + 1;
+
+    const title = document.createElement("span");
+    title.className = "track-title";
+    title.textContent = song.titolo || fileTitle(song.file);
+
+    const artist = document.createElement("span");
+    artist.className = "track-artist";
+    artist.textContent = isRealArtist(song.artista) ? song.artista : "";
+
+    const dur = document.createElement("span");
+    dur.className = "track-dur";
+    dur.textContent = formatTime(song.durata);
+
+    row.appendChild(num);
+    row.appendChild(title);
+    row.appendChild(artist);
+    row.appendChild(dur);
+    row.addEventListener("click", () => playSong(songIdx));
+
+    els.trackList.appendChild(row);
   });
+
+  els.btnBack.classList.remove("hidden");
+  showView("album");
+  highlightActive();
 }
 
-// Avvia la canzone con l'indice dato
-async function playIndex(index) {
-  if (index < 0 || index >= songs.length) return;
+/* ---------- 8. NAVIGAZIONE VISTE ---------- */
 
-  currentIndex = index;
-  const song = songs[currentIndex];
+function showView(name) {
+  els.home.classList.toggle("hidden", name !== "home");
+  els.albumView.classList.toggle("hidden", name !== "album");
+  els.main.scrollTop = 0;
+}
 
-  // Imposta la sorgente audio e prova a partire
+/* ---------- 9. RIPRODUZIONE ---------- */
+
+function currentIndex() {
+  return state.queuePos >= 0 ? state.queue[state.queuePos] : -1;
+}
+
+async function playSong(songIdx) {
+  if (songIdx < 0) return;
+  const pos = state.queue.indexOf(songIdx);
+  state.queuePos = pos >= 0 ? pos : 0;
+  if (pos < 0) state.queue[0] = songIdx;
+
+  const song = state.songs[songIdx];
   audio.src = resolvePath(song.file);
   try {
     await audio.play();
   } catch (err) {
-    // I browser possono bloccare la riproduzione automatica; qui partiamo
-    // sempre da un click, ma l'errore va comunque gestito con calma.
     console.warn("Riproduzione bloccata dal browser:", err);
   }
-
-  // Aggiorna la scheda del brano e la riga evidenziata
-  loadTrackInfo(song);
-  updateActiveRow();
+  updatePlayerInfo(song);
+  highlightActive();
 }
 
-// Compila la zona "info brano" del player
-function loadTrackInfo(song) {
-  songTitleEl.textContent  = song.titolo || fileTitle(song.file);
-  songArtistEl.textContent = song.artista || "Artista sconosciuto";
+function updatePlayerInfo(song) {
+  els.songTitle.textContent = song.titolo || fileTitle(song.file);
+  els.songArtist.textContent = isRealArtist(song.artista)
+    ? song.artista
+    : (song.album || "Senza album");
 
-  // Copertina grande: immagine o placeholder
-  coverEl.innerHTML = "";
-  coverEl.classList.remove("placeholder");
-  if (song.copertina) {
-    const img = document.createElement("img");
-    img.src = resolvePath(song.copertina);
-    img.alt = "Copertina";
-    img.onerror = () => { coverEl.innerHTML = ""; coverEl.classList.add("placeholder"); };
-    coverEl.appendChild(img);
-  } else {
-    coverEl.classList.add("placeholder");
-  }
+  buildCover(els.cover, song.copertina, song.album);
 
-  // Mostra subito la durata dal JSON; verrà raffinata dal browser
-  // quando carica i metadati del file (evento loadedmetadata).
   if (isFinite(song.durata)) {
-    timeDurationEl.textContent = formatTime(song.durata);
+    els.timeDuration.textContent = formatTime(song.durata);
   }
 }
 
-// Play / pausa (usato dal pulsante centrale)
 function togglePlay() {
-  // Nessuna canzone ancora scelta: parte dalla prima della lista
-  if (audio.src === "") {
-    playIndex(0);
+  if (currentIndex() < 0) {
+    playSong(state.queue[0]);
     return;
   }
   if (audio.paused) {
-    audio.play();
+    audio.play().catch(() => {});
   } else {
     audio.pause();
   }
 }
 
-// Passa alla canzone successiva (con "giro" se si è all'ultima)
-function nextSong() {
-  playIndex((currentIndex + 1) % songs.length);
+function skipNext() {
+  const len = state.queue.length;
+  if (len <= 1) return;
+  if (state.queuePos + 1 < len) {
+    state.queuePos++;
+  } else if (state.repeat !== "off" || state.shuffle) {
+    state.queuePos = 0;
+  } else {
+    return;                          // siamo in fondo e repeat è spento
+  }
+  playSong(state.queue[state.queuePos]);
 }
 
-// Precedente: se il brano è appena iniziato torna all'inizio,
-// altrimenti salta al brano precedente.
-function prevSong() {
-  if (audio.currentTime > 3) {
+function skipPrev() {
+  const len = state.queue.length;
+  if (audio.currentTime > 3) {       // brano appena iniziato -> torna all'inizio
     audio.currentTime = 0;
+    return;
+  }
+  if (state.queuePos - 1 >= 0) {
+    state.queuePos--;
   } else {
-    playIndex((currentIndex - 1 + songs.length) % songs.length);
+    state.queuePos = len - 1;        // dall'inizio si torna all'ultimo
+  }
+  playSong(state.queue[state.queuePos]);
+}
+
+/* Evidenzia il brano attivo nello schermo album corrente */
+function highlightActive() {
+  const active = currentIndex();
+  document.querySelectorAll(".track-row").forEach((row) => {
+    row.classList.toggle("active", Number(row.dataset.idx) === active);
+  });
+}
+
+/* ---------- 10. SHUFFLE & RIPETI ---------- */
+
+function shuffledRest(exclude) {
+  const rest = [];
+  for (let i = 0; i < state.songs.length; i++) {
+    if (i !== exclude) rest.push(i);
+  }
+  for (let i = rest.length - 1; i > 0; i--) {   // Fisher-Yates
+    const j = Math.floor(Math.random() * (i + 1));
+    [rest[i], rest[j]] = [rest[j], rest[i]];
+  }
+  return rest;
+}
+
+function toggleShuffle() {
+  state.shuffle = !state.shuffle;
+  localStorage.setItem("ssg-shuffle", state.shuffle ? "1" : "0");
+  els.btnShuffle.classList.toggle("on", state.shuffle);
+
+  const cur = currentIndex();
+  if (state.shuffle) {
+    state.queue = cur >= 0 ? [cur, ...shuffledRest(cur)] : shuffledRest(-1);
+    state.queuePos = 0;
+  } else {
+    state.queue = state.flat.slice();
+    state.queuePos = cur >= 0 ? state.queue.indexOf(cur) : 0;
   }
 }
 
+function cycleRepeat() {
+  const order = ["off", "all", "one"];
+  state.repeat = order[(order.indexOf(state.repeat) + 1) % order.length];
+  localStorage.setItem("ssg-repeat", state.repeat);
 
-/* ---------- 8. AGGIORNAMENTO DELLA BARRA DI AVANZAMENTO ---------- */
+  els.btnRepeat.classList.toggle("on", state.repeat !== "off");
+  els.btnRepeat.classList.toggle("one", state.repeat === "one");
+  els.repBadge.classList.toggle("hidden", state.repeat !== "one");
+}
 
-// Viene chiamata continuamente dal tag <audio> mentre suona
+/* ---------- 11. AVANZAMENTO, SEEK, VOLUME ---------- */
+
 function updateProgress() {
   const duration = audio.duration || 0;
-  const current  = audio.currentTime || 0;
-
-  // La larghezza del riempimento verde è la percentuale ascoltata
-  seekFillEl.style.width = duration ? (current / duration * 100) + "%" : "0%";
-
-  timeCurrentEl.textContent  = formatTime(current);
+  const current = audio.currentTime || 0;
+  els.seekFill.style.width = duration ? (current / duration * 100) + "%" : "0%";
+  els.timeCurrent.textContent = formatTime(current);
   if (isFinite(duration)) {
-    timeDurationEl.textContent = formatTime(duration);
+    els.timeDuration.textContent = formatTime(duration);
   }
 }
 
-// Clic sulla barra = seek (salta in quel punto del brano)
-seekEl.addEventListener("click", (e) => {
-  if (!isFinite(audio.duration)) return;     // durata non ancora nota
-
-  // Posizione del click rapportata alla larghezza della barra
-  const rect = seekEl.getBoundingClientRect();
+els.seek.addEventListener("click", (e) => {
+  if (!isFinite(audio.duration)) return;
+  const rect = els.seek.getBoundingClientRect();
   const ratio = (e.clientX - rect.left) / rect.width;
-  const ratioClamped = Math.max(0, Math.min(1, ratio));
-
-  audio.currentTime = ratioClamped * audio.duration;
+  audio.currentTime = Math.max(0, Math.min(1, ratio)) * audio.duration;
   updateProgress();
 });
 
+let lastVolume = null;
 
-/* ---------- 9. EVENTI DEL TAG <audio> ---------- */
+function setVolume(value) {
+  const v = Math.max(0, Math.min(1, Number(value)));
+  audio.volume = v;
+  els.volume.value = v;
+  localStorage.setItem("mp-volume", v);
+  if (v > 0) lastVolume = v;
+}
 
-// Avanzamento automatico: a fine brano passa al successivo
-audio.addEventListener("ended", () => {
-  if (currentIndex < songs.length - 1) {
-    playIndex(currentIndex + 1);
+els.volume.addEventListener("input", () => setVolume(els.volume.value));
+
+// Click sull'icona: silenzia / ripristina il volume
+els.volumeIcon.addEventListener("click", () => {
+  if (audio.volume > 0) {
+    lastVolume = audio.volume;
+    setVolume(0);
+  } else {
+    setVolume(lastVolume !== null ? lastVolume : 0.8);
   }
-  // Se era l'ultima, ci si ferma (nessun loop)
 });
 
-// Sincronizza lo stato e l'icona del pulsante play
+/* ---------- 12. EVENTI <audio> ---------- */
+
 audio.addEventListener("play", () => {
-  isPlaying = true;
-  setPlayIcon(true);
+  els.iconPlay.style.display = "none";
+  els.iconPause.style.display = "block";
 });
 
 audio.addEventListener("pause", () => {
-  isPlaying = false;
-  setPlayIcon(false);
+  els.iconPlay.style.display = "block";
+  els.iconPause.style.display = "none";
 });
 
-// Mostra o nasconde l'icona play/pausa
-function setPlayIcon(playing) {
-  iconPlay.style.display  = playing ? "none" : "block";
-  iconPause.style.display = playing ? "block" : "none";
-}
-
-
-/* ---------- 10. CONTROLLI UI ---------- */
-
-// Pulsanti del player
-btnPlay.addEventListener("click", togglePlay);
-btnNext.addEventListener("click", nextSong);
-btnPrev.addEventListener("click", prevSong);
-
-// Volume: aggiorna l'audio e salva il valore, così resta al prossimo avvio
-volumeEl.addEventListener("input", () => {
-  audio.volume = Number(volumeEl.value);
-  localStorage.setItem("mp-volume", volumeEl.value);
+// A fine brano: ripeti singolo, altrimenti passa al successivo
+audio.addEventListener("ended", () => {
+  if (state.repeat === "one") {
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
+    return;
+  }
+  const len = state.queue.length;
+  if (state.queuePos + 1 < len) {
+    state.queuePos++;
+    playSong(state.queue[state.queuePos]);
+  } else if (state.repeat === "all" || state.shuffle) {
+    state.queuePos = 0;
+    playSong(state.queue[0]);
+  }
+  // altrimenti si ferma in fondo alla playlist
 });
 
-// Ripristino del volume salvato in un precedente avvio
-const savedVolume = localStorage.getItem("mp-volume");
-if (savedVolume !== null) {
-  volumeEl.value = savedVolume;
-  audio.volume = Number(savedVolume);
+audio.addEventListener("timeupdate", updateProgress);
+audio.addEventListener("loadedmetadata", updateProgress);
+
+/* ---------- 13. CONTROLLI UI E TASTIERA ---------- */
+
+els.btnPlay.addEventListener("click", togglePlay);
+els.btnNext.addEventListener("click", skipNext);
+els.btnPrev.addEventListener("click", skipPrev);
+els.btnShuffle.addEventListener("click", toggleShuffle);
+els.btnRepeat.addEventListener("click", cycleRepeat);
+els.btnBack.addEventListener("click", goHome);
+
+function goHome() {
+  els.btnBack.classList.add("hidden");
+  showView("home");
 }
 
-// Bonus: barra spaziatrice per play/pausa (ignorata quando digiti in un input)
+// Spazio = play/pausa (se un pulsante ha il focus, lo tolgo per non doppio-click)
 document.addEventListener("keydown", (e) => {
+  if (e.target.tagName === "BUTTON") e.target.blur();
   if (e.code === "Space" && e.target.tagName !== "INPUT") {
     e.preventDefault();
     togglePlay();
+  } else if (e.key === "ArrowRight") {
+    audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 5);
+  } else if (e.key === "ArrowLeft") {
+    audio.currentTime = Math.max(0, audio.currentTime - 5);
+  } else if (e.key === "Escape") {
+    goHome();
   }
 });
 
+/* ---------- 14. AVVIO ---------- */
 
-/* ---------- 11. AVVIO ---------- */
-
-// Lo script è in fondo al body, quindi il DOM è già pronto: partiamo subito
 loadPlaylist();

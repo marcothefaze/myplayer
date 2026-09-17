@@ -1,33 +1,25 @@
 /* =========================================================
-   MyPlayer - stile (dark theme, stile Spotify semplificato)
-   Colonne di colore usate: sfondo scuro, testo bianco,
-   accento verde per elementi attivi.
+   SSG Universe - stile (dark, tema "cosmico", leggero)
+   Palette: fondo quasi nero tendente al viola, accento
+   viola/blu (gradiente SSG), niente font o librerie esterne.
    ========================================================= */
 
-/* Variabili di colore: le uso ovunque per cambiare tema facilmente */
 :root {
-  --bg: #121212;            /* sfondo principale */
-  --bg-sidebar: #000000;    /* barra laterale */
-  --bg-player: #181818;     /* player fisso in basso */
-  --bg-hover: #232323;      /* riga della lista al passaggio del mouse */
-  --accent: #1db954;        /* verde "play" stile Spotify */
-  --accent-hover: #1ed760;
-  --text: #ffffff;          /* testo principale */
-  --text-dim: #b3b3b3;      /* testo secondario (artista, tempi) */
-  --border: rgba(255, 255, 255, 0.08);
+  --bg: #0a0a10;
+  --surface: #14141d;
+  --surface-2: #1b1b26;
+  --border: rgba(255, 255, 255, 0.07);
+  --text: #f2f2f7;
+  --dim: #a0a0b8;
+  --accent: #7c6cff;
+  --accent-2: #4f9dff;
+  --accent-soft: rgba(124, 108, 255, 0.18);
+  --grad: linear-gradient(135deg, #7c6cff, #4f9dff);
 }
 
-/* Reset base: tolgo margini e padding di default e faccio sì che
-   padding e bordi non "gonfino" la larghezza degli elementi. */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-html, body {
-  height: 100%;
-}
+html, body { height: 100%; }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
@@ -36,318 +28,451 @@ body {
   color: var(--text);
   display: flex;
   flex-direction: column;
-  overflow: hidden;              /* niente barre laterali: si scrolla solo la lista */
+  overflow: hidden;
 }
 
-/* =========================================================
-   LAYOUT GENERALE
-   body è una colonna: in alto la zona .app (lista), in basso
-   il player fisso .player-bar che occupa 92px.
-   ========================================================= */
-
-.app {
-  flex: 1;                       /* occupa tutto lo spazio sopra il player */
-  display: flex;
-  min-height: 0;                 /* permette lo scroll interno della lista */
+/* Fondo stellato leggero in puro CSS (nessun file immagine) */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(1px 1px at 18% 22%, rgba(255,255,255,.5) 50%, transparent 50%),
+    radial-gradient(1px 1px at 72% 12%, rgba(255,255,255,.35) 50%, transparent 50%),
+    radial-gradient(1.5px 1.5px at 42% 68%, rgba(160,150,255,.55) 50%, transparent 50%),
+    radial-gradient(1px 1px at 88% 55%, rgba(255,255,255,.3) 50%, transparent 50%),
+    radial-gradient(1.5px 1.5px at 8% 82%, rgba(160,150,255,.4) 50%, transparent 50%),
+    radial-gradient(1px 1px at 60% 38%, rgba(255,255,255,.25) 50%, transparent 50%);
+  background-size: 220px 220px, 300px 300px, 340px 340px, 260px 260px, 320px 320px, 280px 280px;
+  opacity: .45;
 }
 
-/* ---------- Barra laterale ---------- */
+.hidden { display: none !important; }
 
-.sidebar {
-  width: 220px;
-  flex-shrink: 0;
-  background: var(--bg-sidebar);
-  padding: 20px 16px;
-}
+/* ---------- Barra superiore ---------- */
 
-.logo {
-  font-size: 1.3rem;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  margin-bottom: 28px;
-}
-
-.sidebar-label {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--text-dim);
-  margin-bottom: 8px;
-}
-
-.sidebar-count {
-  font-size: 0.85rem;
-  color: var(--text-dim);
-}
-
-/* ---------- Zona principale (lista canzoni) ---------- */
-
-.main {
-  flex: 1;
-  min-width: 0;                  /* evita che il contenuto "spinga" oltre */
-  overflow-y: auto;              /* la lista scorre, il resto resta fermo */
-  padding: 18px 22px;
-}
-
-.main-header h1 {
-  font-size: 1.3rem;
-  margin-bottom: 14px;
-}
-
-.playlist {
-  list-style: none;
-}
-
-/* Singola riga della lista */
-.playlist .song {
+.topbar {
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 10px 14px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-
-.playlist .song:hover {
-  background: var(--bg-hover);
-}
-
-/* Riga della canzone in riproduzione: sfondo verde, testo scuro */
-.playlist .song.active {
-  background: var(--accent);
-  color: #000;
-}
-
-.playlist .song.active .song-artist,
-.playlist .song.active .song-duration,
-.playlist .song.active .song-index {
-  color: rgba(0, 0, 0, 0.65);
-}
-
-.song-index {
-  width: 22px;
-  text-align: center;
-  font-size: 0.8rem;
-  color: var(--text-dim);
+  gap: 12px;
+  padding: 12px 20px;
   flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
 }
 
-/* Mini-copertina della riga. Se l'immagine manca resta il gradiente */
-.thumb {
+.back-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .15s ease, transform .1s ease;
+}
+.back-btn:hover { background: #2a2a38; }
+.back-btn:active { transform: scale(.92); }
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-mark {
   width: 40px;
   height: 40px;
-  border-radius: 6px;
-  overflow: hidden;
-  flex-shrink: 0;
+  border-radius: 12px;
+  background: var(--grad);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: .95rem;
+  letter-spacing: .5px;
+  color: #fff;
+  box-shadow: 0 4px 18px rgba(124, 108, 255, .4);
+}
+
+.brand-text { line-height: 1.2; }
+
+.brand-name {
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: .3px;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.brand-sub {
+  font-size: .72rem;
+  color: var(--dim);
+}
+
+/* ---------- Zona principale ---------- */
+
+.main {
   position: relative;
-}
-
-.thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.thumb.placeholder,
-.cover.placeholder {
-  background: linear-gradient(135deg, #3a3a3a, #161616);
-}
-
-.song-text {
+  z-index: 1;
   flex: 1;
-  min-width: 0;                  /* consente di troncare il testo con ellissi */
+  min-height: 0;
+  overflow-y: auto;
 }
 
-.song-title,
-.song-artist {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;       /* "... " se il testo è troppo lungo */
+.view { padding: 26px 28px 34px; }
+
+/* =========================================================
+   HOME: griglia album (solo copertine + titolo)
+   ========================================================= */
+
+.album-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 22px;
 }
 
-.song-title {
-  font-size: 0.95rem;
-  font-weight: 600;
-}
-
-.song-artist {
-  font-size: 0.8rem;
-  color: var(--text-dim);
-  margin-top: 2px;
-}
-
-.song-duration {
-  font-size: 0.8rem;
-  color: var(--text-dim);
-  flex-shrink: 0;
-}
-
-/* ---------- Intestazioni degli album ---------- */
-
-/* La riga d'intestazione non è cliccabile e separa gli album */
-.playlist .song.section {
-  cursor: default;
+.album-card {
   background: none;
-  padding: 20px 14px 8px;
-  margin-top: 10px;
+  border: none;
+  padding: 0;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
 }
 
-.playlist .song.section:first-child {
-  margin-top: 0;
-  padding-top: 8px;
-}
-
-/* Al passaggio del mouse l'intestazione NON deve evidenziarsi */
-.playlist .song.section:hover { background: none; }
-
-/* Copertina più grande dell'album nell'intestazione */
-.section-thumb {
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
+.card-cover {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 14px;
   overflow: hidden;
-  flex-shrink: 0;
+  background: var(--surface-2);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .45);
+  transition: transform .2s ease, box-shadow .2s ease;
 }
 
-.section-thumb img {
+.album-card:hover .card-cover {
+  transform: translateY(-4px) scale(1.015);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .6);
+}
+
+.card-cover img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
 
-.section-thumb.placeholder {
-  background: linear-gradient(135deg, #3a3a3a, #161616);
+/* Copertina segnaposto per album senza immagine (iniziali) */
+.card-cover.ph,
+.covers .ph,
+.cover.ph {
+  background: linear-gradient(150deg, #2b1b5e, #160f2e 55%, #0b0716);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.section-title,
-.section-count {
+.card-cover.ph span.ph-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, .75);
+  letter-spacing: .5px;
+}
+
+/* Badge play che appare al passaggio del mouse sulla copertina */
+.card-play {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--grad);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, .5);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity .18s ease, transform .18s ease;
+}
+
+.album-card:hover .card-play { opacity: 1; transform: translateY(0); }
+
+.card-caption { padding: 10px 2px 0; }
+
+.card-title {
+  font-size: .95rem;
+  font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.section-title {
-  font-size: 1.05rem;
-  font-weight: 700;
-}
-
-.section-count {
-  font-size: 0.78rem;
-  color: var(--text-dim);
+.card-meta {
+  font-size: .76rem;
+  color: var(--dim);
   margin-top: 2px;
 }
 
-/* ---------- Messaggio di errore ---------- */
-.playlist .error {
-  display: block;
-  color: var(--text-dim);
-  font-size: 0.9rem;
-  line-height: 1.5;
-  cursor: default;
+/* =========================================================
+   SCHERMATA ALBUM
+   ========================================================= */
+
+.album-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  padding: 26px;
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  background: var(--surface-2);
+  margin-bottom: 18px;
 }
 
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(28px) brightness(.55);
+  transform: scale(1.15);
+}
+
+.album-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(10, 10, 16, .85), rgba(10, 10, 16, .25));
+}
+
+.album-cover-wrap {
+  position: relative;
+  z-index: 1;
+  width: 150px;
+  height: 150px;
+  flex-shrink: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--surface-2);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .55);
+}
+
+.album-cover-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.album-cover-wrap.ph { display: flex; align-items: center; justify-content: center; }
+.album-cover-wrap.ph span.ph-title { font-size: 2.4rem; font-weight: 800; color: rgba(255,255,255,.75); }
+
+.album-head {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+
+.eyebrow {
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+
+.album-title {
+  font-size: clamp(1.5rem, 4vw, 2.4rem);
+  font-weight: 800;
+  margin: 4px 0 8px;
+  line-height: 1.1;
+  word-break: break-word;
+}
+
+.album-meta { font-size: .82rem; color: var(--dim); }
+
+/* ---------- Lista brani ---------- */
+
+.track-list { display: flex; flex-direction: column; gap: 4px; }
+
+.track-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  padding: 9px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background .12s ease;
+  text-align: left;
+}
+
+.track-row:hover { background: var(--surface-2); }
+
+.track-num {
+  width: 24px;
+  flex-shrink: 0;
+  font-size: .8rem;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.track-title {
+  font-size: .92rem;
+  font-weight: 600;
+  flex: 0 1 50%;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.track-artist {
+  flex: 1;
+  min-width: 0;
+  font-size: .78rem;
+  color: var(--dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.track-dur {
+  flex-shrink: 0;
+  font-size: .76rem;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.track-row.active { background: var(--accent-soft); }
+.track-row.active .track-num { color: var(--accent); font-weight: 700; }
+.track-row.active .track-title { color: var(--accent); }
+
 /* =========================================================
-   PLAYER FISSO IN BASSO
-   Layout a 3 colonne: info brano | controlli | avanzamento+volume
+   PLAYER FISSO IN BASSO - 3 colonne
    ========================================================= */
 
 .player-bar {
+  position: relative;
+  z-index: 2;
   flex-shrink: 0;
-  height: 92px;
-  background: var(--bg-player);
+  background: rgba(16, 16, 24, .82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-top: 1px solid var(--border);
   display: grid;
-  grid-template-columns: 1fr auto 1fr;   /* colonna 1 espandibile, 2 centrata, 3 espandibile */
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: 16px;
-  padding: 8px 16px;
+  gap: 18px;
+  padding: 10px 20px;
 }
-
-/* ---------- Info brano ---------- */
 
 .track-info {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-width: 0;                  /* per ellissi su titoli lunghi */
-}
-
-.cover {
-  width: 56px;
-  height: 56px;
-  border-radius: 8px;
-  flex-shrink: 0;
-  overflow: hidden;
-}
-
-.cover img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.track-meta {
   min-width: 0;
 }
 
-.track-title,
-.track-artist {
+.cover {
+  width: 50px;
+  height: 50px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+
+.cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cover.ph span.ph-title { font-size: .8rem; font-weight: 800; color: rgba(255,255,255,.7); }
+
+.track-meta { min-width: 0; line-height: 1.25; }
+
+.track-title {
+  font-size: .9rem;
+  font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.track-title {
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-
 .track-artist {
-  font-size: 0.78rem;
-  color: var(--text-dim);
-  margin-top: 2px;
+  font-size: .76rem;
+  color: var(--dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* ---------- Controlli ---------- */
+/* ---------- Controlli centrali ---------- */
 
 .controls {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 20px;
+  gap: 8px;
 }
 
 .ctrl-btn {
-  background: none;
-  border: none;
-  color: var(--text);
-  cursor: pointer;
   width: 38px;
   height: 38px;
+  border: none;
   border-radius: 50%;
+  background: none;
+  color: var(--text);
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color 0.15s ease, transform 0.1s ease;
+  transition: color .15s ease, background .15s ease, transform .1s ease;
 }
+.ctrl-btn:hover { color: var(--accent-2); }
+.ctrl-btn:active { transform: scale(.92); }
 
-.ctrl-btn:hover { color: var(--accent-hover); }
-.ctrl-btn:active { transform: scale(0.94); }
-
-/* Il pulsante play è più grande e ha sfondo bianco */
 .btn-play {
-  width: 50px;
-  height: 50px;
+  width: 52px;
+  height: 52px;
   background: #fff;
   color: #000;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  margin: 0 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .5);
 }
+.btn-play:hover { background: var(--accent); color: #fff; }
 
-.btn-play:hover { background: var(--accent-hover); color: #000; }
+.btn-play .ctrl-icon { width: 24px; height: 24px; }
+
+/* Stati attivi di shuffle e repeat */
+.ctrl-btn.on { color: var(--accent); }
+.ctrl-btn.on:hover { color: var(--accent); }
+
+.btn-repeat { position: relative; }
+.rep-badge {
+  position: absolute;
+  top: 2px;
+  right: 1px;
+  font-size: .6rem;
+  font-weight: 800;
+  color: var(--accent);
+}
 
 /* ---------- Avanzamento + volume ---------- */
 
@@ -355,27 +480,28 @@ body {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  min-width: 180px;              /* larghezza minima per non comprimersi troppo */
+  min-width: 200px;
+  align-items: flex-end;
 }
 
 .progress-area {
   display: flex;
   align-items: center;
   gap: 8px;
+  width: 100%;
 }
 
 .time {
-  font-size: 0.68rem;
-  color: var(--text-dim);
-  font-variant-numeric: tabular-nums;   /* numeri di larghezza fissa: evita "salti" */
+  font-size: .68rem;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
   flex-shrink: 0;
 }
 
-/* Barra di avanzamento: il riempimento verde è #seek-fill */
 .seek {
   flex: 1;
   height: 4px;
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, .16);
   border-radius: 2px;
   cursor: pointer;
   position: relative;
@@ -383,11 +509,9 @@ body {
 
 .seek-fill {
   position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 0%;                     /* player.js aggiorna la percentuale */
-  background: var(--accent);
+  left: 0; top: 0; bottom: 0;
+  width: 0%;
+  background: var(--grad);
   border-radius: 2px;
 }
 
@@ -395,54 +519,61 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  justify-content: flex-end;
 }
 
-.volume-icon { color: var(--text-dim); flex-shrink: 0; }
+.volume-icon {
+  color: var(--dim);
+  cursor: pointer;
+  flex-shrink: 0;
+}
 
-/* Slider del volume: accent-color lo colora senza CSS complessi */
 input[type="range"] {
   accent-color: var(--accent);
   cursor: pointer;
-  width: 100px;
+  width: 96px;
+  height: 4px;
 }
+
+/* ---------- Scrollbar ---------- */
+
+.main::-webkit-scrollbar { width: 10px; }
+.main::-webkit-scrollbar-thumb { background: #2c2c3a; border-radius: 10px; }
+.main::-webkit-scrollbar-track { background: transparent; }
+
+.error {
+  color: var(--dim);
+  font-size: .9rem;
+  line-height: 1.6;
+  padding: 10px 2px;
+}
+
+.error code { color: var(--accent); }
 
 /* =========================================================
-   RESPONSIVE (schermi piccoli / mobile)
-   Nascondo la sidebar e impilo il player su 3 righe.
+   RESPONSIVE
    ========================================================= */
 
-@media (max-width: 768px) {
-  .sidebar { display: none; }
+@media (max-width: 720px) {
+  .view { padding: 16px 14px 24px; }
+  .album-grid { grid-template-columns: repeat(auto-fill, minmax(138px, 1fr)); gap: 14px; }
+
+  .album-hero { flex-direction: column; text-align: center; gap: 14px; padding: 20px 16px; }
+  .album-cover-wrap { width: 120px; height: 120px; }
+
+  .track-artist { display: none; }
+  .track-title { flex: 1; }
 
   .player-bar {
-    /* Da griglia a 3 colonne -> colonna singola con 3 righe */
     display: flex;
     flex-direction: column;
-    height: auto;
-    gap: 6px;
-    padding: 10px 12px 14px;
+    gap: 8px;
+    padding: 10px 14px 14px;
   }
-
-  /* Ordine su mobile: controlli in alto, poi info, poi progress/volume */
-  .controls { order: -1; gap: 16px; }
+  .controls { order: -1; gap: 6px; }
   .track-info { order: 0; align-self: flex-start; max-width: 100%; }
-  .right-side { order: 1; min-width: 0; width: 100%; }
+  .right-side { order: 1; min-width: 0; width: 100%; align-items: stretch; }
+  .volume-area { display: none; }
+  .cover { width: 42px; height: 42px; }
 
-  .cover { width: 44px; height: 44px; }
-  .main { padding: 12px 10px; }
-  .playlist .song { gap: 10px; padding: 8px 10px; }
-  .song-duration { display: none; }   /* risparmio spazio su schermi piccoli */
-  input[type="range"] { width: 90px; }
-}
-
-/* ---------- Scrollbar sottili e scure ---------- */
-.main::-webkit-scrollbar,
-.playlist::-webkit-scrollbar {
-  width: 10px;
-}
-
-.main::-webkit-scrollbar-thumb {
-  background: #333;
-  border-radius: 10px;
+  .btn-play { width: 46px; height: 46px; }
 }

@@ -168,7 +168,7 @@
     "album": "Giorni Migliori - SSG",
     "durata": 318,
     "file": "assets/audio/Giorni Migliori - SSG/Giorni Migliori .mp3",
-    "copertina": "assets/covers/Giorni_Migliori_-_SSG.png"
+    "copertina": "assets/covers/Giorni_Migliori_-_SSG.webp"
   },
   {
     "id": "Glock_9",
@@ -177,7 +177,7 @@
     "album": "Giorni Migliori - SSG",
     "durata": 186,
     "file": "assets/audio/Giorni Migliori - SSG/Glock 9.mp3",
-    "copertina": "assets/covers/Giorni_Migliori_-_SSG.png"
+    "copertina": "assets/covers/Giorni_Migliori_-_SSG.webp"
   },
   {
     "id": "Ho_perso",
@@ -186,7 +186,7 @@
     "album": "Giorni Migliori - SSG",
     "durata": 169,
     "file": "assets/audio/Giorni Migliori - SSG/Ho perso.mp3",
-    "copertina": "assets/covers/Giorni_Migliori_-_SSG.png"
+    "copertina": "assets/covers/Giorni_Migliori_-_SSG.webp"
   },
   {
     "id": "Il_cielo_e_le_nuvole",
@@ -195,7 +195,7 @@
     "album": "Giorni Migliori - SSG",
     "durata": 255,
     "file": "assets/audio/Giorni Migliori - SSG/Il cielo e le nuvole.mp3",
-    "copertina": "assets/covers/Giorni_Migliori_-_SSG.png"
+    "copertina": "assets/covers/Giorni_Migliori_-_SSG.webp"
   },
   {
     "id": "In_mezzo_al_traffico",
@@ -204,7 +204,7 @@
     "album": "Giorni Migliori - SSG",
     "durata": 250,
     "file": "assets/audio/Giorni Migliori - SSG/In mezzo al traffico .mp3",
-    "copertina": "assets/covers/Giorni_Migliori_-_SSG.png"
+    "copertina": "assets/covers/Giorni_Migliori_-_SSG.webp"
   },
   {
     "id": "Pieta_combination",
@@ -213,7 +213,7 @@
     "album": "Giorni Migliori - SSG",
     "durata": 613,
     "file": "assets/audio/Giorni Migliori - SSG/Pieta combination.mp3",
-    "copertina": "assets/covers/Giorni_Migliori_-_SSG.png"
+    "copertina": "assets/covers/Giorni_Migliori_-_SSG.webp"
   },
   {
     "id": "Quartieri",
@@ -222,7 +222,7 @@
     "album": "Giorni Migliori - SSG",
     "durata": 179,
     "file": "assets/audio/Giorni Migliori - SSG/Quartieri.mp3",
-    "copertina": "assets/covers/Giorni_Migliori_-_SSG.png"
+    "copertina": "assets/covers/Giorni_Migliori_-_SSG.webp"
   },
   {
     "id": "Resa_dei_conti",
@@ -231,7 +231,7 @@
     "album": "Giorni Migliori - SSG",
     "durata": 163,
     "file": "assets/audio/Giorni Migliori - SSG/Resa dei conti.mp3",
-    "copertina": "assets/covers/Giorni_Migliori_-_SSG.png"
+    "copertina": "assets/covers/Giorni_Migliori_-_SSG.webp"
   },
   {
     "id": "Solo_Al_Tramonto_-_SSG",
@@ -240,7 +240,7 @@
     "album": "Giorni Migliori - SSG",
     "durata": 188,
     "file": "assets/audio/Giorni Migliori - SSG/Solo Al Tramonto - SSG.mp3",
-    "copertina": "assets/covers/Giorni_Migliori_-_SSG.png"
+    "copertina": "assets/covers/Giorni_Migliori_-_SSG.webp"
   },
   {
     "id": "Soltanto_di_notte",
@@ -249,7 +249,7 @@
     "album": "Giorni Migliori - SSG",
     "durata": 288,
     "file": "assets/audio/Giorni Migliori - SSG/Soltanto di notte.mp3",
-    "copertina": "assets/covers/Giorni_Migliori_-_SSG.png"
+    "copertina": "assets/covers/Giorni_Migliori_-_SSG.webp"
   },
   {
     "id": "7_tikiardi",
@@ -402,7 +402,7 @@
     "album": "NUOVI PEZZI MASTER E MIX",
     "durata": 300,
     "file": "assets/audio/NUOVI PEZZI MASTER E MIX/paura.ancora.afghanistan-.mp3",
-    "copertina": ""
+    "copertina": "assets/covers/NUOVI_PEZZI_MASTER_E_MIX.svg"
   },
   {
     "id": "chi_l'ha_vista_",
@@ -411,7 +411,7 @@
     "album": "NUOVI PEZZI MASTER E MIX",
     "durata": 193,
     "file": "assets/audio/NUOVI PEZZI MASTER E MIX/chi l'ha vista_.mp3",
-    "copertina": ""
+    "copertina": "assets/covers/NUOVI_PEZZI_MASTER_E_MIX.svg"
   },
   {
     "id": "io_sono_swag_special",
@@ -420,7 +420,7 @@
     "album": "NUOVI PEZZI MASTER E MIX",
     "durata": 133,
     "file": "assets/audio/NUOVI PEZZI MASTER E MIX/io sono swag special.mp3",
-    "copertina": ""
+    "copertina": "assets/covers/NUOVI_PEZZI_MASTER_E_MIX.svg"
   },
   {
     "id": "Goleador",
@@ -429,7 +429,7 @@
     "album": "NUOVI PEZZI MASTER E MIX",
     "durata": 130,
     "file": "assets/audio/NUOVI PEZZI MASTER E MIX/Goleador.mp3",
-    "copertina": ""
+    "copertina": "assets/covers/NUOVI_PEZZI_MASTER_E_MIX.svg"
   },
   {
     "id": "gta_viMastereMIX",
@@ -438,7 +438,7 @@
     "album": "NUOVI PEZZI MASTER E MIX",
     "durata": 201,
     "file": "assets/audio/NUOVI PEZZI MASTER E MIX/gta viMastereMIX.mp3",
-    "copertina": ""
+    "copertina": "assets/covers/NUOVI_PEZZI_MASTER_E_MIX.svg"
   },
   {
     "id": "NON_POSSO.NON_VOGLIO",
@@ -447,7 +447,7 @@
     "album": "NUOVI PEZZI MASTER E MIX",
     "durata": 131,
     "file": "assets/audio/NUOVI PEZZI MASTER E MIX/NON POSSO.NON VOGLIO .mp3",
-    "copertina": ""
+    "copertina": "assets/covers/NUOVI_PEZZI_MASTER_E_MIX.svg"
   },
   {
     "id": "PROCLUB",
@@ -456,7 +456,7 @@
     "album": "NUOVI PEZZI MASTER E MIX",
     "durata": 122,
     "file": "assets/audio/NUOVI PEZZI MASTER E MIX/PROCLUB.mp3",
-    "copertina": ""
+    "copertina": "assets/covers/NUOVI_PEZZI_MASTER_E_MIX.svg"
   },
   {
     "id": "RetoricaMIX",
@@ -465,7 +465,7 @@
     "album": "NUOVI PEZZI MASTER E MIX",
     "durata": 280,
     "file": "assets/audio/NUOVI PEZZI MASTER E MIX/RetoricaMIX.mp3",
-    "copertina": ""
+    "copertina": "assets/covers/NUOVI_PEZZI_MASTER_E_MIX.svg"
   },
   {
     "id": "CACAO_ACUSTIC_LIVE",
@@ -474,7 +474,7 @@
     "album": "SINGOLI : EXTRA - SSG",
     "durata": 0,
     "file": "assets/audio/SINGOLI : EXTRA - SSG/CACAO ACUSTIC LIVE.mp3",
-    "copertina": "assets/covers/SINGOLI___EXTRA_-_SSG.png"
+    "copertina": "assets/covers/SINGOLI___EXTRA_-_SSG.webp"
   },
   {
     "id": "2-_NATALE_IN_4.20",
@@ -483,7 +483,7 @@
     "album": "SINGOLI : EXTRA - SSG",
     "durata": 264,
     "file": "assets/audio/SINGOLI : EXTRA - SSG/2- NATALE IN 4.20.mp3",
-    "copertina": "assets/covers/SINGOLI___EXTRA_-_SSG.png"
+    "copertina": "assets/covers/SINGOLI___EXTRA_-_SSG.webp"
   },
   {
     "id": "1-_NBA_Star",
@@ -492,7 +492,7 @@
     "album": "SINGOLI : EXTRA - SSG",
     "durata": 188,
     "file": "assets/audio/SINGOLI : EXTRA - SSG/1- NBA Star.mp3",
-    "copertina": "assets/covers/SINGOLI___EXTRA_-_SSG.png"
+    "copertina": "assets/covers/SINGOLI___EXTRA_-_SSG.webp"
   },
   {
     "id": "3-_Oro_perso",
@@ -501,7 +501,7 @@
     "album": "SINGOLI : EXTRA - SSG",
     "durata": 165,
     "file": "assets/audio/SINGOLI : EXTRA - SSG/3- Oro perso.mp3",
-    "copertina": "assets/covers/SINGOLI___EXTRA_-_SSG.png"
+    "copertina": "assets/covers/SINGOLI___EXTRA_-_SSG.webp"
   },
   {
     "id": "6-_Vado_al_Falo",
@@ -591,7 +591,7 @@
     "album": "Testamento - ssg",
     "durata": 259,
     "file": "assets/audio/Testamento - ssg/Medicine E Malibu.mp3",
-    "copertina": "assets/covers/Testamento_-_ssg.jpeg"
+    "copertina": "assets/covers/Testamento_-_ssg.webp"
   },
   {
     "id": "Solo_Con_Me",
@@ -600,7 +600,7 @@
     "album": "Testamento - ssg",
     "durata": 189,
     "file": "assets/audio/Testamento - ssg/Solo Con Me.mp3",
-    "copertina": "assets/covers/Testamento_-_ssg.jpeg"
+    "copertina": "assets/covers/Testamento_-_ssg.webp"
   },
   {
     "id": "Vans_2_Freestyle_(Bonus)",
@@ -609,7 +609,7 @@
     "album": "Testamento - ssg",
     "durata": 182,
     "file": "assets/audio/Testamento - ssg/Vans 2 Freestyle (Bonus).mp3",
-    "copertina": "assets/covers/Testamento_-_ssg.jpeg"
+    "copertina": "assets/covers/Testamento_-_ssg.webp"
   },
   {
     "id": "Testamento",
@@ -618,6 +618,6 @@
     "album": "Testamento - ssg",
     "durata": 172,
     "file": "assets/audio/Testamento - ssg/Testamento.mp3",
-    "copertina": "assets/covers/Testamento_-_ssg.jpeg"
+    "copertina": "assets/covers/Testamento_-_ssg.webp"
   }
 ]

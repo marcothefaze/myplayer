@@ -1,7 +1,16 @@
-# MyPlayer — Player musicale personale
+# SSG Universe — Player musicale personale
 
 Web app "stile Spotify" semplificata che riproduce i **tuoi** file MP3,
 presenti in locale. Nessuno streaming: tutto funziona **offline**.
+
+## Funzioni
+
+- **Home**: griglia di copertine degli album; clic su un album per
+  aprirne la schermata con i brani.
+- **Player**: play/pausa, precedente/successiva, **shuffle** (casuale) e
+  **ripeti** (off / tutto / singolo), seek cliccabile, volume.
+- Volume, shuffle e modalità di ripetizione vengono ricordati al riavvio
+  (salvati localmente nel browser).
 
 ---
 
