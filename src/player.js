@@ -197,24 +197,25 @@ function applySavedState() {
 /* Sincronizza gli stati di shuffle e repeat su ENTRAMBE le barre (mini + full) */
 function updateModeButtons() {
   els.btnShuffle.classList.toggle("on", state.shuffle);
-  els.fpShuffle.classList.toggle("on", state.shuffle);
+  els.btnRepeat.classList.toggle("on", state.repeat !== "off");
+  els.btnRepeat.classList.toggle("one", state.repeat === "one");
+  els.repBadge.classList.toggle("hidden", state.repeat !== "one");
 
-  const repOn = state.repeat !== "off";
-  const repOne = state.repeat === "one";
-  els.btnRepeat.classList.toggle("on", repOn);
-  els.btnRepeat.classList.toggle("one", repOne);
-  els.repBadge.classList.toggle("hidden", !repOne);
-  els.fpRepeat.classList.toggle("on", repOn);
-  els.fpRepeat.classList.toggle("one", repOne);
-  els.fpRepBadge.classList.toggle("hidden", !repOne);
+  if (!els.fp) return;
+  els.fpShuffle.classList.toggle("on", state.shuffle);
+  els.fpRepeat.classList.toggle("on", state.repeat !== "off");
+  els.fpRepeat.classList.toggle("one", state.repeat === "one");
+  els.fpRepBadge.classList.toggle("hidden", state.repeat !== "one");
 }
 
 /* Mostra/nasconde l'icona play/pausa su entrambe le barre */
 function setPlayIcons(playing) {
   els.iconPlay.style.display = playing ? "none" : "block";
   els.iconPause.style.display = playing ? "block" : "none";
-  els.fpIconPlay.style.display = playing ? "none" : "block";
-  els.fpIconPause.style.display = playing ? "block" : "none";
+  if (els.fp) {
+    els.fpIconPlay.style.display = playing ? "none" : "block";
+    els.fpIconPause.style.display = playing ? "block" : "none";
+  }
 }
 
 function updateBrandCount() {
@@ -359,6 +360,9 @@ function updatePlayerInfo(song) {
   const coverName = song.album || "Senza album";
 
   buildCover(els.cover, coverSrc, coverName);
+
+  if (!els.fp) return;   // full player assente (pagina HTML vecchia): non ci blocchiamo
+
   buildCover(els.fpCover, coverSrc, coverName);
 
   // Sfondo sfocato del full player: la stessa copertina
@@ -467,14 +471,14 @@ function updateProgress() {
   const current = audio.currentTime || 0;
   const pct = duration ? (current / duration * 100) + "%" : "0%";
   els.seekFill.style.width = pct;
-  els.fpSeekFill.style.width = pct;
   const cur = formatTime(current);
   els.timeCurrent.textContent = cur;
-  els.fpTimeCurrent.textContent = cur;
+  if (els.fpSeekFill) els.fpSeekFill.style.width = pct;
+  if (els.fpTimeCurrent) els.fpTimeCurrent.textContent = cur;
   if (isFinite(duration)) {
     const dur = formatTime(duration);
     els.timeDuration.textContent = dur;
-    els.fpTimeDuration.textContent = dur;
+    if (els.fpTimeDuration) els.fpTimeDuration.textContent = dur;
   }
 }
 
@@ -490,7 +494,7 @@ function bindSeek(seekEl, fillEl) {
 }
 
 bindSeek(els.seek, els.seekFill);
-bindSeek(els.fpSeek, els.fpSeekFill);
+if (els.fpSeek) bindSeek(els.fpSeek, els.fpSeekFill);
 
 let lastVolume = null;
 
@@ -498,13 +502,13 @@ function setVolume(value) {
   const v = Math.max(0, Math.min(1, Number(value)));
   audio.volume = v;
   els.volume.value = v;
-  els.fpVolume.value = v;
+  if (els.fpVolume) els.fpVolume.value = v;
   localStorage.setItem("mp-volume", v);
   if (v > 0) lastVolume = v;
 }
 
 els.volume.addEventListener("input", () => setVolume(els.volume.value));
-els.fpVolume.addEventListener("input", () => setVolume(els.fpVolume.value));
+if (els.fpVolume) els.fpVolume.addEventListener("input", () => setVolume(els.fpVolume.value));
 
 // Click sull'icona del volume: silenzia / ripristina (su entrambe le barre)
 function toggleMute() {
@@ -517,7 +521,7 @@ function toggleMute() {
 }
 
 els.volumeIcon.addEventListener("click", toggleMute);
-els.fpVolumeIcon.addEventListener("click", toggleMute);
+if (els.fpVolumeIcon) els.fpVolumeIcon.addEventListener("click", toggleMute);
 
 /* ---------- 12. EVENTI <audio> ---------- */
 
@@ -548,15 +552,10 @@ audio.addEventListener("loadedmetadata", updateProgress);
 /* ---------- 13. CONTROLLI UI E TASTIERA ---------- */
 
 els.btnPlay.addEventListener("click", togglePlay);
-els.fpPlay.addEventListener("click", togglePlay);
 els.btnNext.addEventListener("click", skipNext);
-els.fpNext.addEventListener("click", skipNext);
 els.btnPrev.addEventListener("click", skipPrev);
-els.fpPrev.addEventListener("click", skipPrev);
 els.btnShuffle.addEventListener("click", toggleShuffle);
-els.fpShuffle.addEventListener("click", toggleShuffle);
 els.btnRepeat.addEventListener("click", cycleRepeat);
-els.fpRepeat.addEventListener("click", cycleRepeat);
 els.btnBack.addEventListener("click", goHome);
 
 function goHome() {
@@ -567,32 +566,41 @@ function goHome() {
 /* ---------- 14. FULL PLAYER a tendina ---------- */
 
 function openFullPlayer() {
+  if (!els.fp) return;
   els.fp.classList.add("open");
   els.fp.setAttribute("aria-hidden", "false");
 }
 
 function closeFullPlayer() {
+  if (!els.fp) return;
   els.fp.classList.remove("open");
   els.fp.setAttribute("aria-hidden", "true");
 }
 
-// Clic sulla copertina/brano nella barra in basso -> apre il full player
-els.trackInfo.addEventListener("click", openFullPlayer);
-els.fpCollapse.addEventListener("click", closeFullPlayer);
+if (els.fp) {
+  // Clic sulla copertina/brano nella barra in basso -> apre il full player
+  els.trackInfo.addEventListener("click", openFullPlayer);
+  els.fpCollapse.addEventListener("click", closeFullPlayer);
+  els.fpPlay.addEventListener("click", togglePlay);
+  els.fpNext.addEventListener("click", skipNext);
+  els.fpPrev.addEventListener("click", skipPrev);
+  els.fpShuffle.addEventListener("click", toggleShuffle);
+  els.fpRepeat.addEventListener("click", cycleRepeat);
 
-// Trascina verso il basso sulla zona alta (pillina) -> chiudi la tendina
-let fpDragStart = null;
-els.fpHandle.addEventListener("pointerdown", (e) => {
-  if (e.target === els.fpCollapse) return;   // il chevron gestisce il proprio click
-  fpDragStart = e.clientY;
-  els.fpHandle.setPointerCapture(e.pointerId);
-});
-els.fpHandle.addEventListener("pointermove", (e) => {
-  if (fpDragStart === null) return;
-  const dy = e.clientY - fpDragStart;
-  if (dy > 60) closeFullPlayer();
-});
-els.fpHandle.addEventListener("pointerup", () => { fpDragStart = null; });
+  // Trascina verso il basso sulla zona alta (pillina) -> chiudi la tendina
+  let fpDragStart = null;
+  els.fpHandle.addEventListener("pointerdown", (e) => {
+    if (e.target === els.fpCollapse) return;   // il chevron gestisce il proprio click
+    fpDragStart = e.clientY;
+    els.fpHandle.setPointerCapture(e.pointerId);
+  });
+  els.fpHandle.addEventListener("pointermove", (e) => {
+    if (fpDragStart === null) return;
+    const dy = e.clientY - fpDragStart;
+    if (dy > 60) closeFullPlayer();
+  });
+  els.fpHandle.addEventListener("pointerup", () => { fpDragStart = null; });
+}
 
 // Spazio = play/pausa (se un pulsante ha il focus, lo tolgo per non doppio-click).
 // Esc: chiude il full player se aperto, altrimenti torna alla home.
@@ -606,7 +614,7 @@ document.addEventListener("keydown", (e) => {
   } else if (e.key === "ArrowLeft") {
     audio.currentTime = Math.max(0, audio.currentTime - 5);
   } else if (e.key === "Escape") {
-    if (els.fp.classList.contains("open")) closeFullPlayer();
+    if (els.fp && els.fp.classList.contains("open")) closeFullPlayer();
     else goHome();
   }
 });
