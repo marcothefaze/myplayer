@@ -580,8 +580,16 @@ if (els.fpVolumeIcon) els.fpVolumeIcon.addEventListener("click", toggleMute);
 
 /* ---------- 12. EVENTI <audio> ---------- */
 
-audio.addEventListener("play", () => { setPlayIcons(true); syncPlaybackState(); });
-audio.addEventListener("pause", () => { setPlayIcons(false); syncPlaybackState(); });
+audio.addEventListener("play", () => {
+  setPlayIcons(true);
+  document.body.classList.add("is-playing");
+  syncPlaybackState();
+});
+audio.addEventListener("pause", () => {
+  setPlayIcons(false);
+  document.body.classList.remove("is-playing");
+  syncPlaybackState();
+});
 
 // A fine brano: ripeti singolo, altrimenti passa al successivo
 audio.addEventListener("ended", () => {

@@ -9,7 +9,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/icons/icon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/icons/icon-180.png">
   <link rel="manifest" href="../manifest.json">
-  <link rel="stylesheet" href="style.css?v=10">
+  <link rel="stylesheet" href="style.css?v=11">
   <!-- Il ?v=N forza il browser a scaricare di nuovo i file a ogni rilascio,
        evitando che resti in cache una versione vecchia dell'app. -->
 </head>
@@ -74,7 +74,9 @@
 
     <!-- Info brano in riproduzione (clic = apre il full player) -->
     <div id="track-info" class="track-info" title="Apri a schermo intero">
-      <div id="cover" class="cover"></div>
+      <div id="cover" class="cover">
+        <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
+      </div>
       <div class="track-meta">
         <div id="song-title" class="track-title">SSG Universe</div>
         <div id="song-artist" class="track-artist">Scegli un album per iniziare</div>
@@ -209,6 +211,6 @@
     </div>
   </div>
 
-  <script src="player.js?v=10"></script>
+  <script src="player.js?v=11"></script>
 </body>
 </html>
