@@ -99,16 +99,9 @@ button:active { filter: brightness(1.35); }
 .brand-mark {
   width: 40px;
   height: 40px;
-  border-radius: 12px;
-  background: var(--grad);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: .95rem;
-  letter-spacing: .5px;
-  color: #fff;
-  box-shadow: 0 4px 18px rgba(124, 108, 255, .4);
+  border-radius: 10px;
+  object-fit: cover;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, .45);
 }
 
 .brand-text { line-height: 1.2; }
