@@ -716,7 +716,25 @@ els.btnPrev.addEventListener("click", skipPrev);
 els.btnShuffle.addEventListener("click", toggleShuffle);
 els.btnRepeat.addEventListener("click", cycleRepeat);
 els.btnBack.addEventListener("click", goHome);
-els.btnRefresh.addEventListener("click", () => location.reload());
+
+/* Hard refresh: svuota gli archivi del service worker, aggiorna il worker
+   e ricarica su un URL nuovo (così il browser NON può usare la cache).
+   Equivale al Ctrl+Shift+R dei browser. */
+els.btnRefresh.addEventListener("click", async () => {
+  try {
+    if ("caches" in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((key) => caches.delete(key)));
+    }
+  } catch (e) {}
+  try {
+    if ("serviceWorker" in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map((reg) => reg.update()));
+    }
+  } catch (e) {}
+  location.replace(location.pathname + "?hard=" + Date.now());
+});
 
 function goHome() {
   els.btnBack.classList.add("hidden");
