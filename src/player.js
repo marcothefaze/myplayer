@@ -797,6 +797,12 @@ window.addEventListener("unhandledrejection", (e) => fatalError(
   e.reason && e.reason.message ? e.reason.message : String(e.reason)
 ));
 
+/* Aggiornamento automatico: il service worker carica sempre la versione
+   più recente a ogni apertura, senza che serva il refresh manuale */
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("../sw.js").catch(() => {});
+}
+
 try {
   loadPlaylist();
 } catch (err) {
