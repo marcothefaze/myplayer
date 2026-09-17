@@ -410,8 +410,9 @@ function updatePlayerInfo(song) {
 
   if (isFinite(song.durata)) {
     els.timeDuration.textContent = formatTime(song.durata);
-    els.fpTimeDuration.textContent = formatTime(song.durata);
+    if (els.fp) els.fpTimeDuration.textContent = formatTime(song.durata);
   }
+  updateMediaSession(song);
 }
 
 function togglePlay() {
@@ -513,6 +514,7 @@ function updateProgress() {
     els.timeDuration.textContent = dur;
     if (els.fpTimeDuration) els.fpTimeDuration.textContent = dur;
   }
+  updatePosition();
 }
 
 /* Clic o TRASCINAMENTO sulla barra = seek (scrub live). Funziona con
@@ -578,8 +580,8 @@ if (els.fpVolumeIcon) els.fpVolumeIcon.addEventListener("click", toggleMute);
 
 /* ---------- 12. EVENTI <audio> ---------- */
 
-audio.addEventListener("play", () => setPlayIcons(true));
-audio.addEventListener("pause", () => setPlayIcons(false));
+audio.addEventListener("play", () => { setPlayIcons(true); syncPlaybackState(); });
+audio.addEventListener("pause", () => { setPlayIcons(false); syncPlaybackState(); });
 
 // A fine brano: ripeti singolo, altrimenti passa al successivo
 audio.addEventListener("ended", () => {
@@ -601,6 +603,82 @@ audio.addEventListener("ended", () => {
 
 audio.addEventListener("timeupdate", updateProgress);
 audio.addEventListener("loadedmetadata", updateProgress);
+
+/* ---------- MEDIA SESSION (controlli nativi del telefono) ---------- */
+/* Mostra copertina, titolo e controlli nel player di sistema (blocca
+   schermo/notifica su Android, Control Center su iPhone). La "riproduzione
+   casuale / ripeti" dell'app è già rispettata dai pulsanti avanti/indietro. */
+
+const mediaSession = typeof navigator !== "undefined" && navigator.mediaSession
+  ? navigator.mediaSession
+  : null;
+
+if (mediaSession) {
+  mediaSession.setActionHandler("play", () => audio.play());
+  mediaSession.setActionHandler("pause", () => audio.pause());
+  mediaSession.setActionHandler("previoustrack", () => skipPrev());
+  mediaSession.setActionHandler("nexttrack", () => skipNext());
+  mediaSession.setActionHandler("seekto", (e) => {
+    if (e.seekTime != null && isFinite(e.seekTime)) {
+      audio.currentTime = e.seekTime;
+      updateProgress();
+    }
+  });
+  mediaSession.setActionHandler("seekforward", (e) => {
+    audio.currentTime = Math.min(audio.duration || 0,
+      audio.currentTime + (e.seekOffset || 10));
+  });
+  mediaSession.setActionHandler("seekbackward", (e) => {
+    audio.currentTime = Math.max(0, audio.currentTime - (e.seekOffset || 10));
+  });
+}
+
+function syncPlaybackState() {
+  if (!mediaSession) return;
+  try {
+    mediaSession.playbackState = audio.paused ? "paused" : "playing";
+  } catch (e) {}
+}
+
+/* Copertina e titolo nel player di sistema */
+function updateMediaSession(song) {
+  if (!mediaSession) return;
+
+  const artwork = [];
+  if (song.copertina) {
+    artwork.push({ src: new URL(resolvePath(song.copertina), location.href).href, sizes: "512x512" });
+  }
+  artwork.push({ src: new URL("../assets/icons/icon-512.png", location.href).href, sizes: "512x512" });
+
+  try {
+    mediaSession.metadata = new MediaMetadata({
+      title: song.titolo || fileTitle(song.file),
+      artist: isRealArtist(song.artista) ? song.artista : (song.album || ""),
+      album: song.album || "",
+      artwork
+    });
+    lastPosState = null;   // forzo l'aggiornamento della posizione
+  } catch (e) {}
+}
+
+let lastPosState = null;
+
+/* Posizione/barrina nel player nativo: aggiorno solo quando cambia di ~1s */
+function updatePosition() {
+  if (!mediaSession || typeof mediaSession.setPositionState !== "function") return;
+  const dur = audio.duration || 0;
+  const pos = audio.currentTime || 0;
+  if (!isFinite(dur) || dur <= 0 || !isFinite(pos)) return;
+
+  const p = Math.floor(pos);
+  const d = Math.floor(dur);
+  if (lastPosState && lastPosState[0] === p && lastPosState[1] === d) return;
+  lastPosState = [p, d];
+
+  try {
+    mediaSession.setPositionState({ duration: dur, playbackRate: 1, position: pos });
+  } catch (e) {}
+}
 
 /* ---------- 13. CONTROLLI UI E TASTIERA ---------- */
 
