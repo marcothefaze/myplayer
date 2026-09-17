@@ -9,7 +9,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/icons/icon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/icons/icon-180.png">
   <link rel="manifest" href="../manifest.json">
-  <link rel="stylesheet" href="style.css?v=17">
+  <link rel="stylesheet" href="style.css?v=18">
   <!-- Il ?v=N forza il browser a scaricare di nuovo i file a ogni rilascio,
        evitando che resti in cache una versione vecchia dell'app. -->
 </head>
@@ -32,7 +32,12 @@
         <div id="brand-count" class="brand-sub">Caricamento...</div>
       </div>
     </div>
-    <button id="btn-refresh" class="refresh-btn" title="Aggiornamento forzato: svuota la cache e ricarica">refresh</button>
+    <button id="btn-refresh" class="refresh-btn" title="Aggiornamento forzato: svuota la cache e ricarica">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+      </svg>
+      <span class="refresh-text">refresh</span>
+    </button>
   </header>
 
   <!-- ============ CONTENUTI ============ -->
@@ -209,6 +214,6 @@
     </div>
   </div>
 
-  <script src="player.js?v=17"></script>
+  <script src="player.js?v=18"></script>
 </body>
 </html>

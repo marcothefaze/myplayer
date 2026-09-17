@@ -90,12 +90,14 @@ button:active { filter: brightness(1.35); }
 .back-btn:hover { background: #2a2a38; }
 .back-btn:active { transform: scale(.92); }
 
-/* Tasto "refresh" per PC: forza ricaricamento quando qualcosa sembra vecchio */
+/* Tasto "refresh": su PC con scritta, su telefono solo icona.
+   Fa un aggiornamento forzato (svuota la cache e ricarica). */
 .refresh-btn {
   margin-left: auto;
-  display: none;
+  display: inline-flex;
   align-items: center;
-  padding: 5px 12px;
+  gap: 6px;
+  padding: 6px 12px;
   border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--surface-2);
@@ -104,15 +106,12 @@ button:active { filter: brightness(1.35); }
   font-weight: 700;
   letter-spacing: .3px;
   cursor: pointer;
-  transition: background .15s ease, color .15s ease, border-color .15s ease;
+  flex-shrink: 0;
+  transition: background .15s ease, color .15s ease, border-color .15s ease, transform .1s ease;
 }
+.refresh-btn svg { width: 16px; height: 16px; display: block; }
 .refresh-btn:hover { background: #2e2e3e; color: var(--accent-2); border-color: #3c3c4c; }
 .refresh-btn:active { transform: scale(.95); }
-
-/* Solo su schermi "da mouse" (≥ 721px) */
-@media (min-width: 721px) {
-  .refresh-btn { display: inline-flex; }
-}
 
 .brand {
   display: flex;
@@ -852,6 +851,10 @@ input[type="range"] {
   .fp-controls .fp-btn { width: 44px; height: 44px; }
   .fp-play { width: 64px; height: 64px; margin: 0 6px; }
   .fp-volume input { width: 130px; }
+
+  /* Refresh su telefono: solo icona, piccolo */
+  .refresh-text { display: none; }
+  .refresh-btn { padding: 7px; }
 }
 
 /* Schermi davvero stretti: solo il nome dell'app in alto */
