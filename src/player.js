@@ -39,6 +39,7 @@ const els = {
   albumTitle: $("album-title"),
   albumMeta: $("album-meta"),
   btnBack: $("btn-back"),
+  btnRefresh: $("btn-refresh"),
   brandCount: $("brand-count"),
   cover: $("cover"),
   songTitle: $("song-title"),
@@ -715,6 +716,7 @@ els.btnPrev.addEventListener("click", skipPrev);
 els.btnShuffle.addEventListener("click", toggleShuffle);
 els.btnRepeat.addEventListener("click", cycleRepeat);
 els.btnBack.addEventListener("click", goHome);
+els.btnRefresh.addEventListener("click", () => location.reload());
 
 function goHome() {
   els.btnBack.classList.add("hidden");

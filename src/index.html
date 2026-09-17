@@ -9,7 +9,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/icons/icon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/icons/icon-180.png">
   <link rel="manifest" href="../manifest.json">
-  <link rel="stylesheet" href="style.css?v=14">
+  <link rel="stylesheet" href="style.css?v=15">
   <!-- Il ?v=N forza il browser a scaricare di nuovo i file a ogni rilascio,
        evitando che resti in cache una versione vecchia dell'app. -->
 </head>
@@ -32,6 +32,7 @@
         <div id="brand-count" class="brand-sub">Caricamento...</div>
       </div>
     </div>
+    <button id="btn-refresh" class="refresh-btn" title="Forza l'aggiornamento della pagina">refresh</button>
   </header>
 
   <!-- ============ CONTENUTI ============ -->
@@ -69,8 +70,6 @@
       </div>
       <span id="time-duration" class="time">0:00</span>
     </div>
-
-    <div class="player-row">
 
     <!-- Info brano in riproduzione (clic = apre il full player) -->
     <div id="track-info" class="track-info" title="Apri a schermo intero">
@@ -130,7 +129,6 @@
         <input id="volume" type="range" min="0" max="1" step="0.01" value="0.8" aria-label="Volume">
       </div>
     </div>
-    </div><!-- /player-row -->
 
   </footer>
 
@@ -211,6 +209,6 @@
     </div>
   </div>
 
-  <script src="player.js?v=14"></script>
+  <script src="player.js?v=15"></script>
 </body>
 </html>
