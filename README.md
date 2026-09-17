@@ -140,3 +140,33 @@ Poi apri nel browser: <http://localhost:8000/src/>
   dell'utente. Qui si parte sempre da un click, quindi nessun problema.
 - **Offline**: una volta servita dal server locale, l'app non fa alcuna
   richiesta verso internet (solo il fetch locale di `playlist.json`).
+
+---
+
+## Pubblicare su GitHub Pages
+
+L'app è solo file statici, quindi funziona anche su GitHub Pages
+senza server né Python.
+
+1. **Crea un repository** su github.com (pubblico o privato, non importa)
+   e **non** spuntare "Add a README" (il README c'è già).
+2. Collega il progetto al repo e caricalo, dalla cartella del progetto:
+
+   ```bash
+   git remote add origin https://github.com/IL_TUO_UTENTE/IL_NOME_DEL_REPO.git
+   git push -u origin main
+   ```
+
+3. **Attiva GitHub Pages**: su GitHub vai in
+   `Settings -> Pages`, scegli `Deploy from a branch`, branch `main`,
+   cartella `/ (root)` e salva.
+
+4. Dopo pochi minuti il sito sarà online su:
+   `https://IL_TUO_UTENTE.github.io/IL_NOME_DEL_REPO/`
+   (la pagina di partenza rimanda da sola alla `/src/` con il player).
+
+Note:
+- I file audio pesano ~255 MB: dentro il limite di Pages (1 GB) ma il primo
+  `git push` impiegherà qualche minuto.
+- `tools/ffmpeg` è escluso dal repo (`.gitignore`): su GitHub ti servono
+  solo i file del progetto, non il tool di conversione.
