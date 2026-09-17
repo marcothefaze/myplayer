@@ -163,8 +163,8 @@ button:active { filter: brightness(1.35); }
 
 .album-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 22px;
+  grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
+  gap: 26px;
 }
 
 .album-card {
