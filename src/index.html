@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <!-- viewport: indispensabile per il layout responsivo su mobile -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyPlayer - Il tuo player musicale</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Tag <audio> nascosto: tutta la riproduzione passa da questo unico
+       elemento HTML5, riusato per tutte le canzoni.
+       (display:none NON impedisce la riproduzione) -->
+  <audio id="audio" preload="metadata"></audio>
+
+  <div class="app">
+
+    <!-- ============ BARRA LATERALE ============ -->
+    <aside class="sidebar">
+      <div class="logo">MyPlayer</div>
+      <p class="sidebar-label">La tua libreria</p>
+      <div id="song-count" class="sidebar-count">0 canzoni</div>
+    </aside>
+
+    <!-- ============ ELENCO CANZONI ============ -->
+    <main class="main">
+      <header class="main-header">
+        <h1>Le tue canzoni</h1>
+      </header>
+      <!-- La lista viene riempita dinamicamente da player.js -->
+      <ul id="playlist" class="playlist"></ul>
+    </main>
+
+  </div>
+
+  <!-- ============ PLAYER FISSO IN BASSO ============ -->
+  <footer class="player-bar">
+
+    <!-- Colonna 1: copertina + titolo + artista -->
+    <div class="track-info">
+      <div id="cover" class="cover"></div>
+      <div class="track-meta">
+        <div id="song-title" class="track-title">Nessuna canzone</div>
+        <div id="song-artist" class="track-artist">Scegli un brano per iniziare</div>
+      </div>
+    </div>
+
+    <!-- Colonna 2: controlli play / pausa / avanti / indietro -->
+    <div class="controls">
+      <button id="btn-prev" class="ctrl-btn" title="Precedente" aria-label="Precedente">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+          <polygon points="6,5 8,5 8,19 6,19"/>
+          <polygon points="19,5 9,12 19,19"/>
+        </svg>
+      </button>
+
+      <button id="btn-play" class="ctrl-btn btn-play" title="Play" aria-label="Play o pausa">
+        <!-- Le due icone vengono mostrate/sostituite da player.js -->
+        <svg id="icon-play" viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true">
+          <path d="M8,5 L19,12 L8,19 Z"/>
+        </svg>
+        <svg id="icon-pause" viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true" style="display:none">
+          <rect x="6" y="5" width="4" height="14"/>
+          <rect x="14" y="5" width="4" height="14"/>
+        </svg>
+      </button>
+
+      <button id="btn-next" class="ctrl-btn" title="Successiva" aria-label="Successiva">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+          <polygon points="18,5 16,5 16,19 18,19"/>
+          <polygon points="5,5 15,12 5,19"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Colonna 3: barra di avanzamento (con seek) + volume -->
+    <div class="right-side">
+      <div class="progress-area">
+        <span id="time-current" class="time">0:00</span>
+        <!-- Barra cliccabile: player.js gestisce il click per fare "seek" -->
+        <div id="seek" class="seek">
+          <div id="seek-fill" class="seek-fill"></div>
+        </div>
+        <span id="time-duration" class="time">0:00</span>
+      </div>
+
+      <div class="volume-area">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" class="volume-icon" aria-hidden="true">
+          <path d="M3,9 v6 h4 l5,4 V5 L7,9 Z"/>
+        </svg>
+        <!-- Slider del volume: il colore è gestito con CSS accent-color -->
+        <input id="volume" type="range" min="0" max="1" step="0.01" value="0.8" aria-label="Volume">
+      </div>
+    </div>
+
+  </footer>
+
+  <script src="player.js"></script>
+</body>
+</html>

@@ -1,0 +1,448 @@
+/* =========================================================
+   MyPlayer - stile (dark theme, stile Spotify semplificato)
+   Colonne di colore usate: sfondo scuro, testo bianco,
+   accento verde per elementi attivi.
+   ========================================================= */
+
+/* Variabili di colore: le uso ovunque per cambiare tema facilmente */
+:root {
+  --bg: #121212;            /* sfondo principale */
+  --bg-sidebar: #000000;    /* barra laterale */
+  --bg-player: #181818;     /* player fisso in basso */
+  --bg-hover: #232323;      /* riga della lista al passaggio del mouse */
+  --accent: #1db954;        /* verde "play" stile Spotify */
+  --accent-hover: #1ed760;
+  --text: #ffffff;          /* testo principale */
+  --text-dim: #b3b3b3;      /* testo secondario (artista, tempi) */
+  --border: rgba(255, 255, 255, 0.08);
+}
+
+/* Reset base: tolgo margini e padding di default e faccio sì che
+   padding e bordi non "gonfino" la larghezza degli elementi. */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+               "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;              /* niente barre laterali: si scrolla solo la lista */
+}
+
+/* =========================================================
+   LAYOUT GENERALE
+   body è una colonna: in alto la zona .app (lista), in basso
+   il player fisso .player-bar che occupa 92px.
+   ========================================================= */
+
+.app {
+  flex: 1;                       /* occupa tutto lo spazio sopra il player */
+  display: flex;
+  min-height: 0;                 /* permette lo scroll interno della lista */
+}
+
+/* ---------- Barra laterale ---------- */
+
+.sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: var(--bg-sidebar);
+  padding: 20px 16px;
+}
+
+.logo {
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  margin-bottom: 28px;
+}
+
+.sidebar-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+.sidebar-count {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+/* ---------- Zona principale (lista canzoni) ---------- */
+
+.main {
+  flex: 1;
+  min-width: 0;                  /* evita che il contenuto "spinga" oltre */
+  overflow-y: auto;              /* la lista scorre, il resto resta fermo */
+  padding: 18px 22px;
+}
+
+.main-header h1 {
+  font-size: 1.3rem;
+  margin-bottom: 14px;
+}
+
+.playlist {
+  list-style: none;
+}
+
+/* Singola riga della lista */
+.playlist .song {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.playlist .song:hover {
+  background: var(--bg-hover);
+}
+
+/* Riga della canzone in riproduzione: sfondo verde, testo scuro */
+.playlist .song.active {
+  background: var(--accent);
+  color: #000;
+}
+
+.playlist .song.active .song-artist,
+.playlist .song.active .song-duration,
+.playlist .song.active .song-index {
+  color: rgba(0, 0, 0, 0.65);
+}
+
+.song-index {
+  width: 22px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+/* Mini-copertina della riga. Se l'immagine manca resta il gradiente */
+.thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.thumb.placeholder,
+.cover.placeholder {
+  background: linear-gradient(135deg, #3a3a3a, #161616);
+}
+
+.song-text {
+  flex: 1;
+  min-width: 0;                  /* consente di troncare il testo con ellissi */
+}
+
+.song-title,
+.song-artist {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;       /* "... " se il testo è troppo lungo */
+}
+
+.song-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.song-artist {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+.song-duration {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+/* ---------- Intestazioni degli album ---------- */
+
+/* La riga d'intestazione non è cliccabile e separa gli album */
+.playlist .song.section {
+  cursor: default;
+  background: none;
+  padding: 20px 14px 8px;
+  margin-top: 10px;
+}
+
+.playlist .song.section:first-child {
+  margin-top: 0;
+  padding-top: 8px;
+}
+
+/* Al passaggio del mouse l'intestazione NON deve evidenziarsi */
+.playlist .song.section:hover { background: none; }
+
+/* Copertina più grande dell'album nell'intestazione */
+.section-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.section-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.section-thumb.placeholder {
+  background: linear-gradient(135deg, #3a3a3a, #161616);
+}
+
+.section-title,
+.section-count {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.section-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.section-count {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+/* ---------- Messaggio di errore ---------- */
+.playlist .error {
+  display: block;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  cursor: default;
+}
+
+/* =========================================================
+   PLAYER FISSO IN BASSO
+   Layout a 3 colonne: info brano | controlli | avanzamento+volume
+   ========================================================= */
+
+.player-bar {
+  flex-shrink: 0;
+  height: 92px;
+  background: var(--bg-player);
+  border-top: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;   /* colonna 1 espandibile, 2 centrata, 3 espandibile */
+  align-items: center;
+  gap: 16px;
+  padding: 8px 16px;
+}
+
+/* ---------- Info brano ---------- */
+
+.track-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;                  /* per ellissi su titoli lunghi */
+}
+
+.cover {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.track-meta {
+  min-width: 0;
+}
+
+.track-title,
+.track-artist {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.track-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.track-artist {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+/* ---------- Controlli ---------- */
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+.ctrl-btn {
+  background: none;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease, transform 0.1s ease;
+}
+
+.ctrl-btn:hover { color: var(--accent-hover); }
+.ctrl-btn:active { transform: scale(0.94); }
+
+/* Il pulsante play è più grande e ha sfondo bianco */
+.btn-play {
+  width: 50px;
+  height: 50px;
+  background: #fff;
+  color: #000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.btn-play:hover { background: var(--accent-hover); color: #000; }
+
+/* ---------- Avanzamento + volume ---------- */
+
+.right-side {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 180px;              /* larghezza minima per non comprimersi troppo */
+}
+
+.progress-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.time {
+  font-size: 0.68rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;   /* numeri di larghezza fissa: evita "salti" */
+  flex-shrink: 0;
+}
+
+/* Barra di avanzamento: il riempimento verde è #seek-fill */
+.seek {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 2px;
+  cursor: pointer;
+  position: relative;
+}
+
+.seek-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0%;                     /* player.js aggiorna la percentuale */
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+.volume-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.volume-icon { color: var(--text-dim); flex-shrink: 0; }
+
+/* Slider del volume: accent-color lo colora senza CSS complessi */
+input[type="range"] {
+  accent-color: var(--accent);
+  cursor: pointer;
+  width: 100px;
+}
+
+/* =========================================================
+   RESPONSIVE (schermi piccoli / mobile)
+   Nascondo la sidebar e impilo il player su 3 righe.
+   ========================================================= */
+
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+
+  .player-bar {
+    /* Da griglia a 3 colonne -> colonna singola con 3 righe */
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    gap: 6px;
+    padding: 10px 12px 14px;
+  }
+
+  /* Ordine su mobile: controlli in alto, poi info, poi progress/volume */
+  .controls { order: -1; gap: 16px; }
+  .track-info { order: 0; align-self: flex-start; max-width: 100%; }
+  .right-side { order: 1; min-width: 0; width: 100%; }
+
+  .cover { width: 44px; height: 44px; }
+  .main { padding: 12px 10px; }
+  .playlist .song { gap: 10px; padding: 8px 10px; }
+  .song-duration { display: none; }   /* risparmio spazio su schermi piccoli */
+  input[type="range"] { width: 90px; }
+}
+
+/* ---------- Scrollbar sottili e scure ---------- */
+.main::-webkit-scrollbar,
+.playlist::-webkit-scrollbar {
+  width: 10px;
+}
+
+.main::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 10px;
+}

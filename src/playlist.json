@@ -1,0 +1,623 @@
+[
+  {
+    "id": "2005",
+    "titolo": "2005",
+    "artista": "SSG",
+    "album": "COCONUT ICE CREAM - SSG",
+    "durata": 180,
+    "file": "assets/audio/COCONUT ICE CREAM - SSG/ 2005.mp3",
+    "copertina": "assets/covers/COCONUT_ICE_CREAM_-_SSG.jpeg"
+  },
+  {
+    "id": "Alle_Macchinette",
+    "titolo": "Alle Macchinette",
+    "artista": "SSG",
+    "album": "COCONUT ICE CREAM - SSG",
+    "durata": 262,
+    "file": "assets/audio/COCONUT ICE CREAM - SSG/Alle Macchinette.mp3",
+    "copertina": "assets/covers/COCONUT_ICE_CREAM_-_SSG.jpeg"
+  },
+  {
+    "id": "Ansiovit",
+    "titolo": "Ansiovit",
+    "artista": "SSG",
+    "album": "COCONUT ICE CREAM - SSG",
+    "durata": 220,
+    "file": "assets/audio/COCONUT ICE CREAM - SSG/ Ansiovit.mp3",
+    "copertina": "assets/covers/COCONUT_ICE_CREAM_-_SSG.jpeg"
+  },
+  {
+    "id": "Bancomat",
+    "titolo": "Bancomat",
+    "artista": "SSG",
+    "album": "COCONUT ICE CREAM - SSG",
+    "durata": 149,
+    "file": "assets/audio/COCONUT ICE CREAM - SSG/ Bancomat.mp3",
+    "copertina": "assets/covers/COCONUT_ICE_CREAM_-_SSG.jpeg"
+  },
+  {
+    "id": "Cocco_Frutto",
+    "titolo": "Cocco Frutto",
+    "artista": "SSG",
+    "album": "COCONUT ICE CREAM - SSG",
+    "durata": 209,
+    "file": "assets/audio/COCONUT ICE CREAM - SSG/Cocco Frutto.mp3",
+    "copertina": "assets/covers/COCONUT_ICE_CREAM_-_SSG.jpeg"
+  },
+  {
+    "id": "Isomar",
+    "titolo": "Isomar",
+    "artista": "SSG",
+    "album": "COCONUT ICE CREAM - SSG",
+    "durata": 239,
+    "file": "assets/audio/COCONUT ICE CREAM - SSG/ Isomar.mp3",
+    "copertina": "assets/covers/COCONUT_ICE_CREAM_-_SSG.jpeg"
+  },
+  {
+    "id": "Montblanc",
+    "titolo": "Montblanc",
+    "artista": "SSG",
+    "album": "COCONUT ICE CREAM - SSG",
+    "durata": 257,
+    "file": "assets/audio/COCONUT ICE CREAM - SSG/ Montblanc.mp3",
+    "copertina": "assets/covers/COCONUT_ICE_CREAM_-_SSG.jpeg"
+  },
+  {
+    "id": "Nella_zona_confort",
+    "titolo": "Nella Zona Comfort",
+    "artista": "SSG",
+    "album": "COCONUT ICE CREAM - SSG",
+    "durata": 297,
+    "file": "assets/audio/COCONUT ICE CREAM - SSG/Nella zona confort.mp3",
+    "copertina": "assets/covers/COCONUT_ICE_CREAM_-_SSG.jpeg"
+  },
+  {
+    "id": "Outro",
+    "titolo": "Outro",
+    "artista": "SSG",
+    "album": "COCONUT ICE CREAM - SSG",
+    "durata": 104,
+    "file": "assets/audio/COCONUT ICE CREAM - SSG/ Outro.mp3",
+    "copertina": "assets/covers/COCONUT_ICE_CREAM_-_SSG.jpeg"
+  },
+  {
+    "id": "Un_Anno",
+    "titolo": "Un Anno",
+    "artista": "SSG",
+    "album": "COCONUT ICE CREAM - SSG",
+    "durata": 259,
+    "file": "assets/audio/COCONUT ICE CREAM - SSG/ Un Anno.mp3",
+    "copertina": "assets/covers/COCONUT_ICE_CREAM_-_SSG.jpeg"
+  },
+  {
+    "id": "1-_Demoni",
+    "titolo": "1- Demoni",
+    "artista": "Artista sconosciuto",
+    "album": "D.A.M.S. - SSG",
+    "durata": 67,
+    "file": "assets/audio/D.A.M.S. - SSG/1- Demoni.mp3",
+    "copertina": "assets/covers/D.A.M.S._-_SSG.jpeg"
+  },
+  {
+    "id": "2-_DAMS-TERDAM",
+    "titolo": "2- DAMS-TERDAM",
+    "artista": "Artista sconosciuto",
+    "album": "D.A.M.S. - SSG",
+    "durata": 67,
+    "file": "assets/audio/D.A.M.S. - SSG/2- DAMS-TERDAM.mp3",
+    "copertina": "assets/covers/D.A.M.S._-_SSG.jpeg"
+  },
+  {
+    "id": "3-_DISSING",
+    "titolo": "3- DISSING",
+    "artista": "Artista sconosciuto",
+    "album": "D.A.M.S. - SSG",
+    "durata": 77,
+    "file": "assets/audio/D.A.M.S. - SSG/3- DISSING.mp3",
+    "copertina": "assets/covers/D.A.M.S._-_SSG.jpeg"
+  },
+  {
+    "id": "4-_Crostatine",
+    "titolo": "4- Crostatine",
+    "artista": "Artista sconosciuto",
+    "album": "D.A.M.S. - SSG",
+    "durata": 85,
+    "file": "assets/audio/D.A.M.S. - SSG/4- Crostatine.mp3",
+    "copertina": "assets/covers/D.A.M.S._-_SSG.jpeg"
+  },
+  {
+    "id": "5-_Puozzo_Car",
+    "titolo": "5- Puozzo Car",
+    "artista": "Artista sconosciuto",
+    "album": "D.A.M.S. - SSG",
+    "durata": 67,
+    "file": "assets/audio/D.A.M.S. - SSG/5- Puozzo Car.mp3",
+    "copertina": "assets/covers/D.A.M.S._-_SSG.jpeg"
+  },
+  {
+    "id": "6-_Torna_da_me",
+    "titolo": "6- Torna da me",
+    "artista": "Artista sconosciuto",
+    "album": "D.A.M.S. - SSG",
+    "durata": 102,
+    "file": "assets/audio/D.A.M.S. - SSG/6- Torna da me.mp3",
+    "copertina": "assets/covers/D.A.M.S._-_SSG.jpeg"
+  },
+  {
+    "id": "8-_A_quel_campo",
+    "titolo": "8- A quel campo",
+    "artista": "Artista sconosciuto",
+    "album": "D.A.M.S. - SSG",
+    "durata": 78,
+    "file": "assets/audio/D.A.M.S. - SSG/8- A quel campo.mp3",
+    "copertina": "assets/covers/D.A.M.S._-_SSG.jpeg"
+  },
+  {
+    "id": "9-_Angeli",
+    "titolo": "9- Angeli",
+    "artista": "Artista sconosciuto",
+    "album": "D.A.M.S. - SSG",
+    "durata": 69,
+    "file": "assets/audio/D.A.M.S. - SSG/9- Angeli.mp3",
+    "copertina": "assets/covers/D.A.M.S._-_SSG.jpeg"
+  },
+  {
+    "id": "Giorni_Migliori",
+    "titolo": "Giorni Migliori ",
+    "artista": "Artista sconosciuto",
+    "album": "Giorni Migliori - SSG",
+    "durata": 318,
+    "file": "assets/audio/Giorni Migliori - SSG/Giorni Migliori .mp3",
+    "copertina": "assets/covers/Giorni_Migliori_-_SSG.png"
+  },
+  {
+    "id": "Glock_9",
+    "titolo": "Glock 9",
+    "artista": "Artista sconosciuto",
+    "album": "Giorni Migliori - SSG",
+    "durata": 186,
+    "file": "assets/audio/Giorni Migliori - SSG/Glock 9.mp3",
+    "copertina": "assets/covers/Giorni_Migliori_-_SSG.png"
+  },
+  {
+    "id": "Ho_perso",
+    "titolo": "Ho perso",
+    "artista": "Artista sconosciuto",
+    "album": "Giorni Migliori - SSG",
+    "durata": 169,
+    "file": "assets/audio/Giorni Migliori - SSG/Ho perso.mp3",
+    "copertina": "assets/covers/Giorni_Migliori_-_SSG.png"
+  },
+  {
+    "id": "Il_cielo_e_le_nuvole",
+    "titolo": "Il cielo e le nuvole",
+    "artista": "Artista sconosciuto",
+    "album": "Giorni Migliori - SSG",
+    "durata": 255,
+    "file": "assets/audio/Giorni Migliori - SSG/Il cielo e le nuvole.mp3",
+    "copertina": "assets/covers/Giorni_Migliori_-_SSG.png"
+  },
+  {
+    "id": "In_mezzo_al_traffico",
+    "titolo": "In mezzo al traffico ",
+    "artista": "Artista sconosciuto",
+    "album": "Giorni Migliori - SSG",
+    "durata": 250,
+    "file": "assets/audio/Giorni Migliori - SSG/In mezzo al traffico .mp3",
+    "copertina": "assets/covers/Giorni_Migliori_-_SSG.png"
+  },
+  {
+    "id": "Pieta_combination",
+    "titolo": "Pieta combination",
+    "artista": "Artista sconosciuto",
+    "album": "Giorni Migliori - SSG",
+    "durata": 613,
+    "file": "assets/audio/Giorni Migliori - SSG/Pieta combination.mp3",
+    "copertina": "assets/covers/Giorni_Migliori_-_SSG.png"
+  },
+  {
+    "id": "Quartieri",
+    "titolo": "Quartieri",
+    "artista": "Artista sconosciuto",
+    "album": "Giorni Migliori - SSG",
+    "durata": 179,
+    "file": "assets/audio/Giorni Migliori - SSG/Quartieri.mp3",
+    "copertina": "assets/covers/Giorni_Migliori_-_SSG.png"
+  },
+  {
+    "id": "Resa_dei_conti",
+    "titolo": "Resa dei conti",
+    "artista": "Artista sconosciuto",
+    "album": "Giorni Migliori - SSG",
+    "durata": 163,
+    "file": "assets/audio/Giorni Migliori - SSG/Resa dei conti.mp3",
+    "copertina": "assets/covers/Giorni_Migliori_-_SSG.png"
+  },
+  {
+    "id": "Solo_Al_Tramonto_-_SSG",
+    "titolo": "Solo Al Tramonto - SSG",
+    "artista": "Artista sconosciuto",
+    "album": "Giorni Migliori - SSG",
+    "durata": 188,
+    "file": "assets/audio/Giorni Migliori - SSG/Solo Al Tramonto - SSG.mp3",
+    "copertina": "assets/covers/Giorni_Migliori_-_SSG.png"
+  },
+  {
+    "id": "Soltanto_di_notte",
+    "titolo": "Soltanto di notte",
+    "artista": "Artista sconosciuto",
+    "album": "Giorni Migliori - SSG",
+    "durata": 288,
+    "file": "assets/audio/Giorni Migliori - SSG/Soltanto di notte.mp3",
+    "copertina": "assets/covers/Giorni_Migliori_-_SSG.png"
+  },
+  {
+    "id": "7_tikiardi",
+    "titolo": "7 TIKIARDI",
+    "artista": "SSG",
+    "album": "LUCCIOLE - SSG",
+    "durata": 149,
+    "file": "assets/audio/LUCCIOLE - SSG/7 tikiardi.mp3",
+    "copertina": "assets/covers/LUCCIOLE_-_SSG.jpg"
+  },
+  {
+    "id": "14-_Basta_Cicatrici",
+    "titolo": "Basta Cicatrici",
+    "artista": "SSG",
+    "album": "LUCCIOLE - SSG",
+    "durata": 149,
+    "file": "assets/audio/LUCCIOLE - SSG/14- Basta Cicatrici.mp3",
+    "copertina": "assets/covers/LUCCIOLE_-_SSG.jpg"
+  },
+  {
+    "id": "14-_C3",
+    "titolo": "C3",
+    "artista": "SSG",
+    "album": "LUCCIOLE - SSG",
+    "durata": 240,
+    "file": "assets/audio/LUCCIOLE - SSG/14- C3.mp3",
+    "copertina": "assets/covers/LUCCIOLE_-_SSG.jpg"
+  },
+  {
+    "id": "2-_Ci_siamo_Sciolti",
+    "titolo": "Ci siamo sciolti",
+    "artista": "SSG",
+    "album": "LUCCIOLE - SSG",
+    "durata": 225,
+    "file": "assets/audio/LUCCIOLE - SSG/2- Ci siamo Sciolti.mp3",
+    "copertina": "assets/covers/LUCCIOLE_-_SSG.jpg"
+  },
+  {
+    "id": "3-_GNEGNEGNE",
+    "titolo": "GNEGNEGNEGNE",
+    "artista": "SSG",
+    "album": "LUCCIOLE - SSG",
+    "durata": 187,
+    "file": "assets/audio/LUCCIOLE - SSG/3- GNEGNEGNE.mp3",
+    "copertina": "assets/covers/LUCCIOLE_-_SSG.jpg"
+  },
+  {
+    "id": "1-_Intro",
+    "titolo": "INTRO",
+    "artista": "SSG",
+    "album": "LUCCIOLE - SSG",
+    "durata": 115,
+    "file": "assets/audio/LUCCIOLE - SSG/1- Intro.mp3",
+    "copertina": "assets/covers/LUCCIOLE_-_SSG.jpg"
+  },
+  {
+    "id": "6-_Lucciole",
+    "titolo": "Lucciole",
+    "artista": "SSG",
+    "album": "LUCCIOLE - SSG",
+    "durata": 215,
+    "file": "assets/audio/LUCCIOLE - SSG/6- Lucciole.mp3",
+    "copertina": "assets/covers/LUCCIOLE_-_SSG.jpg"
+  },
+  {
+    "id": "12-_Non_avete_capito_nulla",
+    "titolo": "Non avete capito nulla",
+    "artista": "SSG",
+    "album": "LUCCIOLE - SSG",
+    "durata": 172,
+    "file": "assets/audio/LUCCIOLE - SSG/12- Non avete capito nulla.mp3",
+    "copertina": "assets/covers/LUCCIOLE_-_SSG.jpg"
+  },
+  {
+    "id": "4-_Preso_a_Botte",
+    "titolo": "Presa a Botte",
+    "artista": "SSG",
+    "album": "LUCCIOLE - SSG",
+    "durata": 194,
+    "file": "assets/audio/LUCCIOLE - SSG/4- Preso a Botte.mp3",
+    "copertina": "assets/covers/LUCCIOLE_-_SSG.jpg"
+  },
+  {
+    "id": "9-_Qme_va",
+    "titolo": "QME VA",
+    "artista": "SSG",
+    "album": "LUCCIOLE - SSG",
+    "durata": 227,
+    "file": "assets/audio/LUCCIOLE - SSG/9- Qme va.mp3",
+    "copertina": "assets/covers/LUCCIOLE_-_SSG.jpg"
+  },
+  {
+    "id": "5-_RIP_Puozzo_Car",
+    "titolo": "RIP Puozzo car",
+    "artista": "SSG",
+    "album": "LUCCIOLE - SSG",
+    "durata": 299,
+    "file": "assets/audio/LUCCIOLE - SSG/5- RIP Puozzo Car.mp3",
+    "copertina": "assets/covers/LUCCIOLE_-_SSG.jpg"
+  },
+  {
+    "id": "16-_S.U.S.",
+    "titolo": "S.U.S.",
+    "artista": "SSG",
+    "album": "LUCCIOLE - SSG",
+    "durata": 233,
+    "file": "assets/audio/LUCCIOLE - SSG/16- S.U.S..mp3",
+    "copertina": "assets/covers/LUCCIOLE_-_SSG.jpg"
+  },
+  {
+    "id": "11-_Sei_Basso",
+    "titolo": "Sei Basso",
+    "artista": "SSG",
+    "album": "LUCCIOLE - SSG",
+    "durata": 230,
+    "file": "assets/audio/LUCCIOLE - SSG/11- Sei Basso.mp3",
+    "copertina": "assets/covers/LUCCIOLE_-_SSG.jpg"
+  },
+  {
+    "id": "15-_Soldi_e_Puttane",
+    "titolo": "Soldi e Puttane",
+    "artista": "SSG",
+    "album": "LUCCIOLE - SSG",
+    "durata": 252,
+    "file": "assets/audio/LUCCIOLE - SSG/15- Soldi e Puttane.mp3",
+    "copertina": "assets/covers/LUCCIOLE_-_SSG.jpg"
+  },
+  {
+    "id": "10-_Stai_Zitto,_Troia",
+    "titolo": "Stai zitto , TROIA",
+    "artista": "SSG",
+    "album": "LUCCIOLE - SSG",
+    "durata": 193,
+    "file": "assets/audio/LUCCIOLE - SSG/10- Stai Zitto, Troia.mp3",
+    "copertina": "assets/covers/LUCCIOLE_-_SSG.jpg"
+  },
+  {
+    "id": "8-_Tavernello",
+    "titolo": "Tavernello",
+    "artista": "SSG",
+    "album": "LUCCIOLE - SSG",
+    "durata": 207,
+    "file": "assets/audio/LUCCIOLE - SSG/8- Tavernello.mp3",
+    "copertina": "assets/covers/LUCCIOLE_-_SSG.jpg"
+  },
+  {
+    "id": "paura.ancora.afghanistan-",
+    "titolo": "Censored sound effect",
+    "artista": "SFXAPLENTY",
+    "album": "NUOVI PEZZI MASTER E MIX",
+    "durata": 300,
+    "file": "assets/audio/NUOVI PEZZI MASTER E MIX/paura.ancora.afghanistan-.mp3",
+    "copertina": ""
+  },
+  {
+    "id": "chi_l'ha_vista_",
+    "titolo": "chi l'ha vista_",
+    "artista": "Artista sconosciuto",
+    "album": "NUOVI PEZZI MASTER E MIX",
+    "durata": 193,
+    "file": "assets/audio/NUOVI PEZZI MASTER E MIX/chi l'ha vista_.mp3",
+    "copertina": ""
+  },
+  {
+    "id": "io_sono_swag_special",
+    "titolo": "Desert Eagle Single Shot Gunshot Sound Effect",
+    "artista": "GUN SHOT SOUNDS",
+    "album": "NUOVI PEZZI MASTER E MIX",
+    "durata": 133,
+    "file": "assets/audio/NUOVI PEZZI MASTER E MIX/io sono swag special.mp3",
+    "copertina": ""
+  },
+  {
+    "id": "Goleador",
+    "titolo": "Goleador",
+    "artista": "Artista sconosciuto",
+    "album": "NUOVI PEZZI MASTER E MIX",
+    "durata": 130,
+    "file": "assets/audio/NUOVI PEZZI MASTER E MIX/Goleador.mp3",
+    "copertina": ""
+  },
+  {
+    "id": "gta_viMastereMIX",
+    "titolo": "gta viMastereMIX",
+    "artista": "Artista sconosciuto",
+    "album": "NUOVI PEZZI MASTER E MIX",
+    "durata": 201,
+    "file": "assets/audio/NUOVI PEZZI MASTER E MIX/gta viMastereMIX.mp3",
+    "copertina": ""
+  },
+  {
+    "id": "NON_POSSO.NON_VOGLIO",
+    "titolo": "NON POSSO.NON VOGLIO ",
+    "artista": "Artista sconosciuto",
+    "album": "NUOVI PEZZI MASTER E MIX",
+    "durata": 131,
+    "file": "assets/audio/NUOVI PEZZI MASTER E MIX/NON POSSO.NON VOGLIO .mp3",
+    "copertina": ""
+  },
+  {
+    "id": "PROCLUB",
+    "titolo": "PROCLUB",
+    "artista": "Artista sconosciuto",
+    "album": "NUOVI PEZZI MASTER E MIX",
+    "durata": 122,
+    "file": "assets/audio/NUOVI PEZZI MASTER E MIX/PROCLUB.mp3",
+    "copertina": ""
+  },
+  {
+    "id": "RetoricaMIX",
+    "titolo": "RetoricaMIX",
+    "artista": "Artista sconosciuto",
+    "album": "NUOVI PEZZI MASTER E MIX",
+    "durata": 280,
+    "file": "assets/audio/NUOVI PEZZI MASTER E MIX/RetoricaMIX.mp3",
+    "copertina": ""
+  },
+  {
+    "id": "CACAO_ACUSTIC_LIVE",
+    "titolo": "CACAO ACUSTIC LIVE",
+    "artista": "Artista sconosciuto",
+    "album": "SINGOLI : EXTRA - SSG",
+    "durata": 0,
+    "file": "assets/audio/SINGOLI : EXTRA - SSG/CACAO ACUSTIC LIVE.mp3",
+    "copertina": "assets/covers/SINGOLI___EXTRA_-_SSG.png"
+  },
+  {
+    "id": "2-_NATALE_IN_4.20",
+    "titolo": "Natale in 4.20",
+    "artista": "SSG",
+    "album": "SINGOLI : EXTRA - SSG",
+    "durata": 264,
+    "file": "assets/audio/SINGOLI : EXTRA - SSG/2- NATALE IN 4.20.mp3",
+    "copertina": "assets/covers/SINGOLI___EXTRA_-_SSG.png"
+  },
+  {
+    "id": "1-_NBA_Star",
+    "titolo": "NBA Star",
+    "artista": "SSG",
+    "album": "SINGOLI : EXTRA - SSG",
+    "durata": 188,
+    "file": "assets/audio/SINGOLI : EXTRA - SSG/1- NBA Star.mp3",
+    "copertina": "assets/covers/SINGOLI___EXTRA_-_SSG.png"
+  },
+  {
+    "id": "3-_Oro_perso",
+    "titolo": "Oro perso",
+    "artista": "SSG",
+    "album": "SINGOLI : EXTRA - SSG",
+    "durata": 165,
+    "file": "assets/audio/SINGOLI : EXTRA - SSG/3- Oro perso.mp3",
+    "copertina": "assets/covers/SINGOLI___EXTRA_-_SSG.png"
+  },
+  {
+    "id": "6-_Vado_al_Falo",
+    "titolo": "6- Vado al Falo",
+    "artista": "Artista sconosciuto",
+    "album": "SOLO AVANZI - SSG",
+    "durata": 254,
+    "file": "assets/audio/SOLO AVANZI - SSG/6- Vado al Falo.mp3",
+    "copertina": "assets/covers/SOLO_AVANZI_-_SSG.jpeg"
+  },
+  {
+    "id": "4-_Ansia_No_-_feat_Cris126",
+    "titolo": "Ansia No",
+    "artista": "SSG (Feat - Cris126)",
+    "album": "SOLO AVANZI - SSG",
+    "durata": 107,
+    "file": "assets/audio/SOLO AVANZI - SSG/4- Ansia No - feat Cris126.mp3",
+    "copertina": "assets/covers/SOLO_AVANZI_-_SSG.jpeg"
+  },
+  {
+    "id": "8-_CMP_freestyle_-_feat_Cris126",
+    "titolo": "CMP freestyle",
+    "artista": "SSG (Feat - Cris126)",
+    "album": "SOLO AVANZI - SSG",
+    "durata": 227,
+    "file": "assets/audio/SOLO AVANZI - SSG/8- CMP freestyle - feat Cris126.mp3",
+    "copertina": "assets/covers/SOLO_AVANZI_-_SSG.jpeg"
+  },
+  {
+    "id": "5-_Flashing_lights_rmx",
+    "titolo": "Flashing lights rmx",
+    "artista": "SSG",
+    "album": "SOLO AVANZI - SSG",
+    "durata": 217,
+    "file": "assets/audio/SOLO AVANZI - SSG/5- Flashing lights rmx.mp3",
+    "copertina": "assets/covers/SOLO_AVANZI_-_SSG.jpeg"
+  },
+  {
+    "id": "1-_Oh_Marco",
+    "titolo": "Oh Marco",
+    "artista": "SSG",
+    "album": "SOLO AVANZI - SSG",
+    "durata": 93,
+    "file": "assets/audio/SOLO AVANZI - SSG/1- Oh Marco.mp3",
+    "copertina": "assets/covers/SOLO_AVANZI_-_SSG.jpeg"
+  },
+  {
+    "id": "7-_Soldi_nei_Jeans_-_Feat_Gigi",
+    "titolo": "Soldi nei Jeans",
+    "artista": "SSG (Feat - Gigi)",
+    "album": "SOLO AVANZI - SSG",
+    "durata": 254,
+    "file": "assets/audio/SOLO AVANZI - SSG/7- Soldi nei Jeans - Feat Gigi.mp3",
+    "copertina": "assets/covers/SOLO_AVANZI_-_SSG.jpeg"
+  },
+  {
+    "id": "2-_Soli_contro_Tutti_Rmx_-_feat_Gigi",
+    "titolo": "Soli contro tutti Rmx",
+    "artista": "SSG (Feat - Gigi)",
+    "album": "SOLO AVANZI - SSG",
+    "durata": 195,
+    "file": "assets/audio/SOLO AVANZI - SSG/2- Soli contro Tutti Rmx - feat Gigi.mp3",
+    "copertina": "assets/covers/SOLO_AVANZI_-_SSG.jpeg"
+  },
+  {
+    "id": "3-_Torna_da_me_2",
+    "titolo": "Torna Da Me 2",
+    "artista": "SSG",
+    "album": "SOLO AVANZI - SSG",
+    "durata": 178,
+    "file": "assets/audio/SOLO AVANZI - SSG/3- Torna da me 2.mp3",
+    "copertina": "assets/covers/SOLO_AVANZI_-_SSG.jpeg"
+  },
+  {
+    "id": "9-_XXX",
+    "titolo": "XXX",
+    "artista": "SSG",
+    "album": "SOLO AVANZI - SSG",
+    "durata": 217,
+    "file": "assets/audio/SOLO AVANZI - SSG/9- XXX.mp3",
+    "copertina": "assets/covers/SOLO_AVANZI_-_SSG.jpeg"
+  },
+  {
+    "id": "Medicine_E_Malibu",
+    "titolo": "Medicine E Malibu",
+    "artista": "Artista sconosciuto",
+    "album": "Testamento - ssg",
+    "durata": 259,
+    "file": "assets/audio/Testamento - ssg/Medicine E Malibu.mp3",
+    "copertina": "assets/covers/Testamento_-_ssg.jpeg"
+  },
+  {
+    "id": "Solo_Con_Me",
+    "titolo": "Solo Con Me",
+    "artista": "Artista sconosciuto",
+    "album": "Testamento - ssg",
+    "durata": 189,
+    "file": "assets/audio/Testamento - ssg/Solo Con Me.mp3",
+    "copertina": "assets/covers/Testamento_-_ssg.jpeg"
+  },
+  {
+    "id": "Vans_2_Freestyle_(Bonus)",
+    "titolo": "Sto troppo in alto v1",
+    "artista": "Marco The FaZe",
+    "album": "Testamento - ssg",
+    "durata": 182,
+    "file": "assets/audio/Testamento - ssg/Vans 2 Freestyle (Bonus).mp3",
+    "copertina": "assets/covers/Testamento_-_ssg.jpeg"
+  },
+  {
+    "id": "Testamento",
+    "titolo": "Testamento",
+    "artista": "Artista sconosciuto",
+    "album": "Testamento - ssg",
+    "durata": 172,
+    "file": "assets/audio/Testamento - ssg/Testamento.mp3",
+    "copertina": "assets/covers/Testamento_-_ssg.jpeg"
+  }
+]
