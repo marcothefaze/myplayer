@@ -554,6 +554,10 @@ input[type="range"] {
    ========================================================= */
 
 @media (max-width: 720px) {
+  .topbar {
+    padding-top: calc(12px + env(safe-area-inset-top));
+  }
+
   .view { padding: 16px 14px 24px; }
   .album-grid { grid-template-columns: repeat(auto-fill, minmax(138px, 1fr)); gap: 14px; }
 
@@ -562,12 +566,13 @@ input[type="range"] {
 
   .track-artist { display: none; }
   .track-title { flex: 1; }
+  .track-row { min-height: 48px; }          /* bersaglio tattile comodo */
 
   .player-bar {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    padding: 10px 14px 14px;
+    padding: 10px 14px calc(14px + env(safe-area-inset-bottom)); /* incasso barra gestuale */
   }
   .controls { order: -1; gap: 6px; }
   .track-info { order: 0; align-self: flex-start; max-width: 100%; }
@@ -575,5 +580,26 @@ input[type="range"] {
   .volume-area { display: none; }
   .cover { width: 42px; height: 42px; }
 
-  .btn-play { width: 46px; height: 46px; }
+  /* Pulsanti più grandi, facili da toccare col dito */
+  .ctrl-btn { width: 44px; height: 44px; }
+  .btn-play { width: 48px; height: 48px; }
+  .seek { height: 6px; }
+}
+
+/* Schermi davvero stretti: solo il nome dell'app in alto */
+@media (max-width: 380px) {
+  .brand-sub { display: none; }
+}
+
+/* Su schermi TOUCH il mouse non esiste: il badge play è sempre visibile
+   sulle copertine della home, così si capisce che si può toccare */
+@media (hover: none) {
+  .card-play {
+    opacity: 1;
+    transform: none;
+    right: 8px;
+    bottom: 8px;
+    width: 38px;
+    height: 38px;
+  }
 }
