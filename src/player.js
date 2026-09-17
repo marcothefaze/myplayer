@@ -12,9 +12,17 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const PLAYLIST_URL = "playlist.json";
+const APP_VERSION = "6";
+const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
 const $ = (id) => document.getElementById(id);
+
+/* localStorage "difeso": in Safari privato o su certi telefoni non è
+   accessibile; qui non deve MAI far crashare l'app */
+const storage = {
+  get(key) { try { return window.localStorage.getItem(key); } catch (e) { return null; } },
+  set(key, value) { try { window.localStorage.setItem(key, String(value)); } catch (e) {} }
+};
 
 /* ---------- 2. ELEMENTI DEL DOM ---------- */
 
@@ -81,8 +89,8 @@ const state = {
   albums: [],       // [{ title, artist, cover, totalSec, songs:[indici] }]
   queue: [],        // ordine di riproduzione corrente (indici in songs[])
   queuePos: -1,     // posizione corrente dentro queue
-  shuffle: localStorage.getItem("ssg-shuffle") === "1",
-  repeat: localStorage.getItem("ssg-repeat") || "off"    // off | all | one
+  shuffle: storage.get("ssg-shuffle") === "1",
+  repeat: storage.get("ssg-repeat") || "off"    // off | all | one
 };
 
 /* ---------- 4. FUNZIONI DI SUPPORTO ---------- */
@@ -186,7 +194,7 @@ function buildAlbums() {
 function applySavedState() {
   updateModeButtons();
 
-  const savedVolume = localStorage.getItem("mp-volume");
+  const savedVolume = storage.get("mp-volume");
   if (savedVolume !== null) {
     els.volume.value = savedVolume;
     els.fpVolume.value = savedVolume;
@@ -444,7 +452,7 @@ function shuffledRest(exclude) {
 
 function toggleShuffle() {
   state.shuffle = !state.shuffle;
-  localStorage.setItem("ssg-shuffle", state.shuffle ? "1" : "0");
+  storage.set("ssg-shuffle", state.shuffle ? "1" : "0");
   updateModeButtons();
 
   const cur = currentIndex();
@@ -460,7 +468,7 @@ function toggleShuffle() {
 function cycleRepeat() {
   const order = ["off", "all", "one"];
   state.repeat = order[(order.indexOf(state.repeat) + 1) % order.length];
-  localStorage.setItem("ssg-repeat", state.repeat);
+  storage.set("ssg-repeat", state.repeat);
   updateModeButtons();
 }
 
@@ -503,7 +511,7 @@ function setVolume(value) {
   audio.volume = v;
   els.volume.value = v;
   if (els.fpVolume) els.fpVolume.value = v;
-  localStorage.setItem("mp-volume", v);
+  storage.set("mp-volume", v);
   if (v > 0) lastVolume = v;
 }
 
@@ -621,4 +629,26 @@ document.addEventListener("keydown", (e) => {
 
 /* ---------- 14. AVVIO ---------- */
 
-loadPlaylist();
+/* Qualunque errore JavaScript viene mostrato a schermo, così da poterlo
+   leggere anche dal telefono invece di un generico "Caricamento..." */
+function fatalError(message) {
+  const grid = els.albumGrid;
+  if (grid) {
+    grid.innerHTML = '<div class="error"><b>Errore nella pagina:</b><br>' +
+      "<code>" + String(message).replace(/</g, "&lt;") + "</code><br>" +
+      "Ricarica la pagina, se possibile in una scheda privata.</div>";
+  }
+  if (els.brandCount) els.brandCount.textContent = "Errore di caricamento";
+  console.error("SSG Universe:", message);
+}
+
+window.addEventListener("error", (e) => fatalError(e.message));
+window.addEventListener("unhandledrejection", (e) => fatalError(
+  e.reason && e.reason.message ? e.reason.message : String(e.reason)
+));
+
+try {
+  loadPlaylist();
+} catch (err) {
+  fatalError(err);
+}
