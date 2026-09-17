@@ -197,6 +197,18 @@ async function loadPlaylist() {
   }
 }
 
+/* Ordine di visualizzazione degli album richiesto */
+const ALBUM_ORDER = [
+  "Non é SSG",
+  "Testamento - ssg",
+  "Giorni Migliori - SSG",
+  "SINGOLI : EXTRA - SSG",
+  "SOLO AVANZI - SSG",
+  "COCONUT ICE CREAM - SSG",
+  "LUCCIOLE - SSG",
+  "D.A.M.S. - SSG"
+];
+
 function buildAlbums() {
   const map = new Map();
   state.songs.forEach((song, i) => {
@@ -210,6 +222,13 @@ function buildAlbums() {
     if (!album.cover && song.copertina) album.cover = song.copertina;
   });
   state.albums = [...map.values()];
+
+  /* Applica l'ordine personalizzato; i non elencati restano in coda */
+  state.albums.sort((a, b) => {
+    const ia = ALBUM_ORDER.indexOf(a.title);
+    const ib = ALBUM_ORDER.indexOf(b.title);
+    return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+  });
 
   state.flat = [];
   state.albums.forEach((album) => album.songs.forEach((i) => state.flat.push(i)));
