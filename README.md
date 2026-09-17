@@ -9,6 +9,9 @@ presenti in locale. Nessuno streaming: tutto funziona **offline**.
   aprirne la schermata con i brani.
 - **Player**: play/pausa, precedente/successiva, **shuffle** (casuale) e
   **ripeti** (off / tutto / singolo), seek cliccabile, volume.
+- **Full player**: clicca sulla copertina/brano nella barra in basso per
+  aprirlo a schermo intero; si richiude col chevron in alto, con `Esc` o
+  trascinandolo verso il basso.
 - Volume, shuffle e modalità di ripetizione vengono ricordati al riavvio
   (salvati localmente nel browser).
 

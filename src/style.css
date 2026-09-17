@@ -550,6 +550,163 @@ input[type="range"] {
 .error code { color: var(--accent); }
 
 /* =========================================================
+   FULL PLAYER a tendina (stile Spotify)
+   Copre tutto lo schermo, scivola dal basso. Sfondo = la
+   copertina del brano in riproduzione, sfocata e scurita.
+   ========================================================= */
+
+.full-player {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--bg);
+  transform: translateY(105%);
+  visibility: hidden;
+  transition: transform .4s ease, visibility 0s .4s;
+}
+
+.full-player.open {
+  transform: translateY(0);
+  visibility: visible;
+  transition: transform .4s ease;
+}
+
+.fp-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(60px) brightness(.4);
+  transform: scale(1.2);
+}
+
+.fp-inner {
+  position: relative;
+  height: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  padding:
+    calc(env(safe-area-inset-top) + 40px)
+    24px
+    calc(env(safe-area-inset-bottom) + 30px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  text-align: center;
+}
+
+/* Zona alta: pillina (grabber) + pulsante chevron */
+.fp-handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 46px;
+  touch-action: none;
+  cursor: grab;
+  z-index: 2;
+}
+
+.fp-handle::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 10px;
+  transform: translateX(-50%);
+  width: 48px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, .28);
+}
+
+.fp-collapse {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .08);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .15s ease;
+}
+.fp-collapse:hover { background: rgba(255, 255, 255, .18); }
+
+.fp-cover {
+  position: relative;
+  z-index: 1;
+  width: min(60vw, 44vh, 360px);
+  aspect-ratio: 1;
+  border-radius: 18px;
+  overflow: hidden;
+  background: var(--surface-2);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .6);
+}
+.fp-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.fp-cover.ph { display: flex; align-items: center; justify-content: center; }
+.fp-cover.ph span.ph-title { font-size: 3rem; font-weight: 800; color: rgba(255, 255, 255, .7); }
+
+.fp-meta { position: relative; z-index: 1; width: 100%; min-width: 0; }
+
+.fp-title {
+  font-size: clamp(1.3rem, 5vw, 1.7rem);
+  font-weight: 800;
+  line-height: 1.15;
+  word-break: break-word;
+}
+
+.fp-album { font-size: .86rem; color: var(--dim); margin-top: 4px; }
+
+.fp-progress {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fp-seek { height: 6px; }
+
+.fp-controls {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.fp-controls .fp-btn { width: 48px; height: 48px; }
+
+.fp-play {
+  width: 74px;
+  height: 74px;
+  background: #fff;
+  color: #000;
+  margin: 0 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .5);
+}
+.fp-play:hover { background: var(--accent); color: #fff; }
+.fp-play .ctrl-icon { width: 30px; height: 30px; }
+
+.fp-volume {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.fp-volume input { width: 150px; }
+
+/* =========================================================
    RESPONSIVE
    ========================================================= */
 
@@ -584,6 +741,14 @@ input[type="range"] {
   .ctrl-btn { width: 44px; height: 44px; }
   .btn-play { width: 48px; height: 48px; }
   .seek { height: 6px; }
+
+  /* Full player su telefono: compatta il contenuto */
+  .fp-inner { gap: 16px; padding-left: 18px; padding-right: 18px; }
+  .fp-title { font-size: 1.25rem; }
+  .fp-controls { gap: 10px; }
+  .fp-controls .fp-btn { width: 44px; height: 44px; }
+  .fp-play { width: 64px; height: 64px; margin: 0 6px; }
+  .fp-volume input { width: 130px; }
 }
 
 /* Schermi davvero stretti: solo il nome dell'app in alto */
