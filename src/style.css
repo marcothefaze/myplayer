@@ -1108,11 +1108,13 @@ input[type="range"] {
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    padding-top: calc(54px + env(safe-area-inset-top));
+    padding-top: calc(8px + env(safe-area-inset-top));
   }
 
   /* Hero bloccato in alto (copertina grande "in prima pagina") */
-  body.album-open .album-hero { flex: 0 0 auto; margin-bottom: 14px; padding-top: 22px; }
+  /* Hero bloccato in alto: la copertina sale fin sotto i pulsanti
+     indietro/aggiorna e riempie il vuoto lasciato dal titolo nascosto */
+  body.album-open .album-hero { flex: 0 0 auto; margin-bottom: 14px; padding-top: 6px; }
   body.album-open .album-cover-wrap { width: min(52vw, 44vh); height: min(52vw, 44vh); }
 
   /* Solo la tracklist scorre */
