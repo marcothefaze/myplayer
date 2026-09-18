@@ -424,6 +424,12 @@ button:active { filter: brightness(1.35); }
      anche dietro la sezione album (per copertine scure tipo "Non é SSG") */
   background: linear-gradient(160deg, rgba(26, 22, 46, .62), rgba(15, 13, 26, .66));
   margin-bottom: 18px;
+
+  /* Dissolvenza radiale verso i bordi: il riquadro non è più un rettangolo
+     pieno ma si "scioglie" nel cielo stellato (opaco al centro, sempre più
+     trasparente verso i lati) */
+  -webkit-mask-image: radial-gradient(115% 115% at 50% 42%, #000 58%, transparent 100%);
+  mask-image: radial-gradient(115% 115% at 50% 42%, #000 58%, transparent 100%);
 }
 
 .hero-bg {
