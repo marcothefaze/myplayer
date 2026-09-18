@@ -498,7 +498,39 @@ function renderHome() {
 
     els.albumGrid.appendChild(card);
   });
+  fitHomeGrid();
 }
+
+/* Su PC (>=1200px): dimensiona le copertine della home in modo che le due
+   righe di album con i loro titoli stiano sempre dentro lo schermo,
+   senza bisogno di scrollare. Misura altezze reali e ricalcola al resize. */
+function fitHomeGrid() {
+  const grid = els.albumGrid;
+  if (!grid || !grid.clientWidth) return;                  // vista nascosta
+  if (!window.matchMedia("(min-width: 1200px)").matches) {
+    grid.style.removeProperty("--cover-max");
+    return;
+  }
+
+  const home = els.home;
+  const cs = getComputedStyle(home);
+  const avail = home.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+  const first = grid.firstElementChild;
+  if (!first) return;
+
+  const cap = first.querySelector(".card-caption");
+  const captionH = cap ? cap.offsetHeight : 60;
+
+  const cols = 4;
+  const gap = 30;                                          // gap riga (verticale)
+  const rows = Math.ceil(grid.children.length / cols);
+  const coverMax = Math.max(80, Math.floor((avail - gap * (rows - 1) - captionH * rows) / rows) - 2);
+
+  grid.style.setProperty("--cover-max", coverMax + "px");
+}
+
+function debouncedResizeFit() { clearTimeout(debouncedResizeFit._t); debouncedResizeFit._t = setTimeout(fitHomeGrid, 180); }
+window.addEventListener("resize", debouncedResizeFit);
 
 /* ---------- 7. SCHERMATA ALBUM ---------- */
 

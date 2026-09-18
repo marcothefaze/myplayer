@@ -247,11 +247,11 @@ button:active { filter: brightness(1.35); }
     align-items: center;
   }
 
-  /* Copertina quadrata ma mai più alta di ~38vh: con 4 colonne le due
-     griglie di album restano sempre tutte visibili a schermo intero */
+  /* Copertina quadrata dimensionata a runtime (--cover-max) su PC: le due
+     griglie di album con i titoli restano sempre tutte visibili senza scroll */
   .album-card { display: flex; flex-direction: column; align-items: center; }
 
-  .card-cover { width: min(100%, 38vh); aspect-ratio: 1 / 1; }
+  .card-cover { width: min(100%, var(--cover-max, 38vh)); aspect-ratio: 1 / 1; }
 
   .card-caption { text-align: center; }
 }
@@ -395,11 +395,11 @@ button:active { filter: brightness(1.35); }
   border-radius: 14px;
   overflow: hidden;
   background: var(--surface-2);
-  border: 1px solid rgba(255, 255, 255, .10);
+  border: 1px solid rgba(255, 255, 255, .07);
   box-shadow:
-    0 0 0 2px rgba(255, 255, 255, .04),
+    0 0 0 1px rgba(255, 255, 255, .03),
     0 12px 30px rgba(0, 0, 0, .55),
-    0 0 26px rgba(160, 145, 255, .18);
+    0 0 18px rgba(160, 145, 255, .12);
 }
 
 .album-cover-wrap img {
@@ -877,11 +877,11 @@ input[type="range"] {
   border-radius: 18px;
   overflow: hidden;
   background: var(--surface-2);
-  border: 1px solid rgba(255, 255, 255, .12);
+  border: 1px solid rgba(255, 255, 255, .08);
   box-shadow:
-    0 0 0 2px rgba(255, 255, 255, .05),
+    0 0 0 1px rgba(255, 255, 255, .04),
     0 24px 60px rgba(0, 0, 0, .6),
-    0 0 30px rgba(160, 145, 255, .22);
+    0 0 20px rgba(160, 145, 255, .15);
 }
 .fp-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .fp-cover.ph { display: flex; align-items: center; justify-content: center; }
