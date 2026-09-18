@@ -608,6 +608,7 @@ function openAlbum(album) {
 function showView(name) {
   els.home.classList.toggle("hidden", name !== "home");
   els.albumView.classList.toggle("hidden", name !== "album");
+  document.body.classList.toggle("album-open", name === "album");
   els.main.scrollTop = 0;
 }
 
