@@ -763,6 +763,24 @@ els.main.addEventListener("touchend", (e) => {
   }
 }, { passive: true });
 
+/* Swipe verso il basso con il full player aperto = lo richiude */
+let fpSwipeY = null, fpSwipeX = null;
+els.fp.addEventListener("touchstart", (e) => {
+  if (!els.fp.classList.contains("open")) return;
+  const t = e.changedTouches[0];
+  fpSwipeY = t.clientY;
+  fpSwipeX = t.clientX;
+}, { passive: true });
+
+els.fp.addEventListener("touchend", (e) => {
+  if (fpSwipeY === null) return;
+  const t = e.changedTouches[0];
+  const dy = t.clientY - fpSwipeY;
+  const dx = t.clientX - fpSwipeX;
+  fpSwipeY = fpSwipeX = null;
+  if (dy > 70 && Math.abs(dx) < 90) closeFullPlayer();
+}, { passive: true });
+
 /* ---------- 14. FULL PLAYER a tendina ---------- */
 
 function openFullPlayer() {
