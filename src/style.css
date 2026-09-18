@@ -244,15 +244,16 @@ button:active { filter: brightness(1.35); }
     grid-template-columns: repeat(4, minmax(0, 1fr));
     grid-auto-rows: 1fr;
     gap: 30px 32px;
+    align-items: center;
   }
 
-  .album-card { display: flex; flex-direction: column; }
+  /* Copertina quadrata ma mai più alta di ~38vh: con 4 colonne le due
+     griglie di album restano sempre tutte visibili a schermo intero */
+  .album-card { display: flex; flex-direction: column; align-items: center; }
 
-  .card-cover {
-    flex: 1;
-    aspect-ratio: auto;
-    min-height: 120px;
-  }
+  .card-cover { width: min(100%, 38vh); aspect-ratio: 1 / 1; }
+
+  .card-caption { text-align: center; }
 }
 
 .album-card {
@@ -394,11 +395,11 @@ button:active { filter: brightness(1.35); }
   border-radius: 14px;
   overflow: hidden;
   background: var(--surface-2);
-  border: 2px solid rgba(255, 255, 255, .16);
+  border: 1px solid rgba(255, 255, 255, .10);
   box-shadow:
-    0 0 0 3px rgba(255, 255, 255, .06),
+    0 0 0 2px rgba(255, 255, 255, .04),
     0 12px 30px rgba(0, 0, 0, .55),
-    0 0 38px rgba(160, 145, 255, .30);
+    0 0 26px rgba(160, 145, 255, .18);
 }
 
 .album-cover-wrap img {
@@ -876,11 +877,11 @@ input[type="range"] {
   border-radius: 18px;
   overflow: hidden;
   background: var(--surface-2);
-  border: 2px solid rgba(255, 255, 255, .18);
+  border: 1px solid rgba(255, 255, 255, .12);
   box-shadow:
-    0 0 0 3px rgba(255, 255, 255, .07),
+    0 0 0 2px rgba(255, 255, 255, .05),
     0 24px 60px rgba(0, 0, 0, .6),
-    0 0 46px rgba(160, 145, 255, .38);
+    0 0 30px rgba(160, 145, 255, .22);
 }
 .fp-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .fp-cover.ph { display: flex; align-items: center; justify-content: center; }
