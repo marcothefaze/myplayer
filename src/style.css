@@ -724,7 +724,11 @@ input[type="range"] {
   top: 0;
   left: 0;
   right: 0;
-  height: 46px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 18px;
   touch-action: none;
   cursor: grab;
   z-index: 2;
@@ -734,7 +738,7 @@ input[type="range"] {
   content: "";
   position: absolute;
   left: 50%;
-  top: 10px;
+  top: 12px;
   transform: translateX(-50%);
   width: 48px;
   height: 5px;
@@ -787,17 +791,16 @@ input[type="range"] {
 
 .fp-share {
   position: relative;
-  z-index: 1;
-  margin-top: 14px;
+  z-index: 3;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border: 1px solid var(--border);
+  gap: 7px;
+  padding: 7px 14px;
+  border: 1px solid rgba(255, 255, 255, .16);
   border-radius: 999px;
-  background: rgba(255, 255, 255, .08);
+  background: rgba(0, 0, 0, .35);
   color: var(--text);
-  font-size: .8rem;
+  font-size: .78rem;
   font-weight: 700;
   letter-spacing: .3px;
   cursor: pointer;
