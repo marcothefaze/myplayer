@@ -421,7 +421,9 @@ button:active { filter: brightness(1.35); }
   display: flex;
   align-items: center;
   gap: 26px;
-  background: linear-gradient(160deg, #1d1a31, #151426);
+  /* Sfondo semi-trasparente: le stelle del background restano visibili
+     anche dietro la sezione album (per copertine scure tipo "Non é SSG") */
+  background: linear-gradient(160deg, rgba(26, 22, 46, .62), rgba(15, 13, 26, .66));
   margin-bottom: 18px;
 }
 
@@ -432,6 +434,10 @@ button:active { filter: brightness(1.35); }
   background-position: center;
   filter: blur(28px) brightness(.6);
   transform: scale(1.15);
+  /* "Screen": la copertina sfocata aggiunge luce ma non nasconde mai
+     le stelle sottostanti (fondamentale con copertine quasi nere) */
+  mix-blend-mode: screen;
+  opacity: .95;
 }
 
 /* Tinta nebulosa sullo sfondo sfocato: si distingue dal riquadro copertina */
@@ -449,7 +455,8 @@ button:active { filter: brightness(1.35); }
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(10, 10, 16, .85), rgba(10, 10, 16, .25));
+  background: linear-gradient(to top, rgba(10, 10, 16, .5), rgba(10, 10, 16, .12));
+  pointer-events: none;
 }
 
 .album-cover-wrap {
