@@ -237,9 +237,21 @@ button:active { filter: brightness(1.35); }
   }
 }
 @media (min-width: 1200px) {
+  #view-home { height: 100%; }
+
   .album-grid {
+    height: 100%;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 30px;
+    grid-auto-rows: 1fr;
+    gap: 30px 32px;
+  }
+
+  .album-card { display: flex; flex-direction: column; }
+
+  .card-cover {
+    flex: 1;
+    aspect-ratio: auto;
+    min-height: 120px;
   }
 }
 
