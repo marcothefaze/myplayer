@@ -1031,3 +1031,52 @@ input[type="range"] {
     height: 38px;
   }
 }
+
+/* =========================================================
+   ANTEPRIMA COPERTINA a schermo intero (lightbox)
+   ========================================================= */
+
+.cover-view {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(5, 5, 10, .88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.cover-view-img {
+  max-width: 94vw;
+  max-height: 92vh;
+  width: auto;
+  height: auto;
+  border-radius: 18px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, .7);
+  pointer-events: none;
+}
+
+.cover-view-close {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 14px);
+  right: 14px;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .12);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background .15s ease, transform .1s ease;
+}
+.cover-view-close:hover { background: rgba(255, 255, 255, .22); }
+.cover-view-close:active { transform: scale(.92); }
+
+/* Niente doppio-tap per zoomare su telefono */
+html { touch-action: manipulation; }

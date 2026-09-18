@@ -24,6 +24,14 @@ const storage = {
   set(key, value) { try { window.localStorage.setItem(key, String(value)); } catch (e) {} }
 };
 
+/* Su telefono: blocca lo zoom con due dita e il doppio tap (iOS/Android) */
+if ("gesturestart" in window) {
+  document.addEventListener("gesturestart", (e) => e.preventDefault());
+}
+document.addEventListener("touchmove", (e) => {
+  if (e.touches.length > 1) e.preventDefault();
+}, { passive: false });
+
 /* ---------- 2. ELEMENTI DEL DOM ---------- */
 
 const audio = $("audio");
@@ -59,6 +67,9 @@ const els = {
   iconPause: $("icon-pause"),
   repBadge: $("rep-badge"),
   trackInfo: $("track-info"),
+  coverView: $("cover-view"),
+  coverViewClose: $("cover-view-close"),
+  coverViewImg: $("cover-view-img"),
   fp: $("full-player"),
   fpBg: $("fp-bg"),
   fpCover: $("fp-cover"),
@@ -491,11 +502,26 @@ function renderHome() {
 
 /* ---------- 7. SCHERMATA ALBUM ---------- */
 
+let currentAlbum = null;   // album visibile sulla schermata album
+
+/* Apre la copertina a schermo intero */
+function openCoverView() {
+  if (!currentAlbum || !currentAlbum.cover) return;
+  els.coverViewImg.src = resolvePath(currentAlbum.cover);
+  els.coverView.classList.remove("hidden");
+}
+
+function closeCoverView() {
+  els.coverView.classList.add("hidden");
+  els.coverViewImg.src = "";
+}
+
 function openAlbum(album) {
   els.albumTitle.textContent = album.title;
   els.albumMeta.textContent =
     album.songs.length + " brani · " + formatMinutes(album.totalSec) +
     (isRealArtist(album.artist) ? " · " + album.artist : "");
+  currentAlbum = album;
 
   buildCover(els.albumCoverWrap, album.cover, album.title);
 
@@ -891,6 +917,18 @@ els.btnPrev.addEventListener("click", skipPrev);
 els.btnShuffle.addEventListener("click", toggleShuffle);
 els.btnRepeat.addEventListener("click", cycleRepeat);
 els.btnBack.addEventListener("click", goHome);
+
+/* Copertina album cliccabile -> anteprima a schermo intero */
+els.albumCoverWrap.addEventListener("click", openCoverView);
+els.coverViewClose.addEventListener("click", closeCoverView);
+els.coverView.addEventListener("click", (e) => {
+  if (e.target === els.coverView) closeCoverView();   // click fuori dall'immagine
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && els.coverView && !els.coverView.classList.contains("hidden")) {
+    closeCoverView();
+  }
+});
 
 /* Hard refresh: svuota gli archivi del service worker, lo disinstalla,
    e ricarica su un URL nuovo (così il browser NON può usare la cache).
