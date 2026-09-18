@@ -25,10 +25,10 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
                "Helvetica Neue", Arial, sans-serif;
   background:
-    radial-gradient(62% 48% at 10% 6%, rgba(124, 108, 255, .16), transparent 62%),
-    radial-gradient(56% 44% at 90% 90%, rgba(79, 157, 255, .13), transparent 62%),
-    radial-gradient(38% 38% at 74% 16%, rgba(148, 130, 255, .08), transparent 60%),
-    radial-gradient(30% 32% at 28% 92%, rgba(90, 130, 255, .07), transparent 55%),
+    radial-gradient(65% 50% at 12% 6%, rgba(124, 108, 255, .28), transparent 62%),
+    radial-gradient(58% 46% at 90% 90%, rgba(79, 157, 255, .24), transparent 62%),
+    radial-gradient(42% 40% at 74% 14%, rgba(168, 148, 255, .17), transparent 60%),
+    radial-gradient(34% 34% at 26% 94%, rgba(98, 142, 255, .15), transparent 55%),
     var(--bg);
   color: var(--text);
   display: flex;
@@ -46,32 +46,39 @@ body::before {
   pointer-events: none;
   z-index: 0;
   background-image:
-    radial-gradient(1px 1px at 12% 15%, #fff 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 12% 15%, #fff 50%, transparent 51%),
     radial-gradient(1px 1px at 34% 28%, #fff 50%, transparent 51%),
-    radial-gradient(1.2px 1.2px at 58% 9%, #e9e6ff 50%, transparent 51%),
+    radial-gradient(1.6px 1.6px at 58% 9%, #ece8ff 50%, transparent 51%),
     radial-gradient(1px 1px at 74% 41%, #ffffff 50%, transparent 51%),
-    radial-gradient(1.4px 1.4px at 88% 22%, #cfc5ff 50%, transparent 51%),
+    radial-gradient(2px 2px at 88% 22%, #d4cbff 50%, transparent 51%),
     radial-gradient(1px 1px at 26% 54%, #ffffff 50%, transparent 51%),
-    radial-gradient(1px 1px at 49% 63%, rgba(255, 255, 255, .85) 50%, transparent 51%),
-    radial-gradient(1.6px 1.6px at 67% 72%, #aeb2ff 50%, transparent 51%),
+    radial-gradient(1.3px 1.3px at 49% 63%, rgba(255, 255, 255, .95) 50%, transparent 51%),
+    radial-gradient(2.2px 2.2px at 67% 72%, #b6b0ff 50%, transparent 51%),
     radial-gradient(1px 1px at 83% 58%, #fff 50%, transparent 51%),
-    radial-gradient(1.2px 1.2px at 9% 79%, rgba(255, 255, 255, .9) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 9% 79%, rgba(255, 255, 255, .95) 50%, transparent 51%),
     radial-gradient(1px 1px at 41% 87%, #fff 50%, transparent 51%),
-    radial-gradient(1.5px 1.5px at 63% 90%, #d8d2ff 50%, transparent 51%),
-    radial-gradient(2px 2px at 55% 33%, rgba(255, 255, 255, .9) 50%, transparent 51%),
-    radial-gradient(2.2px 2.2px at 21% 40%, #9f9bff 50%, transparent 51%);
+    radial-gradient(1.8px 1.8px at 63% 90%, #ddd7ff 50%, transparent 51%),
+    radial-gradient(2.4px 2.4px at 55% 33%, rgba(255, 255, 255, .95) 50%, transparent 51%),
+    radial-gradient(2.6px 2.6px at 21% 40%, #a89fff 50%, transparent 51%),
+    radial-gradient(1.4px 1.4px at 90% 70%, #fff 50%, transparent 51%),
+    radial-gradient(1.1px 1.1px at 8% 40%, #fff 50%, transparent 51%),
+    radial-gradient(1.7px 1.7px at 42% 33%, #cabfff 50%, transparent 51%),
+    radial-gradient(2px 2px at 78% 6%, #ffffff 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 60% 78%, #fff 50%, transparent 51%),
+    radial-gradient(2.2px 2.2px at 18% 92%, #b6b0ff 50%, transparent 51%);
   background-size:
-    260px 260px, 320px 320px, 400px 400px, 300px 300px,
-    360px 360px, 280px 280px, 340px 340px, 420px 420px,
-    380px 380px, 300px 300px, 350px 350px, 450px 450px,
-    480px 480px, 520px 520px;
-  opacity: .5;
+    220px 220px, 270px 270px, 340px 340px, 250px 250px,
+    300px 300px, 240px 240px, 290px 290px, 360px 360px,
+    320px 320px, 260px 260px, 295px 295px, 380px 380px,
+    410px 410px, 440px 440px, 330px 330px, 250px 250px,
+    360px 360px, 300px 300px, 340px 340px, 420px 420px;
+  opacity: .85;
   animation: star-breathe 7s ease-in-out infinite;
 }
 
 @keyframes star-breathe {
-  0%, 100% { opacity: .42; }
-  50%      { opacity: .56; }
+  0%, 100% { opacity: .72; }
+  50%      { opacity: .92; }
 }
 
 /* Stella cadente occasionale (molto leggera, ogni ~9 secondi) */
