@@ -81,6 +81,9 @@ const els = {
   fpVolume: $("fp-volume"),
   fpVolumeIcon: $("fp-volume-icon"),
   fpShare: $("fp-share"),
+  fpShareMenu: $("fp-share-menu"),
+  fpShareLink: $("fp-share-link"),
+  fpShareCover: $("fp-share-cover"),
   main: $("main")
 };
 
@@ -208,13 +211,44 @@ function handleDeepLink() {
   if (i >= 0) playSong(i, true);
 }
 
-/* Condivide l'attuale brano con un link che lo riapre nell'app */
-function shareTrack() {
+/* ---------- CONDIVISIONE BRANO ---------- */
+
+/* Link "carino" per il brano: una mini-pagina generata in /og/<slug>/
+   che mostra all'anteprima (WhatsApp/Telegram/Instagram) la copertina
+   giusta dell'album e poi reindirizza all'app con il brano avviato. */
+function ogUrl(file) {
+  const slug = trackSlug(file);
+  return new URL("../../og/" + slug + "/", location.href).href;
+}
+
+function trackSlug(file) {
+  const base = String(file || "").split("/").pop().replace(/\.[^.]+$/, "");
+  return base
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60) || "brano";
+}
+
+/* Apre/chiude il menu Condividi */
+function toggleShareMenu() {
+  const menu = els.fpShareMenu;
+  if (!menu) return;
+  const open = menu.classList.toggle("hidden");
+  if (els.fpShare) els.fpShare.setAttribute("aria-expanded", String(!open));
+}
+document.addEventListener("click", (e) => {
+  if (!els.fpShareMenu || els.fpShareMenu.classList.contains("hidden")) return;
+  if (!e.target.closest(".fp-share-wrap")) toggleShareMenu();
+});
+
+/* Condivide il link del brano */
+function shareLink() {
   const i = currentIndex();
   if (i < 0) return;
   const song = state.songs[i];
-  const url = location.origin + location.pathname +
-    "?track=" + encodeURIComponent(song.file);
+  const url = ogUrl(song.file);
   const name = song.titolo || fileTitle(song.file);
   if (navigator.share) {
     navigator.share({ title: name, text: name + " - SSG Universe", url }).catch(() => {});
@@ -226,6 +260,100 @@ function shareTrack() {
       toast(url);
     }
   }
+}
+
+/* Immagine della copertina (+ titolo) da pubblicare nelle storie.
+   Condivisa come file immagine: dall'anti-share del telefono si può
+   scegliere Instagram -> Storie. */
+function shareCover() {
+  const i = currentIndex();
+  if (i < 0) return;
+  const song = state.songs[i];
+  const name = song.titolo || fileTitle(song.file);
+  const coverSrc = resolvePath(song.copertina || "");
+  const cover = new Image();
+  if (coverSrc) cover.crossOrigin = "anonymous";
+  cover.onload = () => {
+    canvasShare(cover, name);
+  };
+  cover.onerror = () => {
+    if (navigator.share && navigator.canShare) {
+      navigator.share({ title: name, text: name + " - SSG Universe",
+        url: ogUrl(song.file) }).catch(() => {});
+    } else {
+      toast("Copertina non disponibile");
+    }
+  };
+  if (coverSrc) {
+    cover.src = coverSrc;
+  } else {
+    cover.onerror();
+  }
+}
+
+function canvasShare(cover, name) {
+  const size = 1080;
+  const c = document.createElement("canvas");
+  c.width = size;
+  c.height = size;
+  const ctx = c.getContext("2d");
+  const imgW = cover && cover.src ? cover.width : size;
+  const imgH = cover && cover.src ? cover.height : size;
+  ctx.fillStyle = "#0a0a10";
+  ctx.fillRect(0, 0, size, size);
+  if (cover && cover.src) {
+    const s = Math.max(size / imgW, size / imgH);
+    const w = imgW * s, h = imgH * s;
+    ctx.drawImage(cover, (size - w) / 2, (size - h) / 2, w, h);
+  }
+  const grad = ctx.createLinearGradient(0, size * .55, 0, size);
+  grad.addColorStop(0, "rgba(10,10,16,0)");
+  grad.addColorStop(1, "rgba(10,10,16,.95)");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, size * .5, size, size * .5);
+  ctx.fillStyle = "#fff";
+  ctx.font = "800 46px -apple-system, 'Segoe UI', sans-serif";
+  ctx.textBaseline = "bottom";
+  wrapCtxText(ctx, name, 70, size - 170, size - 140, 46);
+  ctx.fillStyle = "rgba(255,255,255,.75)";
+  ctx.font = "700 34px -apple-system, 'Segoe UI', sans-serif";
+  ctx.fillText("SSG Universe", 70, size - 84);
+  c.toBlob(async (blob) => {
+    if (!blob) return toast("Impossibile creare l'immagine");
+    const file = new File([blob], "cover.png", { type: "image/png" });
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: name, text: name + " - SSG Universe" });
+      } catch (e) {}
+    } else {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "cover-ssg.png";
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      toast("Immagine salvata: la trovi nel download");
+    }
+  }, "image/png");
+}
+
+function wrapCtxText(ctx, text, x, maxW, y, lineH) {
+  const words = String(text).split(/\s+/);
+  let line = "";
+  let lines = [];
+  for (const w of words) {
+    const test = line ? line + " " + w : w;
+    if (ctx.measureText(test).width > maxW && line) {
+      lines.push(line);
+      line = w;
+    } else {
+      line = test;
+    }
+  }
+  if (line) lines.push(line);
+  lines = lines.slice(0, 3);
+  y -= (lines.length - 1) * lineH;
+  lines.forEach((l) => { ctx.fillText(l, x, y); y += lineH; });
 }
 
 /* Piccolo messaggio a comparsa in basso (usato per i link copiati) */
@@ -764,10 +892,11 @@ els.btnShuffle.addEventListener("click", toggleShuffle);
 els.btnRepeat.addEventListener("click", cycleRepeat);
 els.btnBack.addEventListener("click", goHome);
 
-/* Hard refresh: svuota gli archivi del service worker, aggiorna il worker
+/* Hard refresh: svuota gli archivi del service worker, lo disinstalla,
    e ricarica su un URL nuovo (così il browser NON può usare la cache).
    Equivale al Ctrl+Shift+R dei browser. */
 els.btnRefresh.addEventListener("click", async () => {
+  toast("Aggiornamento in corso\u2026");
   try {
     if ("caches" in window) {
       const keys = await caches.keys();
@@ -777,7 +906,7 @@ els.btnRefresh.addEventListener("click", async () => {
   try {
     if ("serviceWorker" in navigator) {
       const regs = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(regs.map((reg) => reg.update()));
+      await Promise.all(regs.map((reg) => (reg.unregister ? reg.unregister() : reg.update())));
     }
   } catch (e) {}
   location.replace(location.pathname + "?hard=" + Date.now());
@@ -849,7 +978,9 @@ if (els.fp) {
   els.fpPrev.addEventListener("click", skipPrev);
   els.fpShuffle.addEventListener("click", toggleShuffle);
   els.fpRepeat.addEventListener("click", cycleRepeat);
-  els.fpShare.addEventListener("click", shareTrack);
+  els.fpShare.addEventListener("click", toggleShareMenu);
+  els.fpShareLink.addEventListener("click", () => { toggleShareMenu(); shareLink(); });
+  els.fpShareCover.addEventListener("click", () => { toggleShareMenu(); shareCover(); });
 
   // Trascina verso il basso sulla zona alta (pillina) -> chiudi la tendina
   let fpDragStart = null;

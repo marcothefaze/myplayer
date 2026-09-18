@@ -3,7 +3,7 @@
    dal server; solo se offline ripiega sulla cache locale.
    L'audio (mp3) non viene intercettato per non disturbare lo streaming. */
 
-const CACHE = "ssg-cache-v1";
+const CACHE = "ssg-cache-v2";
 
 self.addEventListener("install", (e) => {
   self.skipWaiting();
@@ -26,8 +26,12 @@ self.addEventListener("fetch", (e) => {
     (async () => {
       const cache = await caches.open(CACHE);
       try {
-        const net = await fetch(e.request);
-        if (net && net.ok) cache.put(e.request, net.clone());
+        /* "cache: reload" aggira la cache HTTP del browser: si chiede
+           sempre al server la versione più recente. Svuotare la cache
+           dal pulsante refresh garantisce così di ottenere la nuova. */
+        const net = await fetch(e.request, { cache: "reload" });
+        if (net && net.ok && !url.pathname.endsWith(".html"))
+          cache.put(e.request, net.clone());
         return net;
       } catch (err) {
         const cached = await cache.match(e.request);

@@ -806,6 +806,41 @@ input[type="range"] {
 .fp-share:hover { background: rgba(255, 255, 255, .16); }
 .fp-share:active { transform: scale(.95); }
 
+.fp-share-wrap { position: relative; z-index: 2; display: inline-flex; flex-direction: column; align-items: flex-start; }
+
+.fp-share-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 230px;
+  padding: 6px;
+  border-radius: 12px;
+  background: rgba(24, 24, 36, .98);
+  border: 1px solid var(--border);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, .6);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fp-share-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--text);
+  font-size: .88rem;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+.fp-share-item:hover { background: rgba(255, 255, 255, .08); }
+.fp-share-item svg { flex-shrink: 0; color: var(--accent); }
+
 .fp-progress {
   position: relative;
   z-index: 1;
