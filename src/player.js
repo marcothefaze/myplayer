@@ -80,6 +80,7 @@ const els = {
   fpRepBadge: $("fp-rep-badge"),
   fpVolume: $("fp-volume"),
   fpVolumeIcon: $("fp-volume-icon"),
+  fpShare: $("fp-share"),
   main: $("main")
 };
 
@@ -189,6 +190,7 @@ async function loadPlaylist() {
     applySavedState();
     renderHome();
     updateBrandCount();
+    handleDeepLink();
   } catch (err) {
     els.albumGrid.innerHTML =
       '<div class="error">Impossibile caricare playlist.json.<br>' +
@@ -196,6 +198,49 @@ async function loadPlaylist() {
       "cartella del progetto) e ricarica la pagina.</div>";
     console.error("Errore nel caricamento della playlist:", err);
   }
+}
+
+/* Deep link da link condiviso: ?track=<percorso file> -> avvia quel brano */
+function handleDeepLink() {
+  const track = new URLSearchParams(location.search).get("track");
+  if (!track) return;
+  const i = state.songs.findIndex((s) => s.file === track);
+  if (i >= 0) playSong(i, true);
+}
+
+/* Condivide l'attuale brano con un link che lo riapre nell'app */
+function shareTrack() {
+  const i = currentIndex();
+  if (i < 0) return;
+  const song = state.songs[i];
+  const url = location.origin + location.pathname +
+    "?track=" + encodeURIComponent(song.file);
+  const name = song.titolo || fileTitle(song.file);
+  if (navigator.share) {
+    navigator.share({ title: name, text: name + " - SSG Universe", url }).catch(() => {});
+  } else {
+    const done = () => toast("Link copiato negli appunti");
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(done).catch(() => toast(url));
+    } else {
+      toast(url);
+    }
+  }
+}
+
+/* Piccolo messaggio a comparsa in basso (usato per i link copiati) */
+function toast(msg) {
+  let el = document.getElementById("toast");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "toast";
+    el.className = "toast";
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove("show"), 2600);
 }
 
 /* Ordine di visualizzazione degli album richiesto */
@@ -804,6 +849,7 @@ if (els.fp) {
   els.fpPrev.addEventListener("click", skipPrev);
   els.fpShuffle.addEventListener("click", toggleShuffle);
   els.fpRepeat.addEventListener("click", cycleRepeat);
+  els.fpShare.addEventListener("click", shareTrack);
 
   // Trascina verso il basso sulla zona alta (pillina) -> chiudi la tendina
   let fpDragStart = null;

@@ -166,6 +166,22 @@ button:active { filter: brightness(1.35); }
   gap: 26px;
 }
 
+/* PC: gli album riempiono lo schermo in modo dinamico. Con 8 album
+   su schermi grandi si dispongono in griglie eque (3 o 4 per riga) e
+   le copertine si ingrandiscono con la finestra. */
+@media (min-width: 900px) and (max-width: 1199px) {
+  .album-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 28px;
+  }
+}
+@media (min-width: 1200px) {
+  .album-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 30px;
+  }
+}
+
 .album-card {
   background: none;
   border: none;
@@ -769,6 +785,27 @@ input[type="range"] {
 
 .fp-album { font-size: .86rem; color: var(--dim); margin-top: 4px; }
 
+.fp-share {
+  position: relative;
+  z-index: 1;
+  margin-top: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .08);
+  color: var(--text);
+  font-size: .8rem;
+  font-weight: 700;
+  letter-spacing: .3px;
+  cursor: pointer;
+  transition: background .15s ease, transform .1s ease;
+}
+.fp-share:hover { background: rgba(255, 255, 255, .16); }
+.fp-share:active { transform: scale(.95); }
+
 .fp-progress {
   position: relative;
   z-index: 1;
@@ -831,7 +868,30 @@ input[type="range"] {
   .track-title { flex: 1; }
   .track-row { min-height: 48px; }          /* bersaglio tattile comodo */
 
-  .player-bar {
+/* Messaggio a comparsa (link copiato, ecc.) */
+.toast {
+  position: fixed;
+  bottom: 96px;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  z-index: 300;
+  max-width: 88vw;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: rgba(28, 28, 40, .95);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: .82rem;
+  font-weight: 700;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s ease, transform .25s ease;
+  word-break: break-word;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.player-bar {
     grid-template-columns: 1fr;
     grid-template-areas:
       "info"
