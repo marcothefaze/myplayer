@@ -415,6 +415,10 @@ button:active { filter: brightness(1.35); }
   padding: 8px 20px 12px;
 }
 
+/* All'apertura dell'app il miniplayer è invisibile; compare solo quando
+   si avvia un brano (classe "has-track" aggiunta dal player) */
+body:not(.has-track) .player-bar { display: none; }
+
 .player-progress { grid-area: progress; }
 .track-info { grid-area: info; }
 .controls { grid-area: controls; }
@@ -813,10 +817,17 @@ input[type="range"] {
 
 @media (max-width: 720px) {
   .topbar {
-    padding-top: calc(12px + env(safe-area-inset-top));
+    padding-top: calc(8px + env(safe-area-inset-top));
+    padding-bottom: 8px;
   }
 
-  .view { padding: 16px 14px 24px; }
+  /* Scritta in alto: leggera sfocatura per ammorbidirla */
+  .brand-name,
+  .brand-sub {
+    filter: blur(.6px);
+  }
+
+  .view { padding: 14px 14px 24px; }
   .album-grid { grid-template-columns: repeat(auto-fill, minmax(138px, 1fr)); gap: 14px; }
 
   .album-hero { flex-direction: column; text-align: center; gap: 14px; padding: 20px 16px; }

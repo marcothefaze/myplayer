@@ -12,7 +12,7 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "6";
+const APP_VERSION = "15";   // cambia l'URL di playlist.json: niente cache stantia
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
 const $ = (id) => document.getElementById(id);
@@ -362,7 +362,7 @@ function openAlbum(album) {
     row.appendChild(title);
     row.appendChild(artist);
     row.appendChild(dur);
-    row.addEventListener("click", () => playSong(songIdx));
+    row.addEventListener("click", () => playSong(songIdx, true));
 
     els.trackList.appendChild(row);
   });
@@ -386,13 +386,14 @@ function currentIndex() {
   return state.queuePos >= 0 ? state.queue[state.queuePos] : -1;
 }
 
-async function playSong(songIdx) {
+async function playSong(songIdx, openFull) {
   if (songIdx < 0) return;
   const pos = state.queue.indexOf(songIdx);
   state.queuePos = pos >= 0 ? pos : 0;
   if (pos < 0) state.queue[0] = songIdx;
 
   const song = state.songs[songIdx];
+  document.body.classList.add("has-track");   // fa comparire il miniplayer
   audio.src = resolvePath(song.file);
   try {
     await audio.play();
@@ -401,6 +402,7 @@ async function playSong(songIdx) {
   }
   updatePlayerInfo(song);
   highlightActive();
+  if (openFull) openFullPlayer();   // selezione esplicita -> full player automatico
 }
 
 function updatePlayerInfo(song) {
@@ -437,7 +439,7 @@ function updatePlayerInfo(song) {
 
 function togglePlay() {
   if (currentIndex() < 0) {
-    playSong(state.queue[0]);
+    playSong(state.queue[0], true);
     return;
   }
   if (audio.paused) {
@@ -740,6 +742,26 @@ function goHome() {
   els.btnBack.classList.add("hidden");
   showView("home");
 }
+
+/* Swipe con il dito verso destra nella vista album = torna alla home */
+let swipeX = null, swipeY = null;
+els.main.addEventListener("touchstart", (e) => {
+  if (els.fp && els.fp.classList.contains("open")) return;
+  const t = e.changedTouches[0];
+  swipeX = t.clientX;
+  swipeY = t.clientY;
+}, { passive: true });
+
+els.main.addEventListener("touchend", (e) => {
+  if (swipeX === null) return;
+  const t = e.changedTouches[0];
+  const dx = t.clientX - swipeX;
+  const dy = t.clientY - swipeY;
+  swipeX = swipeY = null;
+  if (dx > 70 && Math.abs(dy) < 50 && els.home.classList.contains("hidden")) {
+    goHome();
+  }
+}, { passive: true });
 
 /* ---------- 14. FULL PLAYER a tendina ---------- */
 
