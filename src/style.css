@@ -73,12 +73,27 @@ body::before {
     410px 410px, 440px 440px, 330px 330px, 250px 250px,
     360px 360px, 300px 300px, 340px 340px, 420px 420px;
   opacity: .85;
-  animation: star-breathe 7s ease-in-out infinite;
+  animation:
+    star-breathe 7s ease-in-out infinite,
+    star-drift 90s linear infinite alternate,
+    star-sway 23s ease-in-out infinite alternate;
 }
 
 @keyframes star-breathe {
   0%, 100% { opacity: .72; }
   50%      { opacity: .92; }
+}
+
+/* Lenta deriva del cielo stellato: lo sfondo sembra vivo, in movimento */
+@keyframes star-drift {
+  from { background-position: 0 0; }
+  to   { background-position: 120px 70px; }
+}
+
+/* Dolce oscillazione sopra/sotto delle nebulose */
+@keyframes star-sway {
+  0%   { transform: translateY(-6px); }
+  100% { transform: translateY(6px); }
 }
 
 /* Stella cadente occasionale (molto leggera, ogni ~9 secondi) */
@@ -254,6 +269,57 @@ button:active { filter: brightness(1.35); }
   .card-cover { width: min(100%, var(--cover-max, 38vh)); aspect-ratio: 1 / 1; }
 
   .card-caption { text-align: center; }
+
+  /* ---- Schermata album: copre tutto lo schermo, tracklist enorme ---- */
+  #view-album {
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 32px;
+  }
+
+  .album-hero {
+    flex: 0 0 440px;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    text-align: left;
+    gap: 26px;
+    padding: 42px;
+    margin-bottom: 0;
+    border-radius: 24px;
+  }
+
+  .album-cover-wrap { width: 340px; height: 340px; border-radius: 18px; }
+
+  .album-head { width: 100%; }
+
+  .eyebrow { font-size: .82rem; }
+
+  .album-title { font-size: clamp(2.2rem, 3.6vw, 3.6rem); }
+
+  .album-meta { font-size: .98rem; }
+
+  .track-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    gap: 8px;
+    padding-right: 8px;
+  }
+
+  .track-row { padding: 18px 24px; border-radius: 14px; gap: 20px; }
+
+  .track-num { width: 34px; font-size: 1.05rem; }
+
+  .track-title { font-size: 1.25rem; }
+
+  .track-artist { font-size: 1rem; }
+
+  .track-dur { font-size: 1rem; }
+
+  .track-row:hover { transform: translateX(2px); }
 }
 
 .album-card {
