@@ -985,7 +985,8 @@ if (els.fp) {
   // Trascina verso il basso sulla zona alta (pillina) -> chiudi la tendina
   let fpDragStart = null;
   els.fpHandle.addEventListener("pointerdown", (e) => {
-    if (e.target === els.fpCollapse) return;   // il chevron gestisce il proprio click
+    if (e.target === els.fpCollapse) return;                 // il chevron gestisce il proprio click
+    if (e.target.closest(".fp-share-wrap")) return;          // il menu Condividi gestisce il proprio click
     fpDragStart = e.clientY;
     els.fpHandle.setPointerCapture(e.pointerId);
   });
