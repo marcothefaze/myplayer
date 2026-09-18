@@ -218,7 +218,7 @@ function handleDeepLink() {
    giusta dell'album e poi reindirizza all'app con il brano avviato. */
 function ogUrl(file) {
   const slug = trackSlug(file);
-  return new URL("../../og/" + slug + "/", location.href).href;
+  return new URL("../og/" + slug + "/", location.href).href;
 }
 
 function trackSlug(file) {
