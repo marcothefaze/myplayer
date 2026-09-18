@@ -133,10 +133,7 @@ button:active { filter: brightness(1.35); }
   font-size: 1.05rem;
   font-weight: 800;
   letter-spacing: .3px;
-  background: var(--grad);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--accent);
 }
 
 .brand-sub {
