@@ -384,7 +384,7 @@ function toast(msg) {
 
 /* Ordine di visualizzazione degli album richiesto */
 const ALBUM_ORDER = [
-  "Non é SSG",
+  "Non è SSG",
   "Testamento - ssg",
   "Giorni Migliori - SSG",
   "SINGOLI : EXTRA - SSG",
