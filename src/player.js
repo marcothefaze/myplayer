@@ -96,6 +96,7 @@ const els = {
   fpShareLink: $("fp-share-link"),
   fpShareCover: $("fp-share-cover"),
   fpVideoToggle: $("fp-video-toggle"),
+  fpVideoFs: $("fp-video-fs"),
   main: $("main")
 };
 
@@ -1086,17 +1087,21 @@ function updateFpVideo(song) {
   if (!fpHasVideo) {
     if (fpVideoEl) { fpVideoEl.pause(); fpVideoEl.classList.add("hidden"); }
     if (toggle) toggle.classList.add("hidden");
+    els.fpCover.classList.remove("playing-video");   // riquadro di nuovo quadrato
     return;
   }
 
   const v = ensureFpVideo();
   if (!v) return;
-  if (toggle) toggle.classList.remove("hidden");
+    if (toggle) toggle.classList.remove("hidden");
 
   // Appende il video dentro il riquadro copertina (buildCover svuota il box)
   if (v.parentElement !== els.fpCover) els.fpCover.appendChild(v);
   v.setAttribute("src", resolvePath(src));
   try { v.currentTime = 0; } catch (e) {}
+
+  // Riquadro rettangolare quando il video è visibile (classi annidate no-dip)
+  els.fpCover.classList.toggle("playing-video", fpVideoOn);
   v.classList.toggle("hidden", !fpVideoOn);
   syncFpVideoToAudio();
 }
@@ -1137,10 +1142,39 @@ if (els.fp) {
       if (!fpHasVideo || !fpVideoEl) return;
       fpVideoOn = !fpVideoOn;
       fpVideoEl.classList.toggle("hidden", !fpVideoOn);
+      els.fpCover.classList.toggle("playing-video", fpVideoOn);
       if (fpVideoOn) syncFpVideoToAudio(); else fpVideoEl.pause();
       haptic(12);
     });
   }
+
+  // Tasto "Tutto schermo" (e click sul video) per il videoclip: apre il clip
+  // in fullscreen; uscendo torna allo stato precedente (copertina o video)
+  const fpFsBtn = els.fpVideoFs;
+  const goFs = async () => {
+    if (!fpHasVideo || !fpVideoEl) return;
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        await fpVideoEl.requestFullscreen();
+      }
+    } catch (e) {}
+    haptic(12);
+  };
+  if (fpFsBtn) fpFsBtn.addEventListener("click", goFs);
+  if (fpVideoEl) fpVideoEl.addEventListener("click", () => {
+    if (fpHasVideo && fpVideoOn) goFs();   // solo se il video è visibile
+  });
+  document.addEventListener("fullscreenchange", () => {
+    if (fpVideoEl && !document.fullscreenElement) {
+      // Usciti dal fullscreen: riallinea al player e ripristina l'audio
+      if (fpVideoOn && fpVideoEl.classList.contains("hidden")) {
+        // se era attivo lo state del video continua a valere: non forzo nulla
+      }
+      syncFpVideoToAudio();
+    }
+  });
 
   // Trascina verso il basso sulla zona alta (pillina) -> chiudi la tendina
   let fpDragStart = null;

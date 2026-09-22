@@ -961,7 +961,8 @@ input[type="range"] {
     0 24px 60px rgba(0, 0, 0, .6),
     0 0 20px rgba(160, 145, 255, .15);
 }
-.fp-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Transizione fluida quadrato <-> rettangolo quando si cambia brano/toggle */
+.fp-cover { transition: width .35s ease, aspect-ratio .35s ease; }
 .fp-cover.ph { display: flex; align-items: center; justify-content: center; }
 .fp-cover.ph span.ph-title { font-size: 3rem; font-weight: 800; color: rgba(255, 255, 255, .7); }
 
@@ -972,9 +973,16 @@ input[type="range"] {
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;   /* il videoclip 16:9 entra intero, niente tagli */
   display: block;
   background: #000;
+}
+
+/* Quando il video è visibile il riquadro diventa rettangolare 16:9,
+   leggermente più largo, così il clip si vede tutto dentro di esso */
+.fp-cover.playing-video {
+  aspect-ratio: 9 / 5.2;          /* rettangolo largo: entra tutto il 16:9 */
+  width: min(88vw, 66vh, 560px);
 }
 
 /* Il tasto Video è attivo quando il clip è visibile */
