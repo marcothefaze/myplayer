@@ -95,6 +95,7 @@ const els = {
   fpShareMenu: $("fp-share-menu"),
   fpShareLink: $("fp-share-link"),
   fpShareCover: $("fp-share-cover"),
+  fpVideoToggle: $("fp-video-toggle"),
   main: $("main")
 };
 
@@ -652,6 +653,8 @@ function updatePlayerInfo(song) {
 
   buildCover(els.fpCover, coverSrc, coverName);
 
+  updateFpVideo(song);
+
   // Sfondo sfocato del full player: la stessa copertina
   if (coverSrc) {
     els.fpBg.style.backgroundImage = 'url("' + resolvePath(coverSrc) + '")';
@@ -1032,13 +1035,90 @@ function openFullPlayer() {
   if (!els.fp) return;
   els.fp.classList.add("open");
   els.fp.setAttribute("aria-hidden", "false");
+  syncFpVideoToAudio();   // il video riprende/se parte insieme alla canzone
 }
 
 function closeFullPlayer() {
   if (!els.fp) return;
   els.fp.classList.remove("open");
   els.fp.setAttribute("aria-hidden", "true");
+  if (fpVideoEl) fpVideoEl.pause();
 }
+
+/* ---------- VIDEOCLIP nel full player ----------
+   I brani con un video ufficiale (mappa TRACK_VIDEOS) mostrano nel full
+   player il videoclip AL POSTO della copertina, stesse dimensioni del
+   riquadro. L'audio resta quello della canzone: il video è muto e
+   sincronizzato con play/pausa/seek. Un pulsante "Video" nella barra
+   alta permette di tornare alla copertina e viceversa. */
+const TRACK_VIDEOS = {
+  "Goleador": "assets/video/goleador.mp4"
+};
+
+let fpVideoEl = null;     // elemento <video> dentro la copertina del full player
+let fpHasVideo = false;   // il brano corrente ha un videoclip?
+let fpVideoOn = true;     // preferenza utente: video visibile (true) o copertina (false)
+
+function ensureFpVideo() {
+  if (fpVideoEl || !els.fpCover) return fpVideoEl;
+  fpVideoEl = document.createElement("video");
+  fpVideoEl.className = "fp-video hidden";
+  fpVideoEl.muted = true;               // l'audio arriva dall'elemento audio principale
+  fpVideoEl.loop = true;                // se il video è più corto della canzone riparte
+  fpVideoEl.playsInline = true;         // iOS: niente fullscreen automatico
+  fpVideoEl.setAttribute("playsinline", "");
+  fpVideoEl.preload = "auto";
+  fpVideoEl.addEventListener("error", () => {
+    // Video mancante/non leggibile: torna la copertina e sparisce il pulsante
+    fpHasVideo = false;
+    fpVideoEl.classList.add("hidden");
+    if (els.fpVideoToggle) els.fpVideoToggle.classList.add("hidden");
+  });
+  return fpVideoEl;
+}
+
+function updateFpVideo(song) {
+  if (!els.fp) return;
+  const src = TRACK_VIDEOS[song.titolo];
+  fpHasVideo = !!src;
+  const toggle = els.fpVideoToggle;
+
+  if (!fpHasVideo) {
+    if (fpVideoEl) { fpVideoEl.pause(); fpVideoEl.classList.add("hidden"); }
+    if (toggle) toggle.classList.add("hidden");
+    return;
+  }
+
+  const v = ensureFpVideo();
+  if (!v) return;
+  if (toggle) toggle.classList.remove("hidden");
+
+  // Appende il video dentro il riquadro copertina (buildCover svuota il box)
+  if (v.parentElement !== els.fpCover) els.fpCover.appendChild(v);
+  v.setAttribute("src", resolvePath(src));
+  try { v.currentTime = 0; } catch (e) {}
+  v.classList.toggle("hidden", !fpVideoOn);
+  syncFpVideoToAudio();
+}
+
+/* Il video segue la canzone: parte/pausa con lei e si riallinea ai salti */
+function syncFpVideoToAudio() {
+  if (!fpVideoEl || !fpHasVideo) return;
+  if (audio.paused) {
+    fpVideoEl.pause();
+  } else {
+    fpVideoEl.play().catch(() => {});
+  }
+  try {
+    if (fpVideoEl.duration && isFinite(fpVideoEl.duration) && isFinite(audio.duration)) {
+      fpVideoEl.currentTime = audio.currentTime % fpVideoEl.duration;
+    }
+  } catch (e) {}
+}
+
+audio.addEventListener("play", syncFpVideoToAudio);
+audio.addEventListener("pause", syncFpVideoToAudio);
+audio.addEventListener("seeked", syncFpVideoToAudio);
 
 if (els.fp) {
   // Clic sulla copertina/brano nella barra in basso -> apre il full player
@@ -1052,12 +1132,22 @@ if (els.fp) {
   els.fpShare.addEventListener("click", toggleShareMenu);
   els.fpShareLink.addEventListener("click", () => { toggleShareMenu(); shareLink(); });
   els.fpShareCover.addEventListener("click", () => { toggleShareMenu(); shareCover(); });
+  if (els.fpVideoToggle) {
+    els.fpVideoToggle.addEventListener("click", () => {
+      if (!fpHasVideo || !fpVideoEl) return;
+      fpVideoOn = !fpVideoOn;
+      fpVideoEl.classList.toggle("hidden", !fpVideoOn);
+      if (fpVideoOn) syncFpVideoToAudio(); else fpVideoEl.pause();
+      haptic(12);
+    });
+  }
 
   // Trascina verso il basso sulla zona alta (pillina) -> chiudi la tendina
   let fpDragStart = null;
   els.fpHandle.addEventListener("pointerdown", (e) => {
     if (e.target === els.fpCollapse) return;                 // il chevron gestisce il proprio click
     if (e.target.closest(".fp-share-wrap")) return;          // il menu Condividi gestisce il proprio click
+    if (e.target.closest("#fp-video-toggle")) return;        // il tasto Video gestisce il proprio click
     fpDragStart = e.clientY;
     els.fpHandle.setPointerCapture(e.pointerId);
   });

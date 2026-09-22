@@ -965,6 +965,21 @@ input[type="range"] {
 .fp-cover.ph { display: flex; align-items: center; justify-content: center; }
 .fp-cover.ph span.ph-title { font-size: 3rem; font-weight: 800; color: rgba(255, 255, 255, .7); }
 
+/* Videoclip dentro il riquadro copertina del full player: stesse dimensioni
+   del riquadro, l'audio resta quello della canzone (video muto) */
+.fp-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  background: #000;
+}
+
+/* Il tasto Video è attivo quando il clip è visibile */
+.fp-video-toggle.on { background: var(--accent); color: #fff; border-color: transparent; }
+
 .fp-meta { position: relative; z-index: 1; width: 100%; min-width: 0; }
 
 .fp-title {

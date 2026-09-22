@@ -12,7 +12,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/icons/icon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/icons/icon-180.png">
   <link rel="manifest" href="../manifest.json">
-  <link rel="stylesheet" href="style.css?v=44">
+  <link rel="stylesheet" href="style.css?v=45">
   <!-- Il ?v=N forza il browser a scaricare di nuovo i file a ogni rilascio,
        evitando che resti in cache una versione vecchia dell'app. -->
 </head>
@@ -154,6 +154,12 @@
             <path d="M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z"/>
           </svg>
         </button>
+        <button id="fp-video-toggle" class="fp-share fp-video-toggle hidden" title="Mostra/nascondi il video del brano" aria-label="Mostra o nascondi il video del brano">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+            <path d="M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm6 3.5v8l6.5-4z"/>
+          </svg>
+          <span>Video</span>
+        </button>
         <div class="fp-share-wrap">
           <button id="fp-share" class="fp-share" title="Condividi il brano" aria-label="Condividi il brano" aria-expanded="false">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
@@ -251,6 +257,6 @@
     <img id="cover-view-img" class="cover-view-img" alt="Copertina album">
   </div>
 
-  <script src="player.js?v=44"></script>
+  <script src="player.js?v=45"></script>
 </body>
 </html>
