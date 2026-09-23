@@ -1071,6 +1071,7 @@ const TRACK_VIDEOS = {
 let fpVideoEl = null;     // elemento <video> dentro la copertina del full player
 let fpHasVideo = false;   // il brano corrente ha un videoclip?
 let fpVideoOn = true;     // preferenza utente: video visibile (true) o copertina (false)
+let fpLastDriftSync = 0;  // istante dell'ultima correzione di deriva in fullscreen
 
 /* Ricava il file copertina più vicino possibile allo slug indicato nei JSON:
    i brani salvano "assets/covers/COCONUT_ICE_CR_MIX" (slug accorciato) ma i
@@ -1129,11 +1130,16 @@ function ensureFpVideo() {
     if (fpHasVideo && fpVideoFullscreen() && audio.paused) audio.play().catch(() => {});
   });
   fpVideoEl.addEventListener("timeupdate", () => {
-    // Aggancio continuo in fullscreen: la canzone resta sul video anche alla deriva
-    if (fpHasVideo && fpVideoFullscreen() && isFinite(audio.duration) && isFinite(fpVideoEl.duration) &&
-        Math.abs(fpVideoEl.duration - audio.duration) < 3 &&
-        Math.abs((audio.currentTime || 0) - fpVideoEl.currentTime) > 0.3) {
+    // Correzione di deriva RARA in fullscreen: solo se lo scarto supera 1.5s
+    // e non più di una volta ogni 10s. Il sync continuo (0.3s) faceva andare
+    // la canzone a scatti: ogni seek dell'audio interrompe la riproduzione.
+    if (!fpHasVideo || !fpVideoFullscreen() || !isFinite(audio.duration) || !isFinite(fpVideoEl.duration) ||
+        Math.abs(fpVideoEl.duration - audio.duration) >= 3) return;
+    const now = Date.now();
+    if (now - fpLastDriftSync < 10000) return;
+    if (Math.abs((audio.currentTime || 0) - fpVideoEl.currentTime) > 1.5) {
       audio.currentTime = fpVideoEl.currentTime;
+      fpLastDriftSync = now;
     }
   });
   return fpVideoEl;
@@ -1160,6 +1166,11 @@ function updateFpVideo(song) {
 
   // Appende il video dentro il riquadro copertina (buildCover svuota il box)
   if (v.parentElement !== els.fpCover) els.fpCover.appendChild(v);
+  // Il tasto "Tutto schermo" galleggia sopra il video (angolo alto destro):
+  // buildCover svuota il riquadro a ogni cambio brano, quindi lo riattacco
+  if (els.fpVideoFs && els.fpVideoFs.parentElement !== els.fpCover) {
+    els.fpCover.appendChild(els.fpVideoFs);
+  }
   v.setAttribute("src", resolvePath(src));
   try { v.currentTime = 0; } catch (e) {}
 

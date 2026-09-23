@@ -992,6 +992,14 @@ input[type="range"] {
 /* Il tasto Video è attivo quando il clip è visibile */
 .fp-video-toggle.on { background: var(--accent); color: #fff; border-color: transparent; }
 
+/* Il tasto "Tutto schermo" galleggia sopra il video, angolo alto destro */
+.fp-cover .fp-video-fs {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
+}
+
 .fp-meta { position: relative; z-index: 1; width: 100%; min-width: 0; }
 
 .fp-title {
