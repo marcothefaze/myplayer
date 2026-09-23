@@ -1072,6 +1072,7 @@ let fpVideoEl = null;     // elemento <video> dentro la copertina del full playe
 let fpHasVideo = false;   // il brano corrente ha un videoclip?
 let fpVideoOn = true;     // preferenza utente: video visibile (true) o copertina (false)
 let fpLastDriftSync = 0;  // istante dell'ultima correzione di deriva in fullscreen
+let fpStartSyncPending = false; // riallineo al frame in attesa del "playing"
 
 /* Ricava il file copertina più vicino possibile allo slug indicato nei JSON:
    i brani salvano "assets/covers/COCONUT_ICE_CR_MIX" (slug accorciato) ma i
@@ -1124,10 +1125,18 @@ function ensureFpVideo() {
     }
   });
   fpVideoEl.addEventListener("pause", () => {
-    if (fpHasVideo && fpVideoFullscreen() && !audio.paused) audio.pause();
+    // Debounce 300ms: iOS in fullscreen emette pause spurie durante lo scrub,
+    // fermare subito l'audio su un evento fittizio blocca tutto
+    if (!fpHasVideo || !fpVideoFullscreen()) return;
+    setTimeout(() => {
+      if (fpVideoEl.paused && !audio.paused) audio.pause();
+    }, 300);
   });
   fpVideoEl.addEventListener("play", () => {
-    if (fpHasVideo && fpVideoFullscreen() && audio.paused) audio.play().catch(() => {});
+    if (!fpHasVideo || !fpVideoFullscreen()) return;
+    setTimeout(() => {
+      if (!fpVideoEl.paused && audio.paused) audio.play().catch(() => {});
+    }, 300);
   });
   fpVideoEl.addEventListener("timeupdate", () => {
     // Correzione di deriva RARA in fullscreen: solo se lo scarto supera 1.5s
@@ -1172,6 +1181,10 @@ function updateFpVideo(song) {
     els.fpCover.appendChild(els.fpVideoFs);
   }
   v.setAttribute("src", resolvePath(src));
+  v.preload = "auto";   // bufferizza il videoclip mentre sei nel full player:
+                        // play istantaneo (niente lag iniziale) e seek fluidi
+                        // in fullscreen. All'apertura dell'app non scarica
+                        // nulla: parte solo quando apri un brano con video.
   try { v.currentTime = 0; } catch (e) {}
 
   // Riquadro rettangolare quando il video è visibile (classi annidate no-dip)
@@ -1202,6 +1215,21 @@ function syncFpVideoToAudio() {
     fpVideoEl.pause();
   } else {
     fpVideoEl.play().catch(() => {});
+    // Riallinea il frame appena il video parte DAVVERO: la decodifica introduce
+    // un ritardo e senza questo riallineo il video parte dopo la canzone
+    if (!fpStartSyncPending) {
+      fpStartSyncPending = true;
+      fpVideoEl.addEventListener("playing", () => {
+        fpStartSyncPending = false;
+        try {
+          if (isFinite(fpVideoEl.duration) && isFinite(audio.duration) &&
+              Math.abs(fpVideoEl.duration - audio.duration) < 3 &&
+              Math.abs((audio.currentTime || 0) - fpVideoEl.currentTime) > 0.15) {
+            fpVideoEl.currentTime = audio.currentTime % fpVideoEl.duration;
+          }
+        } catch (e2) {}
+      }, { once: true });
+    }
   }
   try {
     if (fpVideoEl.duration && isFinite(fpVideoEl.duration) && isFinite(audio.duration)) {
@@ -1249,12 +1277,23 @@ if (els.fp) {
     try {
       if (document.fullscreenElement) {
         await document.exitFullscreen();
-      } else if (fpVideoEl.requestFullscreen) {
-        await fpVideoEl.requestFullscreen();
-      } else if (fpVideoEl.webkitEnterFullscreen) {
-        // iOS: il player nativo presenta il video solo se è in riproduzione
-        if (fpVideoEl.paused) { try { await fpVideoEl.play(); } catch (e2) {} }
-        fpVideoEl.webkitEnterFullscreen();
+      } else {
+        // Allinea la canzone al video PRIMA di consegnare il controllo
+        // all'utente: si entra in fullscreen già sincronizzati
+        try {
+          if (isFinite(audio.duration) && isFinite(fpVideoEl.duration) &&
+              Math.abs(fpVideoEl.duration - audio.duration) < 3 &&
+              Math.abs((audio.currentTime || 0) - fpVideoEl.currentTime) > 0.25) {
+            audio.currentTime = fpVideoEl.currentTime;
+          }
+        } catch (e2) {}
+        if (fpVideoEl.requestFullscreen) {
+          await fpVideoEl.requestFullscreen();
+        } else if (fpVideoEl.webkitEnterFullscreen) {
+          // iOS: il player nativo presenta il video solo se è in riproduzione
+          if (fpVideoEl.paused) { try { await fpVideoEl.play(); } catch (e3) {} }
+          fpVideoEl.webkitEnterFullscreen();
+        }
       }
     } catch (e) {}
     haptic(12);
