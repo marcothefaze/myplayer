@@ -1114,6 +1114,28 @@ function ensureFpVideo() {
     // iOS: usciti dal player nativo, riallinea il video all'audio
     syncFpVideoToAudio();
   });
+  /* Fullscreen nativo: l'utente sfoglia/pausa il video -> la canzone segue */
+  fpVideoEl.addEventListener("seeked", () => {
+    if (fpHasVideo && fpVideoFullscreen() && isFinite(audio.duration) && isFinite(fpVideoEl.duration) &&
+        Math.abs(fpVideoEl.duration - audio.duration) < 3 &&
+        Math.abs((audio.currentTime || 0) - fpVideoEl.currentTime) > 0.25) {
+      audio.currentTime = fpVideoEl.currentTime;
+    }
+  });
+  fpVideoEl.addEventListener("pause", () => {
+    if (fpHasVideo && fpVideoFullscreen() && !audio.paused) audio.pause();
+  });
+  fpVideoEl.addEventListener("play", () => {
+    if (fpHasVideo && fpVideoFullscreen() && audio.paused) audio.play().catch(() => {});
+  });
+  fpVideoEl.addEventListener("timeupdate", () => {
+    // Aggancio continuo in fullscreen: la canzone resta sul video anche alla deriva
+    if (fpHasVideo && fpVideoFullscreen() && isFinite(audio.duration) && isFinite(fpVideoEl.duration) &&
+        Math.abs(fpVideoEl.duration - audio.duration) < 3 &&
+        Math.abs((audio.currentTime || 0) - fpVideoEl.currentTime) > 0.3) {
+      audio.currentTime = fpVideoEl.currentTime;
+    }
+  });
   return fpVideoEl;
 }
 
@@ -1147,9 +1169,24 @@ function updateFpVideo(song) {
   syncFpVideoToAudio();
 }
 
-/* Il video segue la canzone: parte/pausa con lei e si riallinea ai salti */
+/* Il video è attualmente a tutto schermo? (API standard o player nativo iOS) */
+function fpVideoFullscreen() {
+  return !!(document.fullscreenElement ||
+    (fpVideoEl && fpVideoEl.webkitDisplayingFullscreen));
+}
+
+/* Il video segue la canzone: parte/pausa con lei e si riallinea ai salti.
+   In fullscreen nativo invece il video COMANDA: l'utente lo sfoglia/pausa
+   dal player iOS, quindi la canzone segue lui e non si riscrive mai il
+   currentTime del video (altrimenti il seek dell'utente verrebbe annullato). */
 function syncFpVideoToAudio() {
   if (!fpVideoEl || !fpHasVideo) return;
+  if (fpVideoFullscreen()) {
+    if (audio.paused !== fpVideoEl.paused) {
+      if (fpVideoEl.paused) audio.pause(); else audio.play().catch(() => {});
+    }
+    return;
+  }
   if (audio.paused) {
     fpVideoEl.pause();
   } else {
@@ -1161,6 +1198,10 @@ function syncFpVideoToAudio() {
     }
   } catch (e) {}
 }
+
+/* Fullscreen: l'utente muove/pausa il video dal player nativo -> la canzone
+   segue (valgono solo lì: fuori dal fullscreen comanda l'audio). I listener
+   stanno dentro ensureFpVideo perché l'elemento video nasce lì. */
 
 audio.addEventListener("play", syncFpVideoToAudio);
 audio.addEventListener("pause", syncFpVideoToAudio);
