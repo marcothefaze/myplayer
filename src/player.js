@@ -1110,6 +1110,10 @@ function ensureFpVideo() {
     fpVideoEl.classList.add("hidden");
     if (els.fpVideoToggle) els.fpVideoToggle.classList.add("hidden");
   });
+  fpVideoEl.addEventListener("webkitendfullscreen", () => {
+    // iOS: usciti dal player nativo, riallinea il video all'audio
+    syncFpVideoToAudio();
+  });
   return fpVideoEl;
 }
 
@@ -1196,7 +1200,9 @@ if (els.fp) {
       } else if (fpVideoEl.requestFullscreen) {
         await fpVideoEl.requestFullscreen();
       } else if (fpVideoEl.webkitEnterFullscreen) {
-        fpVideoEl.webkitEnterFullscreen();   // iOS Safari: fullscreen nativo del video
+        // iOS: il player nativo presenta il video solo se è in riproduzione
+        if (fpVideoEl.paused) { try { await fpVideoEl.play(); } catch (e2) {} }
+        fpVideoEl.webkitEnterFullscreen();
       }
     } catch (e) {}
     haptic(12);
@@ -1221,6 +1227,7 @@ if (els.fp) {
     if (e.target === els.fpCollapse) return;                 // il chevron gestisce il proprio click
     if (e.target.closest(".fp-share-wrap")) return;          // il menu Condividi gestisce il proprio click
     if (e.target.closest("#fp-video-toggle")) return;        // il tasto Video gestisce il proprio click
+    if (e.target.closest("#fp-video-fs")) return;            // il tasto Tutto schermo gestisce il proprio click
     fpDragStart = e.clientY;
     els.fpHandle.setPointerCapture(e.pointerId);
   });
