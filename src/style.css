@@ -951,7 +951,7 @@ input[type="range"] {
   position: relative;
   z-index: 1;
   width: min(74vw, 56vh, 460px);
-  aspect-ratio: 1;
+  aspect-ratio: var(--fp-ar, 1);   /* si adatta al formato reale della copertina (default quadrato) */
   border-radius: 18px;
   overflow: hidden;
   background: var(--surface-2);

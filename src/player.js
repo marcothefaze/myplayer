@@ -152,12 +152,20 @@ function buildCover(container, src, name) {
   container.classList.remove("ph");
   container.innerHTML = "";
   container.classList.remove("ph");
+  if (container === els.fpCover) container.style.setProperty("--fp-ar", "1");   // reset: riquadro quadrato
   if (src) {
     const img = document.createElement("img");
     img.src = resolvePath(src);
     img.alt = "";
     img.loading = "lazy";        // fuori schermo? non si scarica adesso: il telefono parte subito
     img.decoding = "async";      // l'immagine si scompatta un secondo piano, niente blocco del paint
+    img.onload = () => {
+      // Copertine non quadrate (es. LUCCIOLE 770x470): il riquadro si adatta
+      // al formato reale dell'immagine così la copertina lo riempie per intero
+      if (container === els.fpCover && img.naturalWidth && img.naturalHeight) {
+        container.style.setProperty("--fp-ar", String(img.naturalWidth / img.naturalHeight));
+      }
+    };
     img.onerror = () => { container.classList.add("ph"); img.remove(); makePh(container, name); };
     container.appendChild(img);
   } else {
@@ -1114,6 +1122,7 @@ function updateFpVideo(song) {
   if (!fpHasVideo) {
     if (fpVideoEl) { fpVideoEl.pause(); fpVideoEl.classList.add("hidden"); }
     if (toggle) toggle.classList.add("hidden");
+    if (els.fpVideoFs) els.fpVideoFs.classList.add("hidden");
     els.fpCover.classList.remove("playing-video");   // riquadro di nuovo quadrato
     return;
   }
@@ -1121,6 +1130,7 @@ function updateFpVideo(song) {
   const v = ensureFpVideo();
   if (!v) return;
     if (toggle) toggle.classList.remove("hidden");
+    if (els.fpVideoFs) els.fpVideoFs.classList.remove("hidden");
 
   // Appende il video dentro il riquadro copertina (buildCover svuota il box)
   if (v.parentElement !== els.fpCover) els.fpCover.appendChild(v);
@@ -1183,8 +1193,10 @@ if (els.fp) {
     try {
       if (document.fullscreenElement) {
         await document.exitFullscreen();
-      } else {
+      } else if (fpVideoEl.requestFullscreen) {
         await fpVideoEl.requestFullscreen();
+      } else if (fpVideoEl.webkitEnterFullscreen) {
+        fpVideoEl.webkitEnterFullscreen();   // iOS Safari: fullscreen nativo del video
       }
     } catch (e) {}
     haptic(12);
