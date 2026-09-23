@@ -963,6 +963,10 @@ input[type="range"] {
 }
 /* Transizione fluida quadrato <-> rettangolo quando si cambia brano/toggle */
 .fp-cover { transition: width .35s ease, aspect-ratio .35s ease; }
+.fp-cover img { width: 100%; height: 100%; object-fit: contain; display: block; }
+/* Copertine non quadrate (es. LUCCIOLE orizzontale 770x470) dentro il riquadro
+   quadrato del full player: "contain" le mostra intere senza tagli/zoom.
+   Le immagini quadrate restano a copertura piena perché il riquadro combacia. */
 .fp-cover.ph { display: flex; align-items: center; justify-content: center; }
 .fp-cover.ph span.ph-title { font-size: 3rem; font-weight: 800; color: rgba(255, 255, 255, .7); }
 

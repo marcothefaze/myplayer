@@ -150,10 +150,14 @@ function initials(name) {
 function buildCover(container, src, name) {
   container.innerHTML = "";
   container.classList.remove("ph");
+  container.innerHTML = "";
+  container.classList.remove("ph");
   if (src) {
     const img = document.createElement("img");
     img.src = resolvePath(src);
     img.alt = "";
+    img.loading = "lazy";        // fuori schermo? non si scarica adesso: il telefono parte subito
+    img.decoding = "async";      // l'immagine si scompatta un secondo piano, niente blocco del paint
     img.onerror = () => { container.classList.add("ph"); img.remove(); makePh(container, name); };
     container.appendChild(img);
   } else {
@@ -409,6 +413,15 @@ function buildAlbums() {
     if (!album.cover && song.copertina) album.cover = song.copertina;
   });
   state.albums = [...map.values()];
+
+  /* La copertina "ufficiale" dell'album è quella del suo JSON, non la prima
+     dei brani: vince sempre l'immagine dell'header album. Fallback = primo
+     brano con copertina. */
+  const byTitle = new Map(state.albums.map((a) => [a.title, a]));
+  (rawAlbums || []).forEach((ra) => {
+    const a = byTitle.get(ra.titolo || ra.title);
+    if (a && (ra.copertina || ra.copertina !== "")) a.cover = ra.copertina;
+  });
 
   /* Applica l'ordine personalizzato; i non elencati restano in coda */
   state.albums.sort((a, b) => {
@@ -1060,6 +1073,29 @@ let fpVideoEl = null;     // elemento <video> dentro la copertina del full playe
 let fpHasVideo = false;   // il brano corrente ha un videoclip?
 let fpVideoOn = true;     // preferenza utente: video visibile (true) o copertina (false)
 
+/* Ricava il file copertina più vicino possibile allo slug indicato nei JSON:
+   i brani salvano "assets/covers/COCONUT_ICE_CR_MIX" (slug accorciato) ma i
+   file hanno nomi completi ("..._-_SSG.jpeg"). La copertina va risolta per
+   prefisso in runtime, così ogni album trova la sua immagine vera. */
+function resolveCover(src) {
+  if (!src) return "";
+  if (/\.(jpe?g|png|webp)$/i.test(src)) return src;   // già estensione esplicita
+  const slug = String(src).split("/").pop();
+  const dir = "assets/covers/";
+  try {
+    const files = [...new Set(
+      document.querySelectorAll('link[rel="preload"][as="image"]')
+    )].length ? [] : assetCoverFiles;
+    const hit = files.find((f) => f.startsWith(slug) || slug.startsWith(f.split("_")[0]));
+    if (hit) return dir + hit;
+  } catch (e) {}
+  return src;   // nessun match: resterà il segnaposto iniziali
+}
+
+/* Indice dei file copertina esistenti (caricato via fetch + JSON) */
+let assetCoverFiles = null;
+let assetCoverFilesLoaded = false;
+
 function ensureFpVideo() {
   if (fpVideoEl || !els.fpCover) return fpVideoEl;
   fpVideoEl = document.createElement("video");
@@ -1068,7 +1104,7 @@ function ensureFpVideo() {
   fpVideoEl.loop = true;                // se il video è più corto della canzone riparte
   fpVideoEl.playsInline = true;         // iOS: niente fullscreen automatico
   fpVideoEl.setAttribute("playsinline", "");
-  fpVideoEl.preload = "auto";
+  fpVideoEl.preload = "metadata";   // niente download dei ~22MB all'apertura: solo l'header, il resto arriva al play
   fpVideoEl.addEventListener("error", () => {
     // Video mancante/non leggibile: torna la copertina e sparisce il pulsante
     fpHasVideo = false;
