@@ -414,15 +414,6 @@ function buildAlbums() {
   });
   state.albums = [...map.values()];
 
-  /* La copertina "ufficiale" dell'album è quella del suo JSON, non la prima
-     dei brani: vince sempre l'immagine dell'header album. Fallback = primo
-     brano con copertina. */
-  const byTitle = new Map(state.albums.map((a) => [a.title, a]));
-  (rawAlbums || []).forEach((ra) => {
-    const a = byTitle.get(ra.titolo || ra.title);
-    if (a && (ra.copertina || ra.copertina !== "")) a.cover = ra.copertina;
-  });
-
   /* Applica l'ordine personalizzato; i non elencati restano in coda */
   state.albums.sort((a, b) => {
     const ia = ALBUM_ORDER.indexOf(a.title);
