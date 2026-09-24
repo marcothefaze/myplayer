@@ -1073,6 +1073,9 @@ let fpHasVideo = false;   // il brano corrente ha un videoclip?
 let fpVideoOn = true;     // preferenza utente: video visibile (true) o copertina (false)
 let fpLastDriftSync = 0;  // istante dell'ultima correzione di deriva in fullscreen
 let fpStartSyncPending = false; // riallineo al frame in attesa del "playing"
+let fpLastRateNudge = 0;  // istante dell'ultimo micro-aggiustamento di velocità
+let fpLastVideoTime = -1; // ultimo currentTime del video (per rilevare gli stalli)
+let fpStallChecks = 0;    // quanti check di fila il video non è avanzato
 
 /* Ricava il file copertina più vicino possibile allo slug indicato nei JSON:
    i brani salvano "assets/covers/COCONUT_ICE_CR_MIX" (slug accorciato) ma i
@@ -1113,7 +1116,11 @@ function ensureFpVideo() {
     if (els.fpVideoToggle) els.fpVideoToggle.classList.add("hidden");
   });
   fpVideoEl.addEventListener("webkitendfullscreen", () => {
-    // iOS: usciti dal player nativo, riallinea il video all'audio
+    // iOS: usciti dal player nativo il video resta fermo con la decodifica
+    // fermata. Prima si riallinea la canzone al video (che fin lì comandava),
+    // poi syncFpVideoToAudio lo fa ripartire senza rifare seek immediati
+    // (erano loro a bloccare la decodifica e congelare il video)
+    fpAlignAudioToVideo();
     syncFpVideoToAudio();
   });
   /* Fullscreen nativo: l'utente sfoglia/pausa il video -> la canzone segue */
@@ -1138,19 +1145,9 @@ function ensureFpVideo() {
       if (!fpVideoEl.paused && audio.paused) audio.play().catch(() => {});
     }, 300);
   });
-  fpVideoEl.addEventListener("timeupdate", () => {
-    // Correzione di deriva RARA in fullscreen: solo se lo scarto supera 1.5s
-    // e non più di una volta ogni 10s. Il sync continuo (0.3s) faceva andare
-    // la canzone a scatti: ogni seek dell'audio interrompe la riproduzione.
-    if (!fpHasVideo || !fpVideoFullscreen() || !isFinite(audio.duration) || !isFinite(fpVideoEl.duration) ||
-        Math.abs(fpVideoEl.duration - audio.duration) >= 3) return;
-    const now = Date.now();
-    if (now - fpLastDriftSync < 10000) return;
-    if (Math.abs((audio.currentTime || 0) - fpVideoEl.currentTime) > 1.5) {
-      audio.currentTime = fpVideoEl.currentTime;
-      fpLastDriftSync = now;
-    }
-  });
+  /* La correzione di deriva e il rilevamento stalli girano sul TIMEUPDATE
+     dell'AUDIO (fpDriftCheck): l'audio è il conduttore e i suoi eventi
+     arrivano sempre, anche quando il video è congelato: così si riprende. */
   return fpVideoEl;
 }
 
@@ -1199,6 +1196,60 @@ function fpVideoFullscreen() {
     (fpVideoEl && fpVideoEl.webkitDisplayingFullscreen));
 }
 
+/* Fa ripartire il video in modo robusto: su iOS, appena usciti dal player
+   nativo, il primo play() spesso non basta (la decodifica è ferma). Si
+   riprova dopo 250ms e 900ms. MAI se la canzone è in pausa (non si deve
+   mai vedere un video che gira da solo senza audio). */
+function fpVideoResume() {
+  if (!fpVideoEl || audio.paused) return;
+  if (!fpVideoEl.paused) return;
+  const attempt = () => {
+    try {
+      fpVideoEl.playbackRate = 1;   // mai ripartire con una velocità di nudge
+      const p = fpVideoEl.play();
+      if (p && p.catch) p.catch(() => {});
+    } catch (e) {}
+  };
+  attempt();
+  setTimeout(() => { if (fpVideoEl && fpVideoEl.paused && !audio.paused) attempt(); }, 250);
+  setTimeout(() => { if (fpVideoEl && fpVideoEl.paused && !audio.paused) attempt(); }, 900);
+}
+
+/* Allinea la CANZONE al video (si usa quando il video comandava:
+   in fullscreen e appena usciti, così non salta indietro) */
+function fpAlignAudioToVideo() {
+  if (!fpVideoEl || !fpHasVideo) return;
+  try {
+    if (isFinite(audio.duration) && isFinite(fpVideoEl.duration) &&
+        Math.abs(fpVideoEl.duration - audio.duration) < 3 &&
+        Math.abs((audio.currentTime || 0) - fpVideoEl.currentTime) > 0.25) {
+      audio.currentTime = fpVideoEl.currentTime;
+    }
+  } catch (e) {}
+}
+
+/* Allinea il VIDEO alla canzone appena il video parte DAVVERO: la decodifica
+   introduce un ritardo e senza questo riallineo il video parte indietro.
+   Il seek avviene SOLO quando il video sta già girando: rifarlo subito dopo
+   play() aborted la decodifica iOS e congelava il video. */
+function fpAlignVideoOnPlaying() {
+  if (!fpVideoEl) return;
+  if (fpStartSyncPending) return;
+  fpStartSyncPending = true;
+  fpVideoEl.addEventListener("playing", () => {
+    fpStartSyncPending = false;
+    try {
+      if (fpHasVideo && !fpVideoFullscreen() && !audio.paused &&
+          isFinite(fpVideoEl.duration) && isFinite(audio.duration) &&
+          Math.abs(fpVideoEl.duration - audio.duration) < 3 &&
+          Math.abs((audio.currentTime || 0) - fpVideoEl.currentTime) > 0.25) {
+        fpVideoEl.playbackRate = 1;
+        fpVideoEl.currentTime = audio.currentTime % fpVideoEl.duration;
+      }
+    } catch (e2) {}
+  }, { once: true });
+}
+
 /* Il video segue la canzone: parte/pausa con lei e si riallinea ai salti.
    In fullscreen nativo invece il video COMANDA: l'utente lo sfoglia/pausa
    dal player iOS, quindi la canzone segue lui e non si riscrive mai il
@@ -1213,29 +1264,87 @@ function syncFpVideoToAudio() {
   }
   if (audio.paused) {
     fpVideoEl.pause();
-  } else {
-    fpVideoEl.play().catch(() => {});
-    // Riallinea il frame appena il video parte DAVVERO: la decodifica introduce
-    // un ritardo e senza questo riallineo il video parte dopo la canzone
-    if (!fpStartSyncPending) {
-      fpStartSyncPending = true;
-      fpVideoEl.addEventListener("playing", () => {
-        fpStartSyncPending = false;
-        try {
-          if (isFinite(fpVideoEl.duration) && isFinite(audio.duration) &&
-              Math.abs(fpVideoEl.duration - audio.duration) < 3 &&
-              Math.abs((audio.currentTime || 0) - fpVideoEl.currentTime) > 0.15) {
-            fpVideoEl.currentTime = audio.currentTime % fpVideoEl.duration;
-          }
-        } catch (e2) {}
-      }, { once: true });
-    }
+    return;
   }
-  try {
-    if (fpVideoEl.duration && isFinite(fpVideoEl.duration) && isFinite(audio.duration)) {
-      fpVideoEl.currentTime = audio.currentTime % fpVideoEl.duration;
+  // Canzone in riproduzione -> il video deve andare e restare sincronizzato
+  fpVideoResume();
+  fpAlignVideoOnPlaying();
+}
+
+/* Correzione di deriva + rilevamento stalli, in OGNI situazione. Gira sul
+   timeupdate dell'AUDIO (~4 eventi al secondo finché suona): anche se il
+   video è congelato gli eventi arrivano lo stesso e lo si sblocca.
+   - Fullscreen: comanda il video -> si corregge la canzone (raro).
+   - Fuori dal fullscreen: comanda la canzone ->
+       * video fermo/pausa mentre la canzone va -> si fa ripartire;
+       * video che non avanza da ~1.2s (stallo) -> si riporta sulla canzone;
+       * scarto grande (>1s) -> seek del video (raro, max 1 ogni 3s);
+       * scarto piccolo (0.1-1s) -> micro-velocità (1.08x/0.92x) SENZA seek:
+         la decodifica non si interrompe mai, il video non scatta e non
+         si blocca, e riallinea la deriva in un paio di secondi. */
+function fpDriftCheck() {
+  if (!fpHasVideo || !fpVideoEl || audio.paused) return;
+  if (!isFinite(audio.duration) || !isFinite(fpVideoEl.duration)) return;
+  const durMatch = Math.abs(fpVideoEl.duration - audio.duration) < 3;
+  const drift = (audio.currentTime || 0) - (fpVideoEl.currentTime || 0);
+  const now = Date.now();
+
+  if (fpVideoFullscreen()) {
+    // Il video comanda: correzione RARA della canzone, come prima
+    if (durMatch && now - fpLastDriftSync >= 10000 && Math.abs(drift) > 1.5) {
+      try { audio.currentTime = fpVideoEl.currentTime; } catch (e) {}
+      fpLastDriftSync = now;
     }
-  } catch (e) {}
+    fpLastVideoTime = -1;
+    fpStallChecks = 0;
+    return;
+  }
+
+  // Fuori dal fullscreen: comanda la canzone
+  if (!durMatch) return;
+
+  if (fpVideoEl.paused) {          // video fermo mentre la canzone va: riparte
+    fpStallChecks = 0;
+    fpLastVideoTime = -1;
+    fpVideoResume();
+    return;
+  }
+
+  // Rilevamento stallo: il video non avanza (~1.2s di check di fila)
+  if (fpLastVideoTime >= 0 && Math.abs(fpVideoEl.currentTime - fpLastVideoTime) < 0.04) {
+    fpStallChecks++;
+    if (fpStallChecks >= 5) {
+      try {
+        fpVideoEl.playbackRate = 1;
+        fpVideoEl.currentTime = Math.max(0, Math.min(fpVideoEl.duration - 0.05, audio.currentTime));
+      } catch (e) {}
+      fpStallChecks = 0;
+      fpLastVideoTime = -1;
+      fpLastDriftSync = now;
+      return;
+    }
+  } else {
+    fpStallChecks = 0;
+  }
+  fpLastVideoTime = fpVideoEl.currentTime;
+
+  if (Math.abs(drift) <= 0.1) {    // sincronizzati: velocità normale
+    if (fpVideoEl.playbackRate !== 1) fpVideoEl.playbackRate = 1;
+    return;
+  }
+  if (Math.abs(drift) > 1.0) {     // scarto grande: seek del video (raro)
+    if (now - fpLastDriftSync >= 3000) {
+      try {
+        fpVideoEl.playbackRate = 1;
+        fpVideoEl.currentTime = Math.max(0, Math.min(fpVideoEl.duration - 0.05, audio.currentTime));
+      } catch (e) {}
+      fpLastDriftSync = now;
+    }
+  } else if (now - fpLastRateNudge >= 1200) {
+    // Scarto piccolo: micro-accelerazione/rallentamento senza seek
+    fpVideoEl.playbackRate = drift > 0 ? 1.08 : 0.92;
+    fpLastRateNudge = now;
+  }
 }
 
 /* Fullscreen: l'utente muove/pausa il video dal player nativo -> la canzone
@@ -1244,7 +1353,26 @@ function syncFpVideoToAudio() {
 
 audio.addEventListener("play", syncFpVideoToAudio);
 audio.addEventListener("pause", syncFpVideoToAudio);
-audio.addEventListener("seeked", syncFpVideoToAudio);
+
+/* La canzone viene sfogliata (seek bar, tastiera, player di sistema):
+   il video salta subito al nuovo punto e resta sincronizzato */
+audio.addEventListener("seeked", () => {
+  if (!fpHasVideo || !fpVideoEl || fpVideoFullscreen()) return;
+  if (audio.paused) { syncFpVideoToAudio(); return; }
+  fpVideoResume();
+  try {
+    if (isFinite(fpVideoEl.duration) && isFinite(audio.duration) &&
+        Math.abs(fpVideoEl.duration - audio.duration) < 3 &&
+        Math.abs((audio.currentTime || 0) - fpVideoEl.currentTime) > 0.25) {
+      fpVideoEl.playbackRate = 1;
+      fpVideoEl.currentTime = audio.currentTime % fpVideoEl.duration;
+    }
+  } catch (e) {}
+});
+
+/* Cuore del fix: deriva, stalli e ripresa del video controllati dal
+   timeupdate dell'audio in OGNI situazione (non solo in fullscreen) */
+audio.addEventListener("timeupdate", fpDriftCheck);
 
 if (els.fp) {
   // Clic sulla copertina/brano nella barra in basso -> apre il full player
@@ -1280,13 +1408,7 @@ if (els.fp) {
       } else {
         // Allinea la canzone al video PRIMA di consegnare il controllo
         // all'utente: si entra in fullscreen già sincronizzati
-        try {
-          if (isFinite(audio.duration) && isFinite(fpVideoEl.duration) &&
-              Math.abs(fpVideoEl.duration - audio.duration) < 3 &&
-              Math.abs((audio.currentTime || 0) - fpVideoEl.currentTime) > 0.25) {
-            audio.currentTime = fpVideoEl.currentTime;
-          }
-        } catch (e2) {}
+        fpAlignAudioToVideo();
         if (fpVideoEl.requestFullscreen) {
           await fpVideoEl.requestFullscreen();
         } else if (fpVideoEl.webkitEnterFullscreen) {
@@ -1304,10 +1426,10 @@ if (els.fp) {
   });
   document.addEventListener("fullscreenchange", () => {
     if (fpVideoEl && !document.fullscreenElement) {
-      // Usciti dal fullscreen: riallinea al player e ripristina l'audio
-      if (fpVideoOn && fpVideoEl.classList.contains("hidden")) {
-        // se era attivo lo state del video continua a valere: non forzo nulla
-      }
+      // Usciti dal fullscreen (desktop/Android): la canzone si riallinea al
+      // video (che fin lì comandava), poi il video riparte e resta sync
+      fpAlignAudioToVideo();
+      fpVideoResume();
       syncFpVideoToAudio();
     }
   });
