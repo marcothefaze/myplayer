@@ -208,6 +208,11 @@ document.addEventListener("pointerdown", (e) => {
       haptic(8);
     }
   }
+  /* Niente ripple sui tasti play/pausa: su un cerchio bianco l'alone crea
+     solo rumore e copre l'icona (segnalato da Marco). Lì la pressione è
+     la scala + l'icona nera fissa, come su Spotify. Il ripple resta su
+     tutti gli altri bottoni/canzoni/copertine. */
+  if (t.classList.contains("btn-play") || t.classList.contains("fp-play")) return;
   // Ripple: sulle copertine della home va nel figlio (ha già overflow
   // hidden e i bordi arrotondati, così il cerchio non esce dal riquadro)
   const host = t.classList.contains("album-card") && t.firstElementChild
@@ -217,8 +222,7 @@ document.addEventListener("pointerdown", (e) => {
   if (!rect.width && !rect.height) return;
   const size = Math.max(rect.width, rect.height) * 2.2;
   const rip = document.createElement("span");
-  rip.className = "ripple" +
-    (t.classList.contains("btn-play") || t.classList.contains("fp-play") ? " dark" : "");
+  rip.className = "ripple";
   rip.style.width = rip.style.height = size + "px";
   rip.style.left = (e.clientX - rect.left - size / 2) + "px";
   rip.style.top = (e.clientY - rect.top - size / 2) + "px";
@@ -653,6 +657,14 @@ function currentIndex() {
   return state.queuePos >= 0 ? state.queue[state.queuePos] : -1;
 }
 
+/* Anti-corsa sugli skip rapidi: playToken identifica l'ultimo brano
+   richiesto (solo il suo retry può partire), audioPauseSeen distingue una
+   pausa VOLUTA dall'utente (evento "pause") da una play rifiutata da iOS
+   (nessun evento: il brano non è mai partito). */
+let playToken = 0;
+let audioPauseSeen = false;
+let audioErrorRetried = false;
+
 async function playSong(songIdx, openFull) {
   if (songIdx < 0) return;
   const pos = state.queue.indexOf(songIdx);
@@ -667,7 +679,18 @@ async function playSong(songIdx, openFull) {
      titolo/copertina e aprire il full player: cliccando una canzone la UI
      restava congelata e sembrava lenta. Ora la UI si aggiorna all'istante
      mentre l'audio bufferizza in background. */
+  const myToken = ++playToken;      // anti-corsa: solo l'ULTIMO skip comanda
+  audioErrorRetried = false;        // nuovo brano: di nuovo un tentativo su errore
   audio.play().catch((err) => console.warn("Riproduzione bloccata dal browser:", err));
+  /* Skip rapidissimi: iOS può rifiutare il play mentre il cambio traccia è
+     ancora in corsa -> player congelato. Si riprova una volta dopo 400ms ma
+     SOLO se: è ancora l'ultimo skip, il brano non è mai partito e l'utente
+     non ha messo in pausa (la pausa voluta emette l'evento "pause",
+     una play rifiutata no: così non si combatte mai con l'utente). */
+  setTimeout(() => {
+    if (myToken !== playToken || !audio.paused || audioPauseSeen) return;
+    audio.play().catch(() => {});
+  }, 400);
   updatePlayerInfo(song);
   highlightActive();
   if (openFull) openFullPlayer();   // selezione esplicita -> full player automatico
@@ -875,12 +898,23 @@ if (els.fpVolumeIcon) els.fpVolumeIcon.addEventListener("click", toggleMute);
 audio.addEventListener("play", () => {
   setPlayIcons(true);
   document.body.classList.add("is-playing");
+  audioPauseSeen = false;
   syncPlaybackState();
 });
 audio.addEventListener("pause", () => {
   setPlayIcons(false);
   document.body.classList.remove("is-playing");
+  audioPauseSeen = true;    // pausa voluta: i retry del play non devono riprendere
   syncPlaybackState();
+});
+
+/* Errore di caricamento (capita su skip rapidissimi per una corsa di rete):
+   un SOLO tentativo di ripresa dopo 500ms, poi se il file è davvero
+   rotto ci si ferma senza loop né schermate di errore */
+audio.addEventListener("error", () => {
+  if (audioErrorRetried) return;
+  audioErrorRetried = true;
+  setTimeout(() => { if (audio.paused) audio.play().catch(() => {}); }, 500);
 });
 
 // A fine brano: ripeti singolo, altrimenti passa al successivo
@@ -914,7 +948,13 @@ const mediaSession = typeof navigator !== "undefined" && navigator.mediaSession
   : null;
 
 if (mediaSession) {
-  mediaSession.setActionHandler("play", () => audio.play());
+  /* SENZA catch: se iOS rifiuta il play (capita con skip rapidissimi, quando
+     il cambio traccia è ancora in corsa) la rejection non gestita faceva
+     comparire la schermata di errore dell'app. Con un retry corto. */
+  mediaSession.setActionHandler("play", () => {
+    audio.play().catch(() =>
+      setTimeout(() => audio.play().catch(() => {}), 300));
+  });
   mediaSession.setActionHandler("pause", () => audio.pause());
   mediaSession.setActionHandler("previoustrack", () => skipPrev());
   mediaSession.setActionHandler("nexttrack", () => skipNext());
@@ -1199,12 +1239,19 @@ function updateFpVideo(song) {
   if (els.fpVideoFs && els.fpVideoFs.parentElement !== els.fpCover) {
     els.fpCover.appendChild(els.fpVideoFs);
   }
-  v.setAttribute("src", resolvePath(src));
-  v.preload = "auto";   // bufferizza il videoclip mentre sei nel full player:
-                        // play istantaneo (niente lag iniziale) e seek fluidi
-                        // in fullscreen. All'apertura dell'app non scarica
-                        // nulla: parte solo quando apri un brano con video.
-  try { v.currentTime = 0; } catch (e) {}
+  /* Il src si riscrive SOLO se cambia davvero: prima ogni skip da/verso un
+     brano con video ricaricava tutto il clip (22MB) da capo — lento e su
+     iOS le corse di caricamento possono rompersi. Tornando sul brano il
+     video riparte istantaneo da dov'era. */
+  const fullSrc = resolvePath(src);
+  if (v.getAttribute("src") !== fullSrc) {
+    v.setAttribute("src", fullSrc);
+    v.preload = "auto";   // bufferizza il videoclip mentre sei nel full player:
+                          // play istantaneo (niente lag iniziale) e seek fluidi
+                          // in fullscreen. All'apertura dell'app non scarica
+                          // nulla: parte solo quando apri un brano con video.
+    try { v.currentTime = 0; } catch (e) {}
+  }
 
   // Riquadro rettangolare quando il video è visibile (classi annidate no-dip)
   els.fpCover.classList.toggle("playing-video", fpVideoOn);
@@ -1351,7 +1398,7 @@ function fpDriftCheck() {
   fpLastVideoTime = fpVideoEl.currentTime;
 
   if (Math.abs(drift) <= 0.1) {    // sincronizzati: velocità normale
-    if (fpVideoEl.playbackRate !== 1) fpVideoEl.playbackRate = 1;
+    try { if (fpVideoEl.playbackRate !== 1) fpVideoEl.playbackRate = 1; } catch (e) {}
     return;
   }
   if (Math.abs(drift) > 1.0) {     // scarto grande: seek del video (raro)
@@ -1364,7 +1411,7 @@ function fpDriftCheck() {
     }
   } else if (now - fpLastRateNudge >= 1200) {
     // Scarto piccolo: micro-accelerazione/rallentamento senza seek
-    fpVideoEl.playbackRate = drift > 0 ? 1.08 : 0.92;
+    try { fpVideoEl.playbackRate = drift > 0 ? 1.08 : 0.92; } catch (e) {}
     fpLastRateNudge = now;
   }
 }

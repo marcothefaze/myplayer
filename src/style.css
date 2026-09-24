@@ -151,10 +151,8 @@ button:active { transform: scale(.94); }
   animation: ripple .55s ease-out forwards;
   pointer-events: none;
 }
-/* Variante scura per i pulsanti chiari (play), dove il bianco non si vede */
-.ripple.dark {
-  background: radial-gradient(circle, rgba(10, 10, 16, .22) 0%, rgba(10, 10, 16, .1) 45%, transparent 68%);
-}
+/* Variante scura rimossa: sui tasti play/pausa (cerchio bianco) il ripple
+   copre l'icona e crea alone (segnalato da Marco): lì nessun ripple. */
 @keyframes ripple {
   to { transform: scale(1); opacity: 0; }
 }
@@ -764,8 +762,8 @@ body.is-playing .eq { opacity: 1; }
   margin: 0 6px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, .5);
 }
-.btn-play:hover { background: #fff; transform: scale(1.06); }
-.btn-play:active { transform: scale(.94); }
+.btn-play:hover { background: #fff; transform: scale(1.06); color: #000; }
+.btn-play:active { transform: scale(.94); color: #000; }
 
 .btn-play .ctrl-icon { width: 24px; height: 24px; }
 
@@ -1166,8 +1164,8 @@ input[type="range"] {
   margin: 0 10px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, .5);
 }
-.fp-play:hover { background: #fff; transform: scale(1.05); }
-.fp-play:active { transform: scale(.94); }
+.fp-play:hover { background: #fff; transform: scale(1.05); color: #000; }
+.fp-play:active { transform: scale(.94); color: #000; }
 .fp-play .ctrl-icon { width: 30px; height: 30px; }
 
 .fp-volume {
