@@ -38,11 +38,14 @@ body {
 
 /* Cielo stellato ricco in puro CSS: grappoli di stelle di dimensione e
    colore vari (bianche + viola/blu), tassellate con periodi diversi per
-   non sembrare ripetitive, con un lieve "respiro" di brillio. */
+   non sembrare ripetitive, con un lieve "respiro" di brillio.
+   La deriva è animata in TRANSFORM (GPU, un solo compositing) su un layer
+   più grande dello schermo: il vecchio background-position ridisegnava
+   TUTTO lo schermo a ogni frame ed era la causa principale dei lag. */
 body::before {
   content: "";
   position: fixed;
-  inset: 0;
+  inset: -160px;   /* oltre i bordi: la deriva in transform non li mostra mai */
   pointer-events: none;
   z-index: 0;
   background-image:
@@ -73,10 +76,10 @@ body::before {
     410px 410px, 440px 440px, 330px 330px, 250px 250px,
     360px 360px, 300px 300px, 340px 340px, 420px 420px;
   opacity: .85;
+  will-change: transform;   /* layer proprio della GPU: un repaint, poi solo compositing */
   animation:
     star-breathe 7s ease-in-out infinite,
-    star-drift 90s linear infinite alternate,
-    star-sway 23s ease-in-out infinite alternate;
+    star-float 110s ease-in-out infinite alternate;
 }
 
 @keyframes star-breathe {
@@ -84,16 +87,11 @@ body::before {
   50%      { opacity: .92; }
 }
 
-/* Lenta deriva del cielo stellato: lo sfondo sembra vivo, in movimento */
-@keyframes star-drift {
-  from { background-position: 0 0; }
-  to   { background-position: 120px 70px; }
-}
-
-/* Dolce oscillazione sopra/sotto delle nebulose */
-@keyframes star-sway {
-  0%   { transform: translateY(-6px); }
-  100% { transform: translateY(6px); }
+/* Lenta deriva diagonale in transform (GPU): lo sfondo sembra vivo e in
+   movimento senza ridisegnare nulla (il movimento include il vecchio sway) */
+@keyframes star-float {
+  from { transform: translate3d(-12px, -10px, 0); }
+  to   { transform: translate3d(108px, 80px, 0); }
 }
 
 /* Stella cadente occasionale (molto leggera, ogni ~9 secondi) */
@@ -123,19 +121,43 @@ body::after {
 @media (prefers-reduced-motion: reduce) {
   body::before { animation: none; }
   body::after { animation: none; opacity: 0; }
+  .view:not(.hidden) { animation: none; }
+  body.has-track .player-bar { animation: none; }
+  .ripple { animation-duration: .01s; }
 }
 
 .hidden { display: none !important; }
 
-/* Al tocco: niente alone blu, niente selezione del testo, lampo di luce
-   alla pressione (feedback visivo anche dove le vibrazioni non ci sono) */
+/* Al tocco: niente alone blu, niente selezione del testo. La pressione
+   usa TRANSFORM (GPU, un solo compositing) invece di filter (che ridisegnava
+   tutto e con il backdrop-filter della barra costava caro): più fluido. */
 button {
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
   user-select: none;
   -webkit-user-select: none;
+  transition: transform .12s ease;
 }
-button:active { filter: brightness(1.35); }
+button:active { transform: scale(.94); }
+
+/* ---------- RIPPLE al tocco (cerchio che si espande dal dito) ----------
+   Feedback rapido e d'impatto su bottoni, canzoni e copertine. Un solo
+   elemento per tocco, animato in transform (GPU): zero lag. */
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, .32) 0%, rgba(160, 150, 255, .18) 45%, transparent 68%);
+  transform: scale(0);
+  animation: ripple .55s ease-out forwards;
+  pointer-events: none;
+}
+/* Variante scura per i pulsanti chiari (play), dove il bianco non si vede */
+.ripple.dark {
+  background: radial-gradient(circle, rgba(10, 10, 16, .22) 0%, rgba(10, 10, 16, .1) 45%, transparent 68%);
+}
+@keyframes ripple {
+  to { transform: scale(1); opacity: 0; }
+}
 
 /* ---------- Barra superiore ---------- */
 
@@ -161,6 +183,8 @@ button:active { filter: brightness(1.35); }
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  overflow: hidden;            /* il ripple resta dentro il cerchio */
   transition: background .15s ease, transform .1s ease;
 }
 .back-btn:hover { background: #2a2a38; }
@@ -183,6 +207,8 @@ button:active { filter: brightness(1.35); }
   letter-spacing: .3px;
   cursor: pointer;
   flex-shrink: 0;
+  position: relative;
+  overflow: hidden;            /* il ripple resta dentro la pill */
   transition: background .15s ease, color .15s ease, border-color .15s ease, transform .1s ease;
 }
 .refresh-btn svg { width: 16px; height: 16px; display: block; }
@@ -530,11 +556,14 @@ button:active { filter: brightness(1.35); }
   padding: 9px 14px;
   border-radius: 10px;
   cursor: pointer;
-  transition: background .12s ease;
+  position: relative;
+  overflow: hidden;            /* il ripple resta dentro la riga */
+  transition: background .12s ease, transform .1s ease;
   text-align: left;
 }
 
 .track-row:hover { background: var(--surface-2); }
+.track-row:active { background: var(--surface-2); transform: scale(.985); }
 
 .track-num {
   width: 24px;
@@ -599,8 +628,15 @@ button:active { filter: brightness(1.35); }
 }
 
 /* All'apertura dell'app il miniplayer è invisibile; compare solo quando
-   si avvia un brano (classe "has-track" aggiunta dal player) */
+   si avvia un brano (classe "has-track" aggiunta dal player), entrando
+   con una risalita rapida invece che apparire di colpo */
 body:not(.has-track) .player-bar { display: none; }
+body.has-track .player-bar { animation: bar-in .3s cubic-bezier(.32, .72, 0, 1) both; }
+
+@keyframes bar-in {
+  from { transform: translateY(100%); }
+  to   { transform: none; }
+}
 
 .player-progress { grid-area: progress; }
 .track-info { grid-area: info; }
@@ -647,17 +683,29 @@ body:not(.has-track) .player-bar { display: none; }
 body.is-playing .eq { opacity: 1; }
 .eq i {
   flex: 1;
-  height: 35%;
+  height: 100%;
   background: #fff;
   border-radius: 2px;
+  transform-origin: bottom;
+  transform: scaleY(.3);
   animation: eq-bounce .8s ease-in-out infinite;
 }
 .eq i:nth-child(2) { animation-delay: .18s; }
 .eq i:nth-child(3) { animation-delay: .36s; }
 
 @keyframes eq-bounce {
-  0%, 100% { height: 30%; }
-  50% { height: 100%; }
+  0%, 100% { transform: scaleY(.3); }
+  50% { transform: scaleY(1); }
+}
+
+/* ---------- Viste: comparsa rapida con lieve risalita (GPU) ----------
+   L'animazione riparte ogni volta che la vista torna visibile:
+   home e album non appaiono più di colpo ma con una micro-transizione. */
+.view:not(.hidden) { animation: view-in .26s ease both; }
+
+@keyframes view-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
 }
 
 .track-meta { min-width: 0; line-height: 1.25; }
@@ -687,22 +735,27 @@ body.is-playing .eq { opacity: 1; }
   gap: 8px;
 }
 
+/* ---------- Controlli stile Spotify: icone grigie che schiariscono a
+   hover/tocco (con lieve ingrandimento), nessun cerchio di sfondo ---------- */
 .ctrl-btn {
   width: 38px;
   height: 38px;
   border: none;
   border-radius: 50%;
   background: none;
-  color: var(--text);
+  color: #b3b3b3;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color .15s ease, background .15s ease, transform .1s ease;
+  position: relative;
+  overflow: hidden;            /* il ripple resta dentro il cerchio */
+  transition: color .15s ease, transform .1s ease;
 }
-.ctrl-btn:hover { color: var(--accent-2); background: rgba(255, 255, 255, .06); }
-.ctrl-btn:active { transform: scale(.92); }
+.ctrl-btn:hover { color: #fff; transform: scale(1.06); }
+.ctrl-btn:active { transform: scale(.92); color: #fff; }
 
+/* Pulsante play: cerchio BIANCO con icona NERA, la firma di Spotify */
 .btn-play {
   width: 52px;
   height: 52px;
@@ -711,13 +764,25 @@ body.is-playing .eq { opacity: 1; }
   margin: 0 6px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, .5);
 }
-.btn-play:hover { background: var(--accent); color: #fff; }
+.btn-play:hover { background: #fff; transform: scale(1.06); }
+.btn-play:active { transform: scale(.94); }
 
 .btn-play .ctrl-icon { width: 24px; height: 24px; }
 
-/* Stati attivi di shuffle e repeat */
-.ctrl-btn.on { color: var(--accent); }
-.ctrl-btn.on:hover { color: var(--accent); }
+/* Stati attivi di shuffle e repeat: verde Spotify + puntino sotto l'icona */
+.ctrl-btn.on { color: #1ed760; }
+.ctrl-btn.on:hover { color: #1ed760; }
+.ctrl-btn.on::after {
+  content: "";
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #1ed760;
+}
 
 .btn-repeat { position: relative; }
 .rep-badge {
@@ -853,13 +918,13 @@ input[type="range"] {
     var(--bg);
   transform: translateY(105%);
   visibility: hidden;
-  transition: transform .4s ease, visibility 0s .4s;
+  transition: transform .38s cubic-bezier(.32, .72, 0, 1), visibility 0s .38s;
 }
 
 .full-player.open {
   transform: translateY(0);
   visibility: visible;
-  transition: transform .4s ease;
+  transition: transform .38s cubic-bezier(.32, .72, 0, 1);
 }
 
 .fp-bg {
@@ -943,9 +1008,11 @@ input[type="range"] {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background .15s ease;
+  overflow: hidden;            /* il ripple resta dentro il cerchio */
+  transition: background .15s ease, transform .1s ease;
 }
 .fp-collapse:hover { background: rgba(255, 255, 255, .18); }
+.fp-collapse:active { transform: scale(.9); }
 
 .fp-cover {
   position: relative;
@@ -989,8 +1056,8 @@ input[type="range"] {
   width: min(88vw, 66vh, 560px);
 }
 
-/* Il tasto Video è attivo quando il clip è visibile */
-.fp-video-toggle.on { background: var(--accent); color: #fff; border-color: transparent; }
+/* Il tasto Video è attivo quando il clip è visibile: chip verde Spotify */
+.fp-video-toggle.on { background: #1ed760; color: #000; border-color: transparent; }
 
 /* Il tasto "Tutto schermo" galleggia sopra il video, angolo alto destro */
 .fp-cover .fp-video-fs {
@@ -1026,6 +1093,7 @@ input[type="range"] {
   font-weight: 700;
   letter-spacing: .3px;
   cursor: pointer;
+  overflow: hidden;            /* il ripple resta dentro la pill */
   transition: background .15s ease, transform .1s ease;
 }
 .fp-share:hover { background: rgba(255, 255, 255, .16); }
@@ -1062,6 +1130,8 @@ input[type="range"] {
   font-weight: 700;
   text-align: left;
   cursor: pointer;
+  position: relative;
+  overflow: hidden;            /* il ripple resta dentro la voce */
 }
 .fp-share-item:hover { background: rgba(255, 255, 255, .08); }
 .fp-share-item svg { flex-shrink: 0; color: var(--accent); }
@@ -1096,7 +1166,8 @@ input[type="range"] {
   margin: 0 10px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, .5);
 }
-.fp-play:hover { background: var(--accent); color: #fff; }
+.fp-play:hover { background: #fff; transform: scale(1.05); }
+.fp-play:active { transform: scale(.94); }
 .fp-play .ctrl-icon { width: 30px; height: 30px; }
 
 .fp-volume {
@@ -1278,6 +1349,7 @@ input[type="range"] {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  overflow: hidden;            /* il ripple resta dentro il cerchio */
   transition: background .15s ease, transform .1s ease;
 }
 .cover-view-close:hover { background: rgba(255, 255, 255, .22); }

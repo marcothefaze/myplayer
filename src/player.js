@@ -12,7 +12,7 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "15";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_VERSION = "16";   // cambia l'URL di playlist.json: niente cache stantia
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
 const $ = (id) => document.getElementById(id);
@@ -191,19 +191,40 @@ function haptic(pulse) {
   }
 }
 
-// Al tocco di un tasto/riga/seek: micro-vibrazione. La durata dipende
-// dall'importanza dell'azione (play più deciso, tasti normali leggeri).
+/* Al tocco di un tasto/canza/copertina: micro-vibrazione (più decisa sul
+   play) + RIPPLE, il cerchio che si espande dal punto toccato: feedback
+   rapido e d'impatto, animato in transform (GPU), zero lag. */
+document.addEventListener("touchstart", function () {}, { passive: true });   // iOS: abilita :active
 document.addEventListener("pointerdown", (e) => {
-  if (e.pointerType !== "touch") return;      // vibrazione solo su touch
-  const t = e.target.closest("button, .track-row, .album-card, .seek");
+  if (e.pointerType === "mouse" && e.button !== 0) return;
+  const t = e.target.closest("button, .track-row, .album-card");
   if (!t) return;
-  if (t.classList.contains("btn-play") || t.classList.contains("fp-play")) {
-    haptic(18);
-  } else if (t.classList.contains("track-row") || t.classList.contains("album-card")) {
-    haptic(14);
-  } else {
-    haptic(8);
+  if (e.pointerType === "touch") {
+    if (t.classList.contains("btn-play") || t.classList.contains("fp-play")) {
+      haptic(18);
+    } else if (t.classList.contains("track-row") || t.classList.contains("album-card")) {
+      haptic(14);
+    } else {
+      haptic(8);
+    }
   }
+  // Ripple: sulle copertine della home va nel figlio (ha già overflow
+  // hidden e i bordi arrotondati, così il cerchio non esce dal riquadro)
+  const host = t.classList.contains("album-card") && t.firstElementChild
+    ? t.firstElementChild
+    : t;
+  const rect = host.getBoundingClientRect();
+  if (!rect.width && !rect.height) return;
+  const size = Math.max(rect.width, rect.height) * 2.2;
+  const rip = document.createElement("span");
+  rip.className = "ripple" +
+    (t.classList.contains("btn-play") || t.classList.contains("fp-play") ? " dark" : "");
+  rip.style.width = rip.style.height = size + "px";
+  rip.style.left = (e.clientX - rect.left - size / 2) + "px";
+  rip.style.top = (e.clientY - rect.top - size / 2) + "px";
+  host.appendChild(rip);
+  rip.addEventListener("animationend", () => rip.remove());
+  setTimeout(() => rip.remove(), 700);   // rete di sicurezza
 });
 
 /* ---------- 5. CARICAMENTO ---------- */
@@ -641,11 +662,12 @@ async function playSong(songIdx, openFull) {
   const song = state.songs[songIdx];
   document.body.classList.add("has-track");   // fa comparire il miniplayer
   audio.src = resolvePath(song.file);
-  try {
-    await audio.play();
-  } catch (err) {
-    console.warn("Riproduzione bloccata dal browser:", err);
-  }
+  /* NIENTE await: il vecchio codice aspettava che audio.play() si risolvesse
+     (cioè finché il brano bufferizzava e partiva DAVVERO) prima di aggiornare
+     titolo/copertina e aprire il full player: cliccando una canzone la UI
+     restava congelata e sembrava lenta. Ora la UI si aggiorna all'istante
+     mentre l'audio bufferizza in background. */
+  audio.play().catch((err) => console.warn("Riproduzione bloccata dal browser:", err));
   updatePlayerInfo(song);
   highlightActive();
   if (openFull) openFullPlayer();   // selezione esplicita -> full player automatico
