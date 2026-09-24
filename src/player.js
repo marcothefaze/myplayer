@@ -159,13 +159,10 @@ function buildCover(container, src, name) {
     img.alt = "";
     img.loading = "lazy";        // fuori schermo? non si scarica adesso: il telefono parte subito
     img.decoding = "async";      // l'immagine si scompatta un secondo piano, niente blocco del paint
-    img.onload = () => {
-      // Copertine non quadrate (es. LUCCIOLE 770x470): il riquadro si adatta
-      // al formato reale dell'immagine così la copertina lo riempie per intero
-      if (container === els.fpCover && img.naturalWidth && img.naturalHeight) {
-        container.style.setProperty("--fp-ar", String(img.naturalWidth / img.naturalHeight));
-      }
-    };
+    /* Il riquadro del full player resta SEMPRE quadrato come le altre
+       copertine (richiesta di Marco): le copertine orizzontali (LUCCIOLE
+       770x470) riempiono il quadrato con "cover", senza buchi né vuoti.
+       Solo il videoclip passa al formato largo (classe playing-video). */
     img.onerror = () => { container.classList.add("ph"); img.remove(); makePh(container, name); };
     container.appendChild(img);
   } else {
@@ -682,6 +679,13 @@ async function playSong(songIdx, openFull) {
   const myToken = ++playToken;      // anti-corsa: solo l'ULTIMO skip comanda
   audioErrorRetried = false;        // nuovo brano: di nuovo un tentativo su errore
   audio.play().catch((err) => console.warn("Riproduzione bloccata dal browser:", err));
+  /* SU iOS il cambio di src emette un evento "pause" FITTIZIO (il browser
+     ferma l'elemento mentre carica il nuovo brano): non è una pausa
+     dell'utente e senza questo azzeramento bloccava il retry qui sotto ->
+     player congelato sugli skip rapidissimi. Si azzera appena finita
+     l'operazione; una pausa DAVVERO dell'utente arriva dopo e il flag
+     torna a valere. */
+  setTimeout(() => { audioPauseSeen = false; }, 0);
   /* Skip rapidissimi: iOS può rifiutare il play mentre il cambio traccia è
      ancora in corsa -> player congelato. Si riprova una volta dopo 400ms ma
      SOLO se: è ancora l'ultimo skip, il brano non è mai partito e l'utente
@@ -1110,6 +1114,13 @@ function openFullPlayer() {
   if (!els.fp) return;
   els.fp.classList.add("open");
   els.fp.setAttribute("aria-hidden", "false");
+  /* Se il video era stato rilasciato alla chiusura (per liberare memoria
+     su iOS) lo si ricarica subito qui, prima che l'utente lo veda */
+  if (fpHasVideo && fpVideoEl && !fpVideoEl.getAttribute("src") &&
+      els.fpVideoToggle && !els.fpVideoToggle.classList.contains("hidden") &&
+      currentIndex() >= 0) {
+    updateFpVideo(state.songs[currentIndex()]);
+  }
   syncFpVideoToAudio();   // il video riprende/se parte insieme alla canzone
 }
 
@@ -1117,7 +1128,15 @@ function closeFullPlayer() {
   if (!els.fp) return;
   els.fp.classList.remove("open");
   els.fp.setAttribute("aria-hidden", "true");
-  if (fpVideoEl) fpVideoEl.pause();
+  if (fpVideoEl) {
+    fpVideoEl.pause();
+    /* RILASCIO memoria: il videoclip (~22MB) bufferizzato resta allocato e
+       su iOS, skippando veloce, la pressione memoria ricaricava/svuotava
+       la pagina intera. Tornando sul brano openFullPlayer lo ricarica
+       all'istante (il src si riscrive solo se manca). */
+    fpVideoEl.removeAttribute("src");
+    try { fpVideoEl.load(); } catch (e) {}
+  }
 }
 
 /* ---------- VIDEOCLIP nel full player ----------
@@ -1540,17 +1559,14 @@ document.addEventListener("keydown", (e) => {
 
 /* ---------- 14. AVVIO ---------- */
 
-/* Qualunque errore JavaScript viene mostrato a schermo, così da poterlo
-   leggere anche dal telefono invece di un generico "Caricamento..." */
+/* Qualunque errore JavaScript: messaggio a comparsa (toast) + console,
+   MA la pagina NON viene più cancellata: su iOS gli errori/rejection
+   improvvisi (rejection di play, corse di caricamento sugli skip rapidi)
+   ricaricavano/svuotavano tutta l'app. Così il messaggio si legge comunque
+   e l'app continua a funzionare. */
 function fatalError(message) {
-  const grid = els.albumGrid;
-  if (grid) {
-    grid.innerHTML = '<div class="error"><b>Errore nella pagina:</b><br>' +
-      "<code>" + String(message).replace(/</g, "&lt;") + "</code><br>" +
-      "Ricarica la pagina, se possibile in una scheda privata.</div>";
-  }
-  if (els.brandCount) els.brandCount.textContent = "Errore di caricamento";
   console.error("SSG Universe:", message);
+  toast("Errore: " + String(message).slice(0, 90));
 }
 
 window.addEventListener("error", (e) => fatalError(e.message));
