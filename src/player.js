@@ -12,7 +12,7 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "17";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_VERSION = "18";   // cambia l'URL di playlist.json: niente cache stantia
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
 const $ = (id) => document.getElementById(id);
@@ -658,12 +658,26 @@ function currentIndex() {
 }
 
 /* Anti-corsa sugli skip rapidi: playToken identifica l'ultimo brano
-   richiesto (solo il suo retry può partire), audioPauseSeen distingue una
-   pausa VOLUTA dall'utente (evento "pause") da una play rifiutata da iOS
-   (nessun evento: il brano non è mai partito). */
+   richiesto (solo il suo retry può partire), audioStarted dice se il brano
+   corrente è mai partito DAVVERO (evento "playing"): una play rifiutata da
+   iOS non lo tocca, una pausa dell'utente dopo il via lo lascia a true ->
+   i retry non combattono mai con l'utente e non dipendono dall'ordine
+   degli eventi (il vecchio flag su "pause" si rompeva perché il cambio src
+   emette un "pause" fittizio che poteva arrivare DOPO l'azzeramento). */
 let playToken = 0;
-let audioPauseSeen = false;
+let audioStarted = false;
 let audioErrorRetried = false;
+
+function riprovaPlay(myToken) {
+  setTimeout(() => {
+    if (myToken !== playToken || !audio.paused || audioStarted) return;
+    audio.play().catch(() => {});
+  }, 400);
+  setTimeout(() => {
+    if (myToken !== playToken || !audio.paused || audioStarted) return;
+    audio.play().catch(() => {});
+  }, 1000);
+}
 
 async function playSong(songIdx, openFull) {
   if (songIdx < 0) return;
@@ -681,23 +695,13 @@ async function playSong(songIdx, openFull) {
      mentre l'audio bufferizza in background. */
   const myToken = ++playToken;      // anti-corsa: solo l'ULTIMO skip comanda
   audioErrorRetried = false;        // nuovo brano: di nuovo un tentativo su errore
+  audioStarted = false;             // nuovo brano: non è ancora partito
   audio.play().catch((err) => console.warn("Riproduzione bloccata dal browser:", err));
-  /* SU iOS il cambio di src emette un evento "pause" FITTIZIO (il browser
-     ferma l'elemento mentre carica il nuovo brano): non è una pausa
-     dell'utente e senza questo azzeramento bloccava il retry qui sotto ->
-     player congelato sugli skip rapidissimi. Si azzera appena finita
-     l'operazione; una pausa DAVVERO dell'utente arriva dopo e il flag
-     torna a valere. */
-  setTimeout(() => { audioPauseSeen = false; }, 0);
-  /* Skip rapidissimi: iOS può rifiutare il play mentre il cambio traccia è
-     ancora in corsa -> player congelato. Si riprova una volta dopo 400ms ma
-     SOLO se: è ancora l'ultimo skip, il brano non è mai partito e l'utente
-     non ha messo in pausa (la pausa voluta emette l'evento "pause",
-     una play rifiutata no: così non si combatte mai con l'utente). */
-  setTimeout(() => {
-    if (myToken !== playToken || !audio.paused || audioPauseSeen) return;
-    audio.play().catch(() => {});
-  }, 400);
+  /* Skip rapidissimi / rete lenta: iOS può rifiutare il play mentre il
+     cambio traccia è ancora in corsa -> player congelato e servivano due
+     click. La rete di sicurezza riprova a 400ms e 1s finché il brano non
+     parte DAVVERO: un solo click/skip basta sempre. */
+  riprovaPlay(myToken);
   updatePlayerInfo(song);
   highlightActive();
   if (openFull) openFullPlayer();   // selezione esplicita -> full player automatico
@@ -743,7 +747,12 @@ function togglePlay() {
     return;
   }
   if (audio.paused) {
+    /* Il click dell'utente comanda: invalida i retry vecchi e ne arma di
+       nuovi, così UN SOLO click fa sempre partire il brano anche se il
+       primo play viene rifiutato da iOS (corsa di caricamento) */
+    const myToken = ++playToken;
     audio.play().catch(() => {});
+    riprovaPlay(myToken);
   } else {
     audio.pause();
   }
@@ -903,15 +912,16 @@ if (els.fpVolumeIcon) els.fpVolumeIcon.addEventListener("click", toggleMute);
 audio.addEventListener("play", () => {
   setPlayIcons(true);
   document.body.classList.add("is-playing");
-  audioPauseSeen = false;
   syncPlaybackState();
 });
 audio.addEventListener("pause", () => {
   setPlayIcons(false);
   document.body.classList.remove("is-playing");
-  audioPauseSeen = true;    // pausa voluta: i retry del play non devono riprendere
   syncPlaybackState();
 });
+/* Il brano è partito DAVVERO: i retry di sicurezza non devono più toccare
+   nulla (nemmeno se l'utente mette in pausa subito dopo il via) */
+audio.addEventListener("playing", () => { audioStarted = true; });
 
 /* Errore di caricamento (capita su skip rapidissimi per una corsa di rete):
    un SOLO tentativo di ripresa dopo 500ms, poi se il file è davvero
