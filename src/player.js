@@ -12,7 +12,7 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "16";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_VERSION = "17";   // cambia l'URL di playlist.json: niente cache stantia
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
 const $ = (id) => document.getElementById(id);
@@ -107,8 +107,11 @@ const state = {
   albums: [],       // [{ title, artist, cover, totalSec, songs:[indici] }]
   queue: [],        // ordine di riproduzione corrente (indici in songs[])
   queuePos: -1,     // posizione corrente dentro queue
-  shuffle: storage.get("ssg-shuffle") === "1",
-  repeat: storage.get("ssg-repeat") || "off"    // off | all | one
+  /* All'apertura dell'app TUTTI i bottoni sono inattivi (richiesta di
+     Marco): niente riproduzione casuale/ripeti ripristinate dall'ultima
+     sessione. Si clicchi e diventano verdi e funzionano subito. */
+  shuffle: false,
+  repeat: "off"     // off | all | one
 };
 
 /* ---------- 4. FUNZIONI DI SUPPORTO ---------- */
@@ -797,7 +800,6 @@ function shuffledRest(exclude) {
 
 function toggleShuffle() {
   state.shuffle = !state.shuffle;
-  storage.set("ssg-shuffle", state.shuffle ? "1" : "0");
   updateModeButtons();
 
   const cur = currentIndex();
@@ -813,7 +815,6 @@ function toggleShuffle() {
 function cycleRepeat() {
   const order = ["off", "all", "one"];
   state.repeat = order[(order.indexOf(state.repeat) + 1) % order.length];
-  storage.set("ssg-repeat", state.repeat);
   updateModeButtons();
 }
 
