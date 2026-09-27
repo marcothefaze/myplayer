@@ -1141,12 +1141,10 @@ function closeFullPlayer() {
   els.fp.setAttribute("aria-hidden", "true");
   if (fpVideoEl) {
     fpVideoEl.pause();
-    /* RILASCIO memoria: il videoclip (~22MB) bufferizzato resta allocato e
-       su iOS, skippando veloce, la pressione memoria ricaricava/svuotava
-       la pagina intera. Tornando sul brano openFullPlayer lo ricarica
-       all'istante (il src si riscrive solo se manca). */
-    fpVideoEl.removeAttribute("src");
-    try { fpVideoEl.load(); } catch (e) {}
+    /* NIENTE rilascio del src: la versione con removeAttribute+load()
+       su iOS faceva scattare errori fittizi che nascondevano i tasti video
+       e disattivava i videoclip per tutta la sessione (segnalato da Marco).
+       Il video resta bufferizzato: la riapertura è istantanea. */
   }
 }
 
@@ -1203,7 +1201,11 @@ function ensureFpVideo() {
   fpVideoEl.setAttribute("playsinline", "");
   fpVideoEl.preload = "metadata";   // niente download dei ~22MB all'apertura: solo l'header, il resto arriva al play
   fpVideoEl.addEventListener("error", () => {
-    // Video mancante/non leggibile: torna la copertina e sparisce il pulsante
+    // Video mancante/non leggibile: torna la copertina e sparisce il pulsante.
+    // MA un errore su un elemento SENZA src (o evento fittizio di iOS su un
+    // elemento fermo) non è un errore vero: non deve nascondere nulla.
+    if (!fpVideoEl.getAttribute("src")) return;
+    if (fpVideoEl.readyState === 0 && !fpVideoEl.error) return;
     fpHasVideo = false;
     fpVideoEl.classList.add("hidden");
     if (els.fpVideoToggle) els.fpVideoToggle.classList.add("hidden");
