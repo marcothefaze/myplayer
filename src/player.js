@@ -12,7 +12,7 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "18";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_VERSION = "19";   // cambia l'URL di playlist.json: niente cache stantia
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
 const $ = (id) => document.getElementById(id);
@@ -1157,7 +1157,8 @@ function closeFullPlayer() {
    sincronizzato con play/pausa/seek. Un pulsante "Video" nella barra
    alta permette di tornare alla copertina e viceversa. */
 const TRACK_VIDEOS = {
-  "Goleador": "assets/video/goleador.mp4"
+  "Goleador": "assets/video/goleador.mp4",
+  "Gta VI": "assets/video/GTA VI 720p.mp4"
 };
 
 let fpVideoEl = null;     // elemento <video> dentro la copertina del full player
