@@ -668,15 +668,23 @@ let playToken = 0;
 let audioStarted = false;
 let audioErrorRetried = false;
 
+/* Rete di sicurezza per il play: skip rapidissimi / rete lenta -> iOS può
+   rifiutare il play mentre il cambio traccia è in corsa. Si riprova a
+   250ms, 800ms e 1.8s finché il brano non parte DAVVERO: un solo
+   click/skip basta sempre e il recupero è più rapido. */
 function riprovaPlay(myToken) {
   setTimeout(() => {
     if (myToken !== playToken || !audio.paused || audioStarted) return;
     audio.play().catch(() => {});
-  }, 400);
+  }, 250);
   setTimeout(() => {
     if (myToken !== playToken || !audio.paused || audioStarted) return;
     audio.play().catch(() => {});
-  }, 1000);
+  }, 800);
+  setTimeout(() => {
+    if (myToken !== playToken || !audio.paused || audioStarted) return;
+    audio.play().catch(() => {});
+  }, 1800);
 }
 
 async function playSong(songIdx, openFull) {
@@ -912,6 +920,7 @@ if (els.fpVolumeIcon) els.fpVolumeIcon.addEventListener("click", toggleMute);
 audio.addEventListener("play", () => {
   setPlayIcons(true);
   document.body.classList.add("is-playing");
+  fpStartSyncLoop();
   syncPlaybackState();
 });
 audio.addEventListener("pause", () => {
@@ -1164,9 +1173,10 @@ let fpHasVideo = false;   // il brano corrente ha un videoclip?
 let fpVideoOn = true;     // preferenza utente: video visibile (true) o copertina (false)
 let fpLastDriftSync = 0;  // istante dell'ultima correzione di deriva in fullscreen
 let fpStartSyncPending = false; // riallineo al frame in attesa del "playing"
-let fpLastRateNudge = 0;  // istante dell'ultimo micro-aggiustamento di velocità
 let fpLastVideoTime = -1; // ultimo currentTime del video (per rilevare gli stalli)
-let fpStallChecks = 0;    // quanti check di fila il video non è avanzato
+let fpVideoStallSince = 0; // da quando il video non avanza (0 = sta avanzando)
+let fpLastRateApplied = 1; // ultima velocità applicata (per non rifarla a ogni check)
+let fpRafActive = false;   // loop di sincronizzazione a 60fps attivo
 
 /* Ricava il file copertina più vicino possibile allo slug indicato nei JSON:
    i brani salvano "assets/covers/COCONUT_ICE_CR_MIX" (slug accorciato) ma i
@@ -1371,19 +1381,22 @@ function syncFpVideoToAudio() {
   // Canzone in riproduzione -> il video deve andare e restare sincronizzato
   fpVideoResume();
   fpAlignVideoOnPlaying();
+  fpStartSyncLoop();
 }
 
-/* Correzione di deriva + rilevamento stalli, in OGNI situazione. Gira sul
-   timeupdate dell'AUDIO (~4 eventi al secondo finché suona): anche se il
-   video è congelato gli eventi arrivano lo stesso e lo si sblocca.
-   - Fullscreen: comanda il video -> si corregge la canzone (raro).
+/* Correzione di deriva + rilevamento stalli, in OGNI situazione. Chiamata
+   dal loop rAF a 60fps (finché il video deve girare) e dal timeupdate
+   dell'AUDIO come rete di sicurezza (scheda nascosta, rAF fermo): anche se
+   il video è congelato gli eventi dell'audio arrivano e lo si sblocca.
+   - Fullscreen: comanda il video -> si corregge la canzone (reattivo).
    - Fuori dal fullscreen: comanda la canzone ->
        * video fermo/pausa mentre la canzone va -> si fa ripartire;
-       * video che non avanza da ~1.2s (stallo) -> si riporta sulla canzone;
-       * scarto grande (>1s) -> seek del video (raro, max 1 ogni 3s);
-       * scarto piccolo (0.1-1s) -> micro-velocità (1.08x/0.92x) SENZA seek:
-         la decodifica non si interrompe mai, il video non scatta e non
-         si blocca, e riallinea la deriva in un paio di secondi. */
+       * video che non avanza da >1.2s (stallo, rilevato a TEMPO) ->
+         si riporta sulla canzone;
+       * scarto grande (>0.9s) -> seek del video (raro, max 1 ogni 3s);
+       * deriva piccola -> correzione PROPORZIONALE di velocità SENZA seek:
+         più il video è indietro più accelera (max ±12%), converge in un
+         paio di secondi, la decodifica non si interrompe mai, niente scatti. */
 function fpDriftCheck() {
   if (!fpHasVideo || !fpVideoEl || audio.paused) return;
   if (!isFinite(audio.duration) || !isFinite(fpVideoEl.duration)) return;
@@ -1392,13 +1405,13 @@ function fpDriftCheck() {
   const now = Date.now();
 
   if (fpVideoFullscreen()) {
-    // Il video comanda: correzione RARA della canzone, come prima
-    if (durMatch && now - fpLastDriftSync >= 10000 && Math.abs(drift) > 1.5) {
+    // Il video comanda: correzione della canzone rara ma più reattiva
+    if (durMatch && now - fpLastDriftSync >= 6000 && Math.abs(drift) > 1.2) {
       try { audio.currentTime = fpVideoEl.currentTime; } catch (e) {}
       fpLastDriftSync = now;
     }
     fpLastVideoTime = -1;
-    fpStallChecks = 0;
+    fpVideoStallSince = 0;
     return;
   }
 
@@ -1406,47 +1419,69 @@ function fpDriftCheck() {
   if (!durMatch) return;
 
   if (fpVideoEl.paused) {          // video fermo mentre la canzone va: riparte
-    fpStallChecks = 0;
+    fpVideoStallSince = 0;
     fpLastVideoTime = -1;
     fpVideoResume();
     return;
   }
 
-  // Rilevamento stallo: il video non avanza (~1.2s di check di fila)
-  if (fpLastVideoTime >= 0 && Math.abs(fpVideoEl.currentTime - fpLastVideoTime) < 0.04) {
-    fpStallChecks++;
-    if (fpStallChecks >= 5) {
+  // Rilevamento stallo a TEMPO: il video non avanza da più di 1.2s
+  if (fpLastVideoTime >= 0 && Math.abs(fpVideoEl.currentTime - fpLastVideoTime) < 0.02) {
+    if (fpVideoStallSince === 0) fpVideoStallSince = now;
+    if (now - fpVideoStallSince > 1200) {
       try {
         fpVideoEl.playbackRate = 1;
         fpVideoEl.currentTime = Math.max(0, Math.min(fpVideoEl.duration - 0.05, audio.currentTime));
       } catch (e) {}
-      fpStallChecks = 0;
+      fpVideoStallSince = 0;
       fpLastVideoTime = -1;
       fpLastDriftSync = now;
       return;
     }
   } else {
-    fpStallChecks = 0;
+    fpVideoStallSince = 0;
   }
   fpLastVideoTime = fpVideoEl.currentTime;
 
-  if (Math.abs(drift) <= 0.1) {    // sincronizzati: velocità normale
+  if (Math.abs(drift) <= 0.06) {   // sincronizzati: velocità normale
     try { if (fpVideoEl.playbackRate !== 1) fpVideoEl.playbackRate = 1; } catch (e) {}
+    fpLastRateApplied = 1;
     return;
   }
-  if (Math.abs(drift) > 1.0) {     // scarto grande: seek del video (raro)
+  if (Math.abs(drift) > 0.9) {     // scarto grande: seek del video (raro)
     if (now - fpLastDriftSync >= 3000) {
       try {
         fpVideoEl.playbackRate = 1;
         fpVideoEl.currentTime = Math.max(0, Math.min(fpVideoEl.duration - 0.05, audio.currentTime));
       } catch (e) {}
       fpLastDriftSync = now;
+      fpLastRateApplied = 1;
     }
-  } else if (now - fpLastRateNudge >= 1200) {
-    // Scarto piccolo: micro-accelerazione/rallentamento senza seek
-    try { fpVideoEl.playbackRate = drift > 0 ? 1.08 : 0.92; } catch (e) {}
-    fpLastRateNudge = now;
+  } else {
+    // Deriva piccola: correzione PROPORZIONALE di velocità senza seek
+    const want = Math.max(0.88, Math.min(1.12, 1 + drift * 0.18));
+    if (Math.abs(want - fpLastRateApplied) > 0.01) {
+      try { fpVideoEl.playbackRate = want; } catch (e) {}
+      fpLastRateApplied = want;
+    }
   }
+}
+
+/* Loop di sincronizzazione a 60fps (rAF) mentre il video deve girare:
+   rileva la deriva in ~16ms invece dei 250ms del timeupdate -> sync molto
+   più stretta, si accorge subito di un video che rallenta o si ferma.
+   Si ferma da solo quando non serve più (canzone in pausa / video via). */
+function fpSyncLoop() {
+  if (!fpHasVideo || !fpVideoEl || audio.paused) { fpRafActive = false; return; }
+  fpDriftCheck();
+  if (fpRafActive) requestAnimationFrame(fpSyncLoop);
+}
+
+function fpStartSyncLoop() {
+  if (fpRafActive) return;
+  if (!fpHasVideo || !fpVideoEl || audio.paused) return;
+  fpRafActive = true;
+  requestAnimationFrame(fpSyncLoop);
 }
 
 /* Fullscreen: l'utente muove/pausa il video dal player nativo -> la canzone
@@ -1462,6 +1497,7 @@ audio.addEventListener("seeked", () => {
   if (!fpHasVideo || !fpVideoEl || fpVideoFullscreen()) return;
   if (audio.paused) { syncFpVideoToAudio(); return; }
   fpVideoResume();
+  fpStartSyncLoop();
   try {
     if (isFinite(fpVideoEl.duration) && isFinite(audio.duration) &&
         Math.abs(fpVideoEl.duration - audio.duration) < 3 &&
@@ -1472,8 +1508,8 @@ audio.addEventListener("seeked", () => {
   } catch (e) {}
 });
 
-/* Cuore del fix: deriva, stalli e ripresa del video controllati dal
-   timeupdate dell'audio in OGNI situazione (non solo in fullscreen) */
+/* Rete di sicurezza: deriva, stalli e ripresa controllati dal timeupdate
+   dell'audio in OGNI situazione (il loop rAF non gira in scheda nascosta) */
 audio.addEventListener("timeupdate", fpDriftCheck);
 
 if (els.fp) {
