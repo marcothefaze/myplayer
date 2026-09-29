@@ -12,7 +12,7 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "19";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_VERSION = "20";   // cambia l'URL di playlist.json: niente cache stantia
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
 const $ = (id) => document.getElementById(id);
@@ -1176,6 +1176,7 @@ let fpStartSyncPending = false; // riallineo al frame in attesa del "playing"
 let fpLastVideoTime = -1; // ultimo currentTime del video (per rilevare gli stalli)
 let fpVideoStallSince = 0; // da quando il video non avanza (0 = sta avanzando)
 let fpLastRateApplied = 1; // ultima velocità applicata (per non rifarla a ogni check)
+let fpLastRateChange = 0;  // istante dell'ultimo cambio di velocità (isteresi)
 let fpRafActive = false;   // loop di sincronizzazione a 60fps attivo
 
 /* Ricava il file copertina più vicino possibile allo slug indicato nei JSON:
@@ -1443,9 +1444,17 @@ function fpDriftCheck() {
   }
   fpLastVideoTime = fpVideoEl.currentTime;
 
-  if (Math.abs(drift) <= 0.06) {   // sincronizzati: velocità normale
+  /* ISTERESI anti-scatti (su iOS ogni cambio di playbackRate può far
+     scattare la decodifica: riscriverlo ogni 55ms era il problema):
+     - drift <= 0.06s -> velocità normale (1x);
+     - drift > 0.12s persistente (valutato max ogni 800ms) -> correzione
+       proporzionale (max ±12%) senza seek;
+     - dentro la banda 0.06-0.12 -> la velocità RESTA com'è: niente
+       oscillazioni continue, il video non scatta mai. */
+  if (Math.abs(drift) <= 0.06) {   // ben sincronizzati: velocità normale
     try { if (fpVideoEl.playbackRate !== 1) fpVideoEl.playbackRate = 1; } catch (e) {}
     fpLastRateApplied = 1;
+    fpLastRateChange = 0;
     return;
   }
   if (Math.abs(drift) > 0.9) {     // scarto grande: seek del video (raro)
@@ -1456,14 +1465,16 @@ function fpDriftCheck() {
       } catch (e) {}
       fpLastDriftSync = now;
       fpLastRateApplied = 1;
+      fpLastRateChange = 0;
     }
-  } else {
-    // Deriva piccola: correzione PROPORZIONALE di velocità senza seek
+  } else if (Math.abs(drift) > 0.12 && now - fpLastRateChange >= 800) {
+    // Deriva che persiste oltre la banda morta: correzione proporzionale
     const want = Math.max(0.88, Math.min(1.12, 1 + drift * 0.18));
     if (Math.abs(want - fpLastRateApplied) > 0.01) {
       try { fpVideoEl.playbackRate = want; } catch (e) {}
       fpLastRateApplied = want;
     }
+    fpLastRateChange = now;
   }
 }
 

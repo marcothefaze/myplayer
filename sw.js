@@ -7,7 +7,7 @@
    Le COPERTINE invece sono file statici: cache-first con aggiornamento in
    background, così si vedono all'istante a ogni cambio brano (e offline). */
 
-const CACHE = "ssg-cache-v3";
+const CACHE = "ssg-cache-v4";
 
 /* Copertine degli album: pre-caricate all'installazione (~3MB una volta sola).
    Dopo la prima apertura dell'app le copertine non scaricano più nulla. */
@@ -69,19 +69,18 @@ self.addEventListener("fetch", (e) => {
   e.respondWith(
     (async () => {
       const cache = await caches.open(CACHE);
-      try {
-        /* "cache: reload" aggira la cache HTTP del browser: si chiede
-           sempre al server la versione più recente. Svuotare la cache
-           dal pulsante refresh garantisce così di ottenere la nuova. */
-        const net = await fetch(e.request, { cache: "reload" });
-        if (net && net.ok && !url.pathname.endsWith(".html"))
-          cache.put(e.request, net.clone());
+      const cached = await cache.match(e.request);
+      /* STALE-WHILE-REVALIDATE: la copia in cache risponde ALL'ISTANTE
+         (l'app si apre in un lampo anche con la connessione scarsa) e in
+         background si scarica la versione nuova, che vale per la prossima
+         apertura. A ogni release la versione della cache cambia
+         (ssg-cache-vN): la prima apertura dopo un rilascio prende sempre
+         la versione fresca dal server. */
+      const netFetch = fetch(e.request).then((net) => {
+        if (net && net.ok) cache.put(e.request, net.clone());
         return net;
-      } catch (err) {
-        const cached = await cache.match(e.request);
-        if (cached) return cached;
-        throw err;
-      }
+      }).catch(() => {});
+      return cached || netFetch;
     })()
   );
 });
