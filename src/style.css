@@ -25,6 +25,9 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
                "Helvetica Neue", Arial, sans-serif;
   background:
+    /* Vignetta: i bordi del cielo leggermente più scuri, come nella
+       visione notturna reale (il centro resta luminoso) */
+    radial-gradient(140% 115% at 50% 40%, transparent 50%, rgba(3, 3, 10, .45) 100%),
     radial-gradient(65% 50% at 12% 6%, rgba(124, 108, 255, .28), transparent 62%),
     radial-gradient(58% 46% at 90% 90%, rgba(79, 157, 255, .24), transparent 62%),
     radial-gradient(42% 40% at 74% 14%, rgba(168, 148, 255, .17), transparent 60%),
@@ -218,6 +221,7 @@ body::after {
   body::after { animation: none; opacity: 0; }
   #sky-deep { animation: none; }
   #sky-shooting2 { animation: none; opacity: 0; }
+  .fp-cover::after { animation: none; }
   .view:not(.hidden) { animation: none; }
   body.has-track .player-bar { animation: none; }
   .ripple { animation-duration: .01s; }
@@ -1098,14 +1102,15 @@ input[type="range"] {
 
 /* Tinta nebulosa sullo sfondo sfocato del full player: distingue lo
    sfondo prolungato dal riquadro copertina (fondamentale con copertine
-   molto scure come "Non é SSG") */
+   molto scure come "Non é SSG") + vignetta per profondità */
 .fp-bg::after {
   content: "";
   position: absolute;
   inset: 0;
   background:
     radial-gradient(70% 60% at 20% 15%, rgba(124, 108, 255, .22), transparent 60%),
-    radial-gradient(60% 55% at 85% 90%, rgba(79, 157, 255, .16), transparent 60%);
+    radial-gradient(60% 55% at 85% 90%, rgba(79, 157, 255, .16), transparent 60%),
+    radial-gradient(140% 115% at 50% 40%, transparent 48%, rgba(0, 0, 0, .5) 100%);
   pointer-events: none;
 }
 
@@ -1190,6 +1195,29 @@ input[type="range"] {
 }
 /* Transizione fluida quadrato <-> rettangolo quando si cambia brano/toggle */
 .fp-cover { transition: width .35s ease, aspect-ratio .35s ease; }
+
+/* Riflesso di luce che attraversa la copertina ogni 9s (solo sulla
+   copertina: con il videoclip visibile si spegne) */
+.fp-cover::after {
+  content: "";
+  position: absolute;
+  top: -60%;
+  left: -30%;
+  width: 45%;
+  height: 220%;
+  background: linear-gradient(100deg, transparent 20%, rgba(255, 255, 255, .13) 50%, transparent 80%);
+  transform: translateX(-160%) skewX(-18deg);
+  animation: cover-shine 9s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 3;
+}
+
+@keyframes cover-shine {
+  0%, 70% { transform: translateX(-160%) skewX(-18deg); }
+  94%, 100% { transform: translateX(380%) skewX(-18deg); }
+}
+
+.fp-cover.playing-video::after { display: none; }
 .fp-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
 /* Copertine NON quadrate (es. LUCCIOLE orizzontale 770x470) nel riquadro
    quadrato del full player: "cover" riempie il quadrato per intero senza
@@ -1234,6 +1262,11 @@ input[type="range"] {
   font-weight: 800;
   line-height: 1.15;
   word-break: break-word;
+  /* Titolo in gradiente: coerente con il titolo della schermata album */
+  background: linear-gradient(120deg, #ffffff 15%, #cdc4ff 55%, #8fb5ff 95%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .fp-album { font-size: .86rem; color: var(--dim); margin-top: 4px; }
