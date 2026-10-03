@@ -1171,7 +1171,7 @@ function closeFullPlayer() {
    sincronizzato con play/pausa/seek. Un pulsante "Video" nella barra
    alta permette di tornare alla copertina e viceversa. */
 const TRACK_VIDEOS = {
-  "Goleador": "assets/video/goleador.mp4?v=2",
+  "Goleador": "assets/video/goleador.mp4?v=3",
   "Gta VI": "assets/video/GTA VI 720p.mp4?v=2"
 };
 
