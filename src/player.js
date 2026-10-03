@@ -12,7 +12,7 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "21";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_VERSION = "22";   // cambia l'URL di playlist.json: niente cache stantia
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
 const $ = (id) => document.getElementById(id);
@@ -257,7 +257,10 @@ async function loadPlaylist() {
 function handleDeepLink() {
   const track = new URLSearchParams(location.search).get("track");
   if (!track) return;
-  const i = state.songs.findIndex((s) => s.file === track);
+  /* Il confronto ignora la querystring (?v=...) che può essere nel campo
+     file per il cache-bust: i vecchi link condivisi continuano a funzionare */
+  const clean = (f) => String(f || "").split("?")[0];
+  const i = state.songs.findIndex((s) => clean(s.file) === clean(track));
   if (i >= 0) playSong(i, true);
 }
 
@@ -272,7 +275,8 @@ function ogUrl(file) {
 }
 
 function trackSlug(file) {
-  const base = String(file || "").split("/").pop().replace(/\.[^.]+$/, "");
+  /* Il ?v=... del cache-bust non deve finire nello slug dei link condivisi */
+  const base = String(file || "").split("/").pop().split("?")[0].replace(/\.[^.]+$/, "");
   return base
     .toLowerCase()
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
