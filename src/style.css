@@ -68,7 +68,14 @@ body::before {
     radial-gradient(1.7px 1.7px at 42% 33%, #cabfff 50%, transparent 51%),
     radial-gradient(2px 2px at 78% 6%, #ffffff 50%, transparent 51%),
     radial-gradient(1.2px 1.2px at 60% 78%, #fff 50%, transparent 51%),
-    radial-gradient(2.2px 2.2px at 18% 92%, #b6b0ff 50%, transparent 51%);
+    radial-gradient(2.2px 2.2px at 18% 92%, #b6b0ff 50%, transparent 51%),
+    radial-gradient(1.6px 1.6px at 33% 68%, #ece8ff 50%, transparent 51%),
+    radial-gradient(1px 1px at 6% 12%, #ffffff 50%, transparent 51%),
+    radial-gradient(1.8px 1.8px at 71% 25%, #cabfff 50%, transparent 51%),
+    radial-gradient(1.3px 1.3px at 14% 33%, #fff 50%, transparent 51%),
+    radial-gradient(2.4px 2.4px at 47% 82%, rgba(255, 255, 255, .95) 50%, transparent 51%),
+    radial-gradient(1px 1px at 82% 74%, #d4cbff 50%, transparent 51%),
+    radial-gradient(1.7px 1.7px at 25% 8%, #ffffff 50%, transparent 51%);
   background-size:
     220px 220px, 270px 270px, 340px 340px, 250px 250px,
     300px 300px, 240px 240px, 290px 290px, 360px 360px,
@@ -92,6 +99,94 @@ body::before {
 @keyframes star-float {
   from { transform: translate3d(-12px, -10px, 0); }
   to   { transform: translate3d(108px, 80px, 0); }
+}
+
+/* ---------- STRATO PROFONDO: stelle lontane + Via Lattea ----------
+   Stelle minuscole e sbiadite che derivano più lentamente e in direzione
+   DIVERSA da quelle vicine: la parallasse dà profondità realistica al
+   cielo (due piani di stelle che si muovono in modo indipendente).
+   La fascia diagonale sfumata suggerisce la Via Lattea. */
+#sky-deep {
+  position: fixed;
+  inset: -160px;
+  pointer-events: none;
+  z-index: -1;
+  background-image:
+    linear-gradient(115deg, transparent 28%, rgba(190, 180, 255, .05) 44%, rgba(255, 255, 255, .045) 52%, rgba(190, 180, 255, .05) 61%, transparent 78%),
+    radial-gradient(1px 1px at 15% 22%, rgba(255,255,255,.75) 50%, transparent 51%),
+    radial-gradient(1px 1px at 32% 48%, rgba(255,255,255,.6) 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 51% 12%, rgba(236,232,255,.7) 50%, transparent 51%),
+    radial-gradient(1px 1px at 68% 35%, rgba(255,255,255,.65) 50%, transparent 51%),
+    radial-gradient(1px 1px at 84% 55%, rgba(212,203,255,.7) 50%, transparent 51%),
+    radial-gradient(1px 1px at 9% 62%, rgba(255,255,255,.6) 50%, transparent 51%),
+    radial-gradient(1.1px 1.1px at 27% 74%, rgba(255,255,255,.7) 50%, transparent 51%),
+    radial-gradient(1px 1px at 44% 88%, rgba(222,215,255,.65) 50%, transparent 51%),
+    radial-gradient(1px 1px at 62% 63%, rgba(255,255,255,.6) 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 77% 81%, rgba(182,176,255,.7) 50%, transparent 51%),
+    radial-gradient(1px 1px at 91% 30%, rgba(255,255,255,.6) 50%, transparent 51%),
+    radial-gradient(1px 1px at 5% 38%, rgba(255,255,255,.65) 50%, transparent 51%),
+    radial-gradient(1px 1px at 38% 5%, rgba(255,255,255,.6) 50%, transparent 51%),
+    radial-gradient(1.1px 1.1px at 57% 45%, rgba(202,191,255,.7) 50%, transparent 51%),
+    radial-gradient(1px 1px at 73% 15%, rgba(255,255,255,.6) 50%, transparent 51%),
+    radial-gradient(1px 1px at 88% 90%, rgba(255,255,255,.65) 50%, transparent 51%),
+    radial-gradient(1px 1px at 21% 55%, rgba(236,232,255,.6) 50%, transparent 51%),
+    radial-gradient(1px 1px at 48% 70%, rgba(255,255,255,.7) 50%, transparent 51%),
+    radial-gradient(1px 1px at 66% 92%, rgba(182,176,255,.6) 50%, transparent 51%),
+    radial-gradient(1px 1px at 95% 65%, rgba(255,255,255,.65) 50%, transparent 51%),
+    radial-gradient(1px 1px at 12% 90%, rgba(255,255,255,.6) 50%, transparent 51%),
+    radial-gradient(1.1px 1.1px at 42% 28%, rgba(255,255,255,.7) 50%, transparent 51%),
+    radial-gradient(1px 1px at 59% 78%, rgba(255,255,255,.6) 50%, transparent 51%),
+    radial-gradient(1px 1px at 80% 42%, rgba(212,203,255,.7) 50%, transparent 51%),
+    radial-gradient(1px 1px at 30% 92%, rgba(255,255,255,.65) 50%, transparent 51%);
+  background-size:
+    100% 100%,
+    260px 260px, 300px 300px, 340px 340px, 280px 280px,
+    320px 320px, 250px 250px, 290px 290px, 360px 360px,
+    310px 310px, 380px 380px, 270px 270px, 330px 330px,
+    240px 240px, 350px 350px, 305px 305px, 265px 265px,
+    390px 380px, 335px 335px, 285px 285px, 410px 410px,
+    255px 255px, 345px 345px, 295px 295px, 375px 375px,
+    315px 315px;
+  opacity: .65;
+  will-change: transform;
+  animation:
+    sky-breathe-far 13s ease-in-out -4s infinite,
+    star-float-far 150s linear infinite alternate;
+}
+
+@keyframes sky-breathe-far {
+  0%, 100% { opacity: .5; }
+  50%      { opacity: .8; }
+}
+
+/* La deriva dello strato profondo: direzione OPPOSTA alle stelle vicine */
+@keyframes star-float-far {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-85px, 55px, 0); }
+}
+
+/* Seconda stella cadente: angolo e posizione diversi, sfasata dalla
+   prima (ogni ~13s con ritardo di 5s) così il cielo non sembra a metronomo */
+#sky-shooting2 {
+  position: fixed;
+  z-index: 0;
+  pointer-events: none;
+  top: 16%;
+  left: 108%;
+  width: 120px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent 20%, rgba(200, 210, 255, .5) 80%, #fff);
+  filter: drop-shadow(0 0 5px rgba(190, 200, 255, .5));
+  opacity: 0;
+  animation: shooting-star2 13s linear 5s infinite;
+}
+
+@keyframes shooting-star2 {
+  0%   { transform: translate(0, 0) rotate(-125deg); opacity: 0; }
+  3%   { opacity: 1; }
+  9%   { transform: translate(-52vw, 36vh) rotate(-125deg); opacity: 0; }
+  100% { transform: translate(-52vw, 36vh) rotate(-125deg); opacity: 0; }
 }
 
 /* Stella cadente occasionale (molto leggera, ogni ~9 secondi) */
@@ -121,6 +216,8 @@ body::after {
 @media (prefers-reduced-motion: reduce) {
   body::before { animation: none; }
   body::after { animation: none; opacity: 0; }
+  #sky-deep { animation: none; }
+  #sky-shooting2 { animation: none; opacity: 0; }
   .view:not(.hidden) { animation: none; }
   body.has-track .player-bar { animation: none; }
   .ripple { animation-duration: .01s; }

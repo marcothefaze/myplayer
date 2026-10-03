@@ -12,7 +12,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/icons/icon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/icons/icon-180.png">
   <link rel="manifest" href="../manifest.json">
-  <link rel="stylesheet" href="style.css?v=68">
+  <link rel="stylesheet" href="style.css?v=69">
   <!-- Il ?v=N forza il browser a scaricare di nuovo i file a ogni rilascio,
        evitando che resti in cache una versione vecchia dell'app. -->
 </head>
@@ -20,6 +20,11 @@
 
   <!-- Unico elemento audio: tutta la riproduzione passa di qui -->
   <audio id="audio" preload="metadata"></audio>
+
+  <!-- Cielo stellato: strato profondo (stelle lontane + Via Lattea)
+       e seconda stella cadente, sfasata dalla prima -->
+  <div id="sky-deep" aria-hidden="true"></div>
+  <div id="sky-shooting2" aria-hidden="true"></div>
 
   <!-- ============ BARRA SUPERIORE ============ -->
   <header class="topbar">
@@ -263,6 +268,6 @@
     <img id="cover-view-img" class="cover-view-img" alt="Copertina album">
   </div>
 
-  <script src="player.js?v=68"></script>
+  <script src="player.js?v=69"></script>
 </body>
 </html>
