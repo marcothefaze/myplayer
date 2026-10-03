@@ -615,10 +615,14 @@ function openAlbum(album) {
     const row = document.createElement("button");
     row.className = "track-row";
     row.dataset.idx = songIdx;
+    row.style.setProperty("--i", Math.min(pos, 12));   // ingresso scaglionato (max 12 passi)
 
     const num = document.createElement("span");
     num.className = "track-num";
-    num.textContent = pos + 1;
+    /* Il numero lascia il posto all'equalizzatore sulla riga attiva
+       (solo quando il brano riproduce, come nel miniplayer) */
+    num.innerHTML = '<span class="num-text">' + (pos + 1) + '</span>' +
+      '<span class="row-eq" aria-hidden="true"><i></i><i></i><i></i></span>';
 
     const title = document.createElement("span");
     title.className = "track-title";

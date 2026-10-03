@@ -334,7 +334,7 @@ button:active { transform: scale(.94); }
 
   .track-row { padding: 18px 24px; border-radius: 14px; gap: 20px; }
 
-  .track-num { width: 34px; font-size: 1.05rem; }
+  .track-num { width: 34px; height: 34px; font-size: 1.05rem; border-radius: 10px; }
 
   .track-title { font-size: 1.25rem; }
 
@@ -497,11 +497,11 @@ button:active { transform: scale(.94); }
   border-radius: 14px;
   overflow: hidden;
   background: var(--surface-2);
-  border: 1px solid rgba(255, 255, 255, .07);
+  border: 1px solid rgba(255, 255, 255, .09);
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, .03),
-    0 12px 30px rgba(0, 0, 0, .55),
-    0 0 18px rgba(160, 145, 255, .12);
+    0 0 0 1px rgba(255, 255, 255, .05),
+    0 18px 44px rgba(0, 0, 0, .6),
+    0 0 34px rgba(160, 145, 255, .22);
 }
 
 .album-cover-wrap img {
@@ -526,6 +526,17 @@ button:active { transform: scale(.94); }
   letter-spacing: 2.5px;
   color: var(--accent);
   text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+/* Linea accento prima dell'occhiatura */
+.eyebrow::before {
+  content: "";
+  width: 20px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--grad);
 }
 
 .album-title {
@@ -534,43 +545,89 @@ button:active { transform: scale(.94); }
   margin: 4px 0 8px;
   line-height: 1.1;
   word-break: break-word;
+  /* Titolo in gradiente: bianco che scende nel viola/blu dell'app */
+  background: linear-gradient(120deg, #ffffff 15%, #cdc4ff 55%, #8fb5ff 95%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .album-meta { font-size: .82rem; color: var(--dim); }
 
-/* ---------- Lista brani ---------- */
+/* ---------- Lista brani: righe vetro con ingresso scaglionato ---------- */
 
-.track-list { display: flex; flex-direction: column; gap: 4px; }
+.track-list { display: flex; flex-direction: column; gap: 6px; }
 
 .track-row {
   display: flex;
   align-items: center;
   gap: 14px;
   width: 100%;
-  background: none;
-  border: none;
+  background: rgba(255, 255, 255, .035);
+  border: 1px solid rgba(255, 255, 255, .05);
   color: inherit;
   font: inherit;
-  padding: 9px 14px;
-  border-radius: 10px;
+  padding: 12px 16px;
+  border-radius: 14px;
   cursor: pointer;
   position: relative;
   overflow: hidden;            /* il ripple resta dentro la riga */
-  transition: background .12s ease, transform .1s ease;
+  transition: background .15s ease, transform .12s ease,
+              border-color .15s ease, box-shadow .15s ease;
   text-align: left;
+  /* Ingresso scaglionato: ogni riga compare con un lieve ritardo (GPU) */
+  animation: row-in .34s ease backwards;
+  animation-delay: calc(var(--i, 0) * 22ms);
 }
 
-.track-row:hover { background: var(--surface-2); }
-.track-row:active { background: var(--surface-2); transform: scale(.985); }
+@keyframes row-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.track-row:hover {
+  background: rgba(255, 255, 255, .07);
+  border-color: rgba(255, 255, 255, .12);
+  transform: translateY(-1px);
+}
+.track-row:active { transform: scale(.985); }
 
 .track-num {
-  width: 24px;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, .06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
-  font-size: .8rem;
+  font-size: .78rem;
+  font-weight: 700;
   color: var(--dim);
   font-variant-numeric: tabular-nums;
   text-align: center;
 }
+/* Sulla riga attiva il numero lascia il posto all'equalizzatore */
+.track-num .row-eq { display: none; }
+.track-row.active .num-text { display: none; }
+.track-row.active .row-eq {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  width: 12px;
+  height: 12px;
+}
+.track-row.active .row-eq i {
+  flex: 1;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 1px;
+  transform-origin: bottom;
+  transform: scaleY(.3);
+}
+body.is-playing .track-row.active .row-eq i { animation: eq-bounce .8s ease-in-out infinite; }
+body.is-playing .track-row.active .row-eq i:nth-child(2) { animation-delay: .18s; }
+body.is-playing .track-row.active .row-eq i:nth-child(3) { animation-delay: .36s; }
 
 .track-title {
   font-size: .92rem;
@@ -599,9 +656,17 @@ button:active { transform: scale(.94); }
   font-variant-numeric: tabular-nums;
 }
 
-.track-row.active { background: var(--accent-soft); }
-.track-row.active .track-num { color: var(--accent); font-weight: 700; }
-.track-row.active .track-title { color: var(--accent); }
+.track-row.active {
+  background: linear-gradient(135deg, rgba(124, 108, 255, .22), rgba(79, 157, 255, .12));
+  border-color: rgba(124, 108, 255, .5);
+  box-shadow: 0 0 0 1px rgba(124, 108, 255, .2), 0 4px 20px rgba(124, 108, 255, .18);
+}
+.track-row.active .track-title {
+  background: linear-gradient(120deg, #fff 30%, #cdc4ff 85%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
 
 /* =========================================================
    PLAYER FISSO IN BASSO - 3 colonne
