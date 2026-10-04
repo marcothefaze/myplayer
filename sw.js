@@ -5,7 +5,7 @@
    stati scaricati col tasto "Scarica" (ascolto offline).
    Tutto il resto (pagina, JS, CSS, JSON, copertine): stale-while-revalidate. */
 
-const CACHE = "ssg-cache-v4";
+const CACHE = "ssg-cache-v5";
 /* Cache degli audio SCARICATI per l'ascolto offline (tasto "Scarica"
    sull'album): online va sempre in rete (streaming nativo intatto),
    offline i brani scaricati escono dalla cache locale. */
