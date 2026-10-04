@@ -40,6 +40,10 @@ const els = {
   home: $("view-home"),
   albumView: $("view-album"),
   albumGrid: $("album-grid"),
+  search: $("search"),
+  searchClear: $("search-clear"),
+  searchResults: $("search-results"),
+  albumEyebrow: $("album-eyebrow"),
   trackList: $("track-list"),
   albumHero: $("album-hero"),
   heroBg: $("hero-bg"),
@@ -90,6 +94,7 @@ const els = {
   fpIconPause: $("fp-icon-pause"),
   fpRepBadge: $("fp-rep-badge"),
   fpShare: $("fp-share"),
+  fpFav: $("fp-fav"),
   fpShareMenu: $("fp-share-menu"),
   fpShareLink: $("fp-share-link"),
   fpShareCover: $("fp-share-cover"),
@@ -445,7 +450,195 @@ function applyAlbumColors(albumTitle) {
   document.documentElement.style.setProperty("--album-c2", c.c2);
 }
 
-/* Ordine di visualizzazione degli album richiesto */
+/* ---------- RICERCA (brani e album, mentre scrivi) ---------- */
+
+function normText(s) {
+  return String(s || "").toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function runSearch(q) {
+  const query = normText(q).trim();
+  const grid = els.albumGrid;
+  const box = els.searchResults;
+  if (!grid || !box) return;
+  if (els.searchClear) els.searchClear.classList.toggle("hidden", !query);
+
+  if (!query) {                     // ricerca vuota: torna la griglia
+    grid.classList.remove("hidden");
+    box.classList.add("hidden");
+    box.innerHTML = "";
+    return;
+  }
+
+  grid.classList.add("hidden");
+  box.classList.remove("hidden");
+  box.innerHTML = "";
+
+  const albums = state.albums.filter((a) => normText(a.title).includes(query));
+  const songs = [];
+  state.songs.forEach((s, i) => {
+    if (normText(s.titolo).includes(query) || normText(s.album).includes(query)) {
+      songs.push(i);
+    }
+  });
+
+  if (!albums.length && !songs.length) {
+    const empty = document.createElement("div");
+    empty.className = "search-empty";
+    empty.textContent = "Nessun risultato";
+    box.appendChild(empty);
+    return;
+  }
+
+  if (albums.length) {
+    const head = document.createElement("div");
+    head.className = "sr-head";
+    head.textContent = "Album";
+    box.appendChild(head);
+    albums.forEach((a, n) => {
+      const row = document.createElement("button");
+      row.className = "sr-row";
+      row.style.setProperty("--i", Math.min(n, 12));
+      const cover = document.createElement("div");
+      cover.className = "sr-cover";
+      buildCover(cover, a.cover, a.title);
+      const meta = document.createElement("div");
+      meta.className = "sr-meta";
+      const t = document.createElement("div");
+      t.className = "sr-title";
+      t.textContent = a.title;
+      const sub = document.createElement("div");
+      sub.className = "sr-sub";
+      sub.textContent = a.songs.length + " brani";
+      meta.appendChild(t);
+      meta.appendChild(sub);
+      row.appendChild(cover);
+      row.appendChild(meta);
+      row.addEventListener("click", () => { clearSearch(); openAlbum(a); });
+      box.appendChild(row);
+    });
+  }
+
+  if (songs.length) {
+    const head = document.createElement("div");
+    head.className = "sr-head";
+    head.textContent = "Brani";
+    box.appendChild(head);
+    songs.forEach((idx, n) => {
+      const song = state.songs[idx];
+      const row = document.createElement("button");
+      row.className = "sr-row";
+      row.style.setProperty("--i", Math.min(n, 12));
+      const cover = document.createElement("div");
+      cover.className = "sr-cover";
+      buildCover(cover, song.copertina, song.album);
+      const meta = document.createElement("div");
+      meta.className = "sr-meta";
+      const t = document.createElement("div");
+      t.className = "sr-title";
+      t.textContent = song.titolo || fileTitle(song.file);
+      const sub = document.createElement("div");
+      sub.className = "sr-sub";
+      sub.textContent = song.album || "";
+      meta.appendChild(t);
+      meta.appendChild(sub);
+      const dur = document.createElement("span");
+      dur.className = "sr-dur";
+      dur.textContent = formatTime(song.durata);
+      row.appendChild(cover);
+      row.appendChild(meta);
+      row.appendChild(dur);
+      row.addEventListener("click", () => playSong(idx, true));
+      box.appendChild(row);
+    });
+  }
+}
+
+function clearSearch() {
+  if (els.search) els.search.value = "";
+  runSearch("");
+}
+
+/* ---------- PREFERITI (cuore sui brani + pseudo-album in home) ---------- */
+
+function favSet() {
+  try { return new Set(JSON.parse(storage.get("ssg-fav") || "[]")); }
+  catch (e) { return new Set(); }
+}
+
+function saveFavs(set) {
+  storage.set("ssg-fav", JSON.stringify([...set]));
+}
+
+function isFav(song) {
+  return favSet().has(song.file);
+}
+
+function toggleFav(song) {
+  const set = favSet();
+  if (set.has(song.file)) set.delete(song.file); else set.add(song.file);
+  saveFavs(set);
+}
+
+function updateFpFav() {
+  if (!els.fpFav) return;
+  const i = currentIndex();
+  const on = i >= 0 && isFav(state.songs[i]);
+  els.fpFav.classList.toggle("on", on);
+  els.fpFav.classList.toggle("hidden", i < 0);
+}
+
+/* ---------- ASCOLTO OFFLINE (scarica album in cache) ---------- */
+
+const AUDIO_CACHE = "ssg-audio-v1";
+
+function isAlbumDownloaded(album) {
+  return storage.get("ssg-dl-" + album.title) === "1";
+}
+
+async function downloadAlbum(album, btn) {
+  if (!("caches" in window)) { toast("Ascolto offline non supportato qui"); return; }
+  if (isAlbumDownloaded(album)) {
+    // Rimuovi dalla cache offline
+    try {
+      const cache = await caches.open(AUDIO_CACHE);
+      await Promise.all(album.songs.map((i) => {
+        const url = new URL(resolvePath(state.songs[i].file), location.href).href;
+        return cache.delete(url).catch(() => {});
+      }));
+    } catch (e) {}
+    storage.set("ssg-dl-" + album.title, "0");
+    if (btn) btn.classList.remove("done");
+    toast("Album rimosso dall'ascolto offline");
+    return;
+  }
+  if (btn) { btn.classList.add("busy"); btn.disabled = true; }
+  toast("Scarico l'album per l'ascolto offline\u2026");
+  let ok = 0;
+  try {
+    const cache = await caches.open(AUDIO_CACHE);
+    for (const i of album.songs) {
+      try {
+        const url = new URL(resolvePath(state.songs[i].file), location.href).href;
+        const res = await fetch(url);
+        if (res && res.ok) { await cache.put(url, res); ok++; }
+      } catch (e) {}
+    }
+  } catch (e) {}
+  if (btn) { btn.classList.remove("busy"); btn.disabled = false; }
+  if (ok === album.songs.length) {
+    storage.set("ssg-dl-" + album.title, "1");
+    if (btn) btn.classList.add("done");
+    toast("Album scaricato: suona anche offline");
+  } else if (ok > 0) {
+    toast("Scaricati " + ok + " brani su " + album.songs.length);
+  } else {
+    toast("Download non riuscito, riprova");
+  }
+}
+
+/* ---------- ORDINE DI VISUALIZZAZIONE DEGLI ALBUM RICHIESTO ---------- */
 const ALBUM_ORDER = [
   "Non è SSG",
   "Testamento - ssg",
@@ -522,10 +715,46 @@ function updateBrandCount() {
     state.songs.length + " brani · " + state.albums.length + " album";
 }
 
-/* ---------- 6. HOME: griglia album ---------- */
+/* ---------- 6. HOME: griglia album + card Preferiti ---------- */
 
 function renderHome() {
   els.albumGrid.innerHTML = "";
+
+  /* Card PREFERITI in cima: cuore su copertina scura, apre la lista
+     dei brani con il cuore (anche vuota, come su Spotify) */
+  const favs = [];
+  state.songs.forEach((s, i) => { if (favSet().has(s.file)) favs.push(i); });
+  const favAlbum = {
+    title: "Preferiti",
+    artist: "",
+    cover: null,
+    totalSec: favs.reduce((t, i) => t + (state.songs[i].durata || 0), 0),
+    songs: favs,
+    isFavs: true
+  };
+
+  const favCard = document.createElement("button");
+  favCard.className = "album-card";
+
+  const favCover = document.createElement("div");
+  favCover.className = "card-cover fav-cover";
+  favCover.innerHTML =
+    '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>';
+  favCard.appendChild(favCover);
+
+  const favCaption = document.createElement("div");
+  favCaption.className = "card-caption";
+  const favTitle = document.createElement("div");
+  favTitle.className = "card-title";
+  favTitle.textContent = "Preferiti";
+  const favMeta = document.createElement("div");
+  favMeta.className = "card-meta";
+  favMeta.textContent = favs.length + " brani · " + formatMinutes(favAlbum.totalSec);
+  favCaption.appendChild(favTitle);
+  favCaption.appendChild(favMeta);
+  favCard.appendChild(favCaption);
+  favCard.addEventListener("click", () => openAlbum(favAlbum));
+  els.albumGrid.appendChild(favCard);
 
   state.albums.forEach((album) => {
     const card = document.createElement("button");
@@ -574,9 +803,10 @@ function fitHomeGrid() {
     return;
   }
 
-  const home = els.home;
-  const cs = getComputedStyle(home);
-  const avail = home.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+  /* Su PC la griglia è flex: prende l'altezza RESTANTE sotto intestazione
+     e ricerca: da lì si dimensionano le copertine */
+  const cs = getComputedStyle(grid);
+  const avail = grid.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
   const first = grid.firstElementChild;
   if (!first) return;
 
@@ -627,8 +857,47 @@ function openAlbum(album) {
     els.heroBg.style.backgroundImage = "";
   }
 
+  const albumHead = document.querySelector(".album-head");
+  if (albumHead) {
+    // Tasti flottanti sull'hero: PLAY (parte l'album / riprende) + Scarica
+    let actions = albumHead.querySelector(".hero-actions");
+    if (actions) actions.remove();
+    actions = document.createElement("div");
+    actions.className = "hero-actions";
+
+    const heroPlay = document.createElement("button");
+    heroPlay.className = "hero-play";
+    heroPlay.setAttribute("aria-label", "Riproduci l'album");
+    heroPlay.innerHTML =
+      '<svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+    heroPlay.addEventListener("click", () => {
+      // Se un brano di QUESTO album è in riproduzione: pausa/riprendi;
+      // altrimenti parte il primo brano dell'album
+      const cur = currentIndex();
+      if (cur >= 0 && album.songs.indexOf(cur) >= 0) togglePlay();
+      else playSong(album.songs[0], true);
+      haptic(16);
+    });
+    actions.appendChild(heroPlay);
+
+    const heroDl = document.createElement("button");
+    heroDl.className = "hero-dl" + (isAlbumDownloaded(album) ? " done" : "");
+    heroDl.setAttribute("aria-label", "Ascolto offline");
+    heroDl.title = isAlbumDownloaded(album)
+      ? "Scaricato: tocca per rimuovere" : "Scarica per l'ascolto offline";
+    heroDl.innerHTML =
+      '<svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor" aria-hidden="true"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></svg>';
+    heroDl.addEventListener("click", () => downloadAlbum(album, heroDl));
+    actions.appendChild(heroDl);
+
+    albumHead.appendChild(actions);
+  }
+
   // Lista brani dell'album
   els.trackList.innerHTML = "";
+  if (els.albumEyebrow) {
+    els.albumEyebrow.textContent = album.isFavs ? "Playlist" : "Album";
+  }
   album.songs.forEach((songIdx, pos) => {
     const song = state.songs[songIdx];
 
@@ -656,10 +925,27 @@ function openAlbum(album) {
     dur.className = "track-dur";
     dur.textContent = formatTime(song.durata);
 
+    /* Cuore preferiti (span, non button: la riga è già un button) */
+    const heart = document.createElement("span");
+    heart.className = "fav-btn" + (isFav(song) ? " on" : "");
+    heart.setAttribute("role", "button");
+    heart.setAttribute("aria-label", "Preferito");
+    heart.innerHTML =
+      '<svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>';
+    heart.addEventListener("click", (e) => {
+      e.stopPropagation();          // non avviare il brano
+      toggleFav(song);
+      heart.classList.toggle("on", isFav(song));
+      updateFpFav();
+      renderHome();                 // la card Preferiti si aggiorna
+      haptic(10);
+    });
+
     row.appendChild(num);
     row.appendChild(title);
     row.appendChild(artist);
     row.appendChild(dur);
+    row.appendChild(heart);
     row.addEventListener("click", () => playSong(songIdx, true));
 
     els.trackList.appendChild(row);
@@ -775,6 +1061,7 @@ function updatePlayerInfo(song) {
     els.timeDuration.textContent = formatTime(song.durata);
     if (els.fp) els.fpTimeDuration.textContent = formatTime(song.durata);
   }
+  updateFpFav();
   updateMediaSession(song);
 }
 
@@ -1078,6 +1365,31 @@ els.btnShuffle.addEventListener("click", toggleShuffle);
 els.btnRepeat.addEventListener("click", cycleRepeat);
 els.btnBack.addEventListener("click", goHome);
 
+/* ---------- RICERCA: input + cancella ---------- */
+if (els.search) {
+  els.search.addEventListener("input", () => runSearch(els.search.value));
+  els.search.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") { clearSearch(); els.search.blur(); }
+  });
+}
+if (els.searchClear) {
+  els.searchClear.addEventListener("click", () => {
+    clearSearch();
+    if (els.search) els.search.focus();
+  });
+}
+
+/* ---------- CUORE nel full player ---------- */
+if (els.fpFav) {
+  els.fpFav.addEventListener("click", () => {
+    const i = currentIndex();
+    if (i < 0) return;
+    toggleFav(state.songs[i]);
+    updateFpFav();
+    haptic(10);
+  });
+}
+
 /* Copertina album cliccabile -> anteprima a schermo intero */
 els.albumCoverWrap.addEventListener("click", openCoverView);
 els.coverViewClose.addEventListener("click", closeCoverView);
@@ -1087,6 +1399,14 @@ els.coverView.addEventListener("click", (e) => {
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && els.coverView && !els.coverView.classList.contains("hidden")) {
     closeCoverView();
+  }
+});
+/* Escape in home con ricerca attiva: la svuota */
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && els.search && els.search.value &&
+      els.home && !els.home.classList.contains("hidden") &&
+      els.fp && !els.fp.classList.contains("open")) {
+    clearSearch();
   }
 });
 

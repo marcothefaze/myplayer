@@ -1,13 +1,15 @@
-/* Service worker: aggiornamento automatico (network-first).
-   A ogni apertura dell'app prova a prendere la versione più recente
-   dal server; solo se offline ripiega sulla cache locale.
-   L'AUDIO (mp3) e i VIDEO non vengono intercettati: lo streaming a
-   range requests del telefono non si deve rompere (e niente cache dei
-   file grandi).
-   Le COPERTINE invece sono file statici: cache-first con aggiornamento in
-   background, così si vedono all'istante a ogni cambio brano (e offline). */
+/* Service worker: aggiornamento automatico.
+   I VIDEO non vengono intercettati: lo streaming a range requests del
+   telefono non si deve rompere (e niente cache dei file grandi).
+   GLI AUDIO: online rete diretta, offline escono dalla cache se sono
+   stati scaricati col tasto "Scarica" (ascolto offline).
+   Tutto il resto (pagina, JS, CSS, JSON, copertine): stale-while-revalidate. */
 
 const CACHE = "ssg-cache-v4";
+/* Cache degli audio SCARICATI per l'ascolto offline (tasto "Scarica"
+   sull'album): online va sempre in rete (streaming nativo intatto),
+   offline i brani scaricati escono dalla cache locale. */
+const AUDIO_CACHE = "ssg-audio-v1";
 
 /* Copertine degli album: pre-caricate all'installazione (~3MB una volta sola).
    Dopo la prima apertura dell'app le copertine non scaricano più nulla. */
@@ -36,7 +38,9 @@ self.addEventListener("install", (e) => {
 self.addEventListener("activate", (e) => {
   e.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      /* Gli audio scaricati per l'offline NON si toccano mai */
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE && k !== AUDIO_CACHE)
+        .map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -44,8 +48,23 @@ self.addEventListener("activate", (e) => {
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
   if (e.request.method !== "GET" || url.origin !== location.origin) return;
-  if (url.pathname.includes("/assets/audio/")) return;
   if (url.pathname.includes("/assets/video/")) return;   // streaming video: range requests diretti
+
+  /* AUDIO: ONLINE rete diretta (lo streaming resta nativo); OFFLINE i
+     brani scaricati per l'ascolto offline escono dalla cache locale */
+  if (url.pathname.includes("/assets/audio/")) {
+    e.respondWith((async () => {
+      const cache = await caches.open(AUDIO_CACHE);
+      try {
+        return await fetch(e.request);
+      } catch (err) {
+        const cached = await cache.match(e.request);
+        if (cached) return cached;
+        throw err;
+      }
+    })());
+    return;
+  }
 
   /* Copertine e immagini: CACHE-FIRST (stale-while-revalidate).
      La copia in cache risponde ALL'ISTANTE (niente più secondini a ogni

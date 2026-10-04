@@ -364,6 +364,169 @@ button:active { transform: scale(.94); }
 .view { padding: 26px 28px 34px; }
 
 /* =========================================================
+   HOME: intestazione di sezione + ricerca
+   ========================================================= */
+
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-size: 1.02rem;
+  font-weight: 800;
+  letter-spacing: 2.2px;
+  text-transform: uppercase;
+  color: rgb(var(--album-c1));
+  white-space: nowrap;
+}
+
+/* Linea in gradiente che si estende a destra e svanisce */
+.section-head::after {
+  content: "";
+  flex: 1;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(var(--album-c1), .55), transparent);
+}
+
+/* ---------- Barra di ricerca ---------- */
+
+.search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 16px;
+  margin-bottom: 22px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .05);
+  border: 1px solid rgba(255, 255, 255, .08);
+  transition: border-color .15s ease, background .15s ease;
+}
+.search-wrap:focus-within {
+  border-color: rgba(var(--album-c1), .5);
+  background: rgba(255, 255, 255, .07);
+}
+
+.search-icon { color: var(--dim); flex-shrink: 0; }
+
+.search-input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font: inherit;
+  font-size: .95rem;
+}
+.search-input::placeholder { color: var(--dim); }
+.search-input::-webkit-search-cancel-button { display: none; }
+
+.search-clear {
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .1);
+  color: var(--dim);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  transition: background .15s ease, transform .1s ease;
+}
+.search-clear:hover { background: rgba(255, 255, 255, .18); color: var(--text); }
+.search-clear:active { transform: scale(.9); }
+
+/* ---------- Risultati ricerca ---------- */
+
+.search-results { display: flex; flex-direction: column; gap: 6px; }
+
+.search-results.hidden { display: none !important; }
+
+.sr-head {
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin: 14px 2px 4px;
+}
+.sr-head:first-child { margin-top: 2px; }
+
+.sr-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, .05);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .035);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+  transition: background .15s ease, transform .12s ease, border-color .15s ease;
+  animation: row-in .3s ease backwards;
+  animation-delay: calc(var(--i, 0) * 18ms);
+}
+.sr-row:hover {
+  background: rgba(255, 255, 255, .07);
+  border-color: rgba(255, 255, 255, .12);
+  transform: translateY(-1px);
+}
+.sr-row:active { transform: scale(.985); }
+
+.sr-cover {
+  width: 44px;
+  height: 44px;
+  border-radius: 9px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--surface-2);
+}
+.sr-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.sr-meta { min-width: 0; flex: 1; line-height: 1.3; }
+.sr-title {
+  font-size: .92rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sr-sub {
+  font-size: .76rem;
+  color: var(--dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sr-dur {
+  flex-shrink: 0;
+  font-size: .76rem;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.search-empty {
+  color: var(--dim);
+  font-size: .9rem;
+  padding: 18px 4px;
+  text-align: center;
+}
+
+/* =========================================================
    HOME: griglia album (solo copertine + titolo)
    ========================================================= */
 
@@ -383,10 +546,16 @@ button:active { transform: scale(.94); }
   }
 }
 @media (min-width: 1200px) {
-  #view-home { height: 100%; }
+  #view-home {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
 
   .album-grid {
-    height: 100%;
+    flex: 1;
+    min-height: 0;
+    height: auto;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     grid-auto-rows: 1fr;
     gap: 30px 32px;
@@ -522,6 +691,69 @@ button:active { transform: scale(.94); }
 }
 
 .album-card:hover .card-play { opacity: 1; transform: translateY(0); }
+
+/* ---------- Card PREFERITI (pseudo-album in cima alla home) ---------- */
+
+.fav-cover {
+  background: linear-gradient(150deg, #3b2a72, #1d1438 55%, #0d0a1c);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.fav-cover svg {
+  width: 34%;
+  height: 34%;
+  color: #ff6b9d;
+  filter: drop-shadow(0 4px 16px rgba(255, 107, 157, .45));
+}
+
+/* ---------- Cuore sui brani (preferiti) ---------- */
+
+.fav-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--dim);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: color .15s ease, transform .12s ease, background .15s ease;
+}
+.fav-btn:hover { color: var(--text); background: rgba(255, 255, 255, .07); }
+.fav-btn:active { transform: scale(.85); }
+.fav-btn svg { width: 17px; height: 17px; }
+.fav-btn.on { color: #ff6b9d; }
+.fav-btn.on svg { filter: drop-shadow(0 0 7px rgba(255, 107, 157, .5)); }
+
+/* Cuore nel full player */
+.fp-fav {
+  margin-top: 10px;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, .3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: color .15s ease, border-color .15s ease, transform .12s ease, background .15s ease;
+}
+.fp-fav:hover { background: rgba(255, 255, 255, .12); transform: scale(1.06); }
+.fp-fav:active { transform: scale(.92); }
+.fp-fav.on {
+  color: #ff6b9d;
+  border-color: rgba(255, 107, 157, .5);
+  background: rgba(255, 107, 157, .12);
+}
+.fp-fav.on svg { filter: drop-shadow(0 0 8px rgba(255, 107, 157, .55)); }
 
 .card-caption { padding: 10px 2px 0; }
 
@@ -691,6 +923,64 @@ button:active { transform: scale(.94); }
 }
 
 .album-meta { font-size: .82rem; color: var(--dim); }
+
+/* ---------- Tasti flottanti sull'hero: PLAY album + Scarica ---------- */
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.hero-play {
+  width: 58px;
+  height: 58px;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgb(var(--album-c1)), rgb(var(--album-c2)));
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 6px 22px rgba(var(--album-c1), .45);
+  transition: transform .12s ease, box-shadow .15s ease;
+}
+.hero-play:hover { transform: scale(1.06); }
+.hero-play:active { transform: scale(.92); }
+.hero-play svg { width: 26px; height: 26px; }
+
+.hero-dl {
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, .3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: color .15s ease, border-color .15s ease, transform .12s ease, background .15s ease;
+}
+.hero-dl:hover { background: rgba(255, 255, 255, .1); transform: scale(1.06); }
+.hero-dl:active { transform: scale(.92); }
+.hero-dl svg { width: 19px; height: 19px; }
+.hero-dl.done {
+  color: rgb(var(--album-c1));
+  border-color: rgba(var(--album-c1), .5);
+  background: rgba(var(--album-c1), .12);
+}
+.hero-dl.busy svg { animation: dl-spin 1s linear infinite; }
+@keyframes dl-spin {
+  to { transform: rotate(360deg); }
+}
 
 /* ---------- Lista brani: righe vetro con ingresso scaglionato ----------
    I bordi della lista sfumano (maschera): le righe entrano ed escono
@@ -1047,8 +1337,10 @@ body.is-playing .eq { opacity: 1; }
   position: absolute;
   left: 0; top: 0; bottom: 0;
   width: 0%;
-  background: var(--grad);
+  /* Avanzamento nel colore dell'album, con glow */
+  background: linear-gradient(90deg, rgb(var(--album-c1)), rgb(var(--album-c2)));
   border-radius: 2px;
+  box-shadow: 0 0 10px rgba(var(--album-c1), .55);
 }
 
 /* Pallino sulla punta del riempimento: visibile all'hover o durante il drag */
