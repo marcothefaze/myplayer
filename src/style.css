@@ -424,13 +424,13 @@ button:active { transform: scale(.94); }
     align-items: center;
     text-align: center;
     gap: 18px;
-    padding: 40px 40px 34px;
-    margin-bottom: 22px;
+    padding: 30px 30px 26px;
+    margin-bottom: 16px;
     border-radius: 24px;
     width: 100%;
   }
 
-  .album-cover-wrap { width: min(360px, 36vh); height: min(360px, 36vh); border-radius: 18px; }
+  .album-cover-wrap { width: min(300px, 30vh); height: min(300px, 30vh); border-radius: 16px; }
 
   .eyebrow { font-size: .82rem; }
 
@@ -567,6 +567,27 @@ button:active { transform: scale(.94); }
 .fav-btn.on { color: #ff6b9d; }
 .fav-btn.on svg { filter: drop-shadow(0 0 7px rgba(255, 107, 157, .5)); }
 
+/* Reazione al tocco: pop del cuore + onda luminosa che si espande */
+.fav-btn.pop { animation: fav-pop .45s ease; }
+@keyframes fav-pop {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.4); }
+  60%  { transform: scale(.9); }
+  100% { transform: scale(1); }
+}
+.fav-btn.pop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 107, 157, .7);
+  animation: fav-wave .5s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes fav-wave {
+  to { transform: scale(1.9); opacity: 0; }
+}
+
 /* Cuore nel full player */
 .fp-fav {
   margin-top: 10px;
@@ -592,6 +613,16 @@ button:active { transform: scale(.94); }
   background: rgba(255, 107, 157, .12);
 }
 .fp-fav.on svg { filter: drop-shadow(0 0 8px rgba(255, 107, 157, .55)); }
+.fp-fav.pop { animation: fav-pop .45s ease; }
+.fp-fav.pop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 107, 157, .7);
+  animation: fav-wave .5s ease-out forwards;
+  pointer-events: none;
+}
 
 .card-caption { padding: 10px 2px 0; }
 
@@ -762,19 +793,19 @@ button:active { transform: scale(.94); }
 
 .album-meta { font-size: .82rem; color: var(--dim); }
 
-/* ---------- Tasti flottanti sull'hero: PLAY album + Scarica ---------- */
+/* ---------- Tasti PLAY e Scarica ai lati del titolo ---------- */
 
-.hero-actions {
+.title-row {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 14px;
-  margin-top: 14px;
+  gap: 12px;
+  margin: 2px 0 6px;
 }
+.title-row .album-title { margin: 0; flex: 1; min-width: 0; }
 
 .hero-play {
-  width: 58px;
-  height: 58px;
+  width: 46px;
+  height: 46px;
   border: none;
   border-radius: 50%;
   background: linear-gradient(135deg, rgb(var(--album-c1)), rgb(var(--album-c2)));
@@ -783,18 +814,19 @@ button:active { transform: scale(.94); }
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 6px 22px rgba(var(--album-c1), .45);
+  box-shadow: 0 5px 18px rgba(var(--album-c1), .45);
   transition: transform .12s ease, box-shadow .15s ease;
 }
-.hero-play:hover { transform: scale(1.06); }
-.hero-play:active { transform: scale(.92); }
-.hero-play svg { width: 26px; height: 26px; }
+.hero-play:hover { transform: scale(1.07); }
+.hero-play:active { transform: scale(.9); }
+.hero-play svg { width: 21px; height: 21px; }
 
 .hero-dl {
-  width: 44px;
-  height: 44px;
+  width: 42px;
+  height: 42px;
   border: 1px solid rgba(255, 255, 255, .14);
   border-radius: 50%;
   background: rgba(0, 0, 0, .3);
@@ -803,13 +835,14 @@ button:active { transform: scale(.94); }
   justify-content: center;
   color: var(--text);
   cursor: pointer;
+  flex-shrink: 0;
   position: relative;
   overflow: hidden;
   transition: color .15s ease, border-color .15s ease, transform .12s ease, background .15s ease;
 }
 .hero-dl:hover { background: rgba(255, 255, 255, .1); transform: scale(1.06); }
 .hero-dl:active { transform: scale(.92); }
-.hero-dl svg { width: 19px; height: 19px; }
+.hero-dl svg { width: 17px; height: 17px; }
 .hero-dl.done {
   color: rgb(var(--album-c1));
   border-color: rgba(var(--album-c1), .5);
@@ -1314,10 +1347,10 @@ input[type="range"] {
 #fp-cover-wrap::before {
   content: "";
   position: absolute;
-  inset: -22px;
-  border-radius: 38px;
-  background: rgba(var(--album-c1), .3);
-  box-shadow: 0 0 90px 34px rgba(var(--album-c1), .28);
+  inset: -8px;
+  border-radius: 24px;
+  background: rgba(var(--album-c1), .18);
+  box-shadow: 0 0 44px 10px rgba(var(--album-c1), .22);
   opacity: .7;
   animation: fp-aura 7s ease-in-out infinite;
   pointer-events: none;
@@ -1837,7 +1870,7 @@ input[type="range"] {
   /* Hero bloccato in alto: la copertina sale fin sotto i pulsanti
      indietro/aggiorna e riempie il vuoto lasciato dal titolo nascosto */
   body.album-open .album-hero { flex: 0 0 auto; margin-bottom: 14px; padding-top: 6px; }
-  body.album-open .album-cover-wrap { width: min(52vw, 44vh); height: min(52vw, 44vh); }
+  body.album-open .album-cover-wrap { width: min(46vw, 38vh); height: min(46vw, 38vh); }
 
   /* Solo la tracklist scorre */
   body.album-open .track-list {

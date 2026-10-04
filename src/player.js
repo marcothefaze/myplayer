@@ -878,17 +878,19 @@ function openAlbum(album) {
 
   const albumHead = document.querySelector(".album-head");
   if (albumHead) {
-    // Tasti flottanti sull'hero: PLAY (parte l'album / riprende) + Scarica
-    let actions = albumHead.querySelector(".hero-actions");
-    if (actions) actions.remove();
-    actions = document.createElement("div");
-    actions.className = "hero-actions";
+    // Tasti PLAY e SCARICA ai LATI del titolo: la parte fissa resta compatta
+    let titleRow = albumHead.querySelector(".title-row");
+    if (titleRow) titleRow.remove();
+    const h1 = $("album-title");
+    titleRow = document.createElement("div");
+    titleRow.className = "title-row";
 
     const heroPlay = document.createElement("button");
     heroPlay.className = "hero-play";
     heroPlay.setAttribute("aria-label", "Riproduci l'album");
+    heroPlay.title = "Riproduci l'album";
     heroPlay.innerHTML =
-      '<svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+      '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
     heroPlay.addEventListener("click", () => {
       // Se un brano di QUESTO album è in riproduzione: pausa/riprendi;
       // altrimenti parte il primo brano dell'album
@@ -897,7 +899,6 @@ function openAlbum(album) {
       else playSong(album.songs[0], true);
       haptic(16);
     });
-    actions.appendChild(heroPlay);
 
     const heroDl = document.createElement("button");
     heroDl.className = "hero-dl" + (isAlbumDownloaded(album) ? " done" : "");
@@ -905,11 +906,15 @@ function openAlbum(album) {
     heroDl.title = isAlbumDownloaded(album)
       ? "Scaricato: tocca per rimuovere" : "Scarica per l'ascolto offline";
     heroDl.innerHTML =
-      '<svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor" aria-hidden="true"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></svg>';
+      '<svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></svg>';
     heroDl.addEventListener("click", () => downloadAlbum(album, heroDl));
-    actions.appendChild(heroDl);
 
-    albumHead.appendChild(actions);
+    titleRow.appendChild(heroPlay);
+    titleRow.appendChild(h1);       // il titolo si sposta in mezzo ai tasti
+    titleRow.appendChild(heroDl);
+    const eyebrowEl = els.albumEyebrow;
+    if (eyebrowEl && eyebrowEl.parentElement === albumHead) eyebrowEl.after(titleRow);
+    else albumHead.appendChild(titleRow);
   }
 
   // Lista brani dell'album
@@ -954,17 +959,22 @@ function openAlbum(album) {
     heart.addEventListener("click", (e) => {
       e.stopPropagation();          // non avviare il brano
       toggleFav(song);
-      heart.classList.toggle("on", isFav(song));
+      const on = isFav(song);
+      heart.classList.toggle("on", on);
+      // Reazione: pop del cuore + onda luminosa (riparte anche a clic di fila)
+      heart.classList.remove("pop");
+      void heart.offsetWidth;
+      if (on) heart.classList.add("pop");
       updateFpFav();
       renderHome();                 // la card Preferiti si aggiorna
-      haptic(10);
+      haptic(12);
     });
 
     row.appendChild(num);
     row.appendChild(title);
+    row.appendChild(heart);      /* accanto al nome del pezzo */
     row.appendChild(artist);
     row.appendChild(dur);
-    row.appendChild(heart);
     row.addEventListener("click", () => playSong(songIdx, true));
 
     els.trackList.appendChild(row);
@@ -1415,8 +1425,13 @@ if (els.fpFav) {
     const i = currentIndex();
     if (i < 0) return;
     toggleFav(state.songs[i]);
+    const on = isFav(state.songs[i]);
     updateFpFav();
-    haptic(10);
+    // Reazione pop + onda
+    els.fpFav.classList.remove("pop");
+    void els.fpFav.offsetWidth;
+    if (on) els.fpFav.classList.add("pop");
+    haptic(12);
   });
 }
 
