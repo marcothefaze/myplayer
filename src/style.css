@@ -588,17 +588,17 @@ button:active { transform: scale(.94); }
   to { transform: scale(1.9); opacity: 0; }
 }
 
-/* Cuore nel full player */
+/* Cuore nel full player, a destra del titolo */
 .fp-fav {
-  margin-top: 10px;
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   border: 1px solid rgba(255, 255, 255, .14);
   border-radius: 50%;
   background: rgba(0, 0, 0, .3);
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
   color: var(--text);
   cursor: pointer;
   position: relative;
@@ -1508,6 +1508,16 @@ input[type="range"] {
   word-break: break-word;
   color: var(--text);   /* il titolo del brano resta sempre bianco */
 }
+
+/* Righe titolo: il cuore sta a destra del nome del pezzo */
+.fp-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+}
+.fp-title-row .fp-title { flex: 1; min-width: 0; text-align: left; }
 
 .fp-album {
   font-size: .86rem;

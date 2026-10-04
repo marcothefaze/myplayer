@@ -847,6 +847,38 @@ window.addEventListener("resize", debouncedResizeFit);
 
 let currentAlbum = null;   // album visibile sulla schermata album
 
+/* Tasti flottanti sull'hero dell'album (listener freschi a ogni apertura,
+  così il play/scarica usano SEMPRE l'album giusto) */
+function buildHeroPlay(album) {
+  const b = document.createElement("button");
+  b.className = "hero-play";
+  b.setAttribute("aria-label", "Riproduci l'album");
+  b.title = "Riproduci l'album";
+  b.innerHTML =
+    '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+  b.addEventListener("click", () => {
+    // Se un brano di QUESTO album è in riproduzione: pausa/riprendi;
+    // altrimenti parte il primo brano dell'album
+    const cur = currentIndex();
+    if (cur >= 0 && album.songs.indexOf(cur) >= 0) togglePlay();
+    else playSong(album.songs[0], true);
+    haptic(16);
+  });
+  return b;
+}
+
+function buildHeroDl(album) {
+  const b = document.createElement("button");
+  b.className = "hero-dl" + (isAlbumDownloaded(album) ? " done" : "");
+  b.setAttribute("aria-label", "Ascolto offline");
+  b.title = isAlbumDownloaded(album)
+    ? "Scaricato: tocca per rimuovere" : "Scarica per l'ascolto offline";
+  b.innerHTML =
+    '<svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></svg>';
+  b.addEventListener("click", () => downloadAlbum(album, b));
+  return b;
+}
+
 /* Apre la copertina a schermo intero */
 function openCoverView() {
   if (!currentAlbum || !currentAlbum.cover) return;
@@ -878,43 +910,28 @@ function openAlbum(album) {
 
   const albumHead = document.querySelector(".album-head");
   if (albumHead) {
-    // Tasti PLAY e SCARICA ai LATI del titolo: la parte fissa resta compatta
+    // Tasti PLAY e SCARICA ai LATI del titolo. Il titolo h1 NON si tocca:
+    // rimuovere la riga lo toglieva dal DOM e al secondo openAlbum
+    // getElementById tornava null -> appendChild(null) = errore
     let titleRow = albumHead.querySelector(".title-row");
-    if (titleRow) titleRow.remove();
-    const h1 = $("album-title");
-    titleRow = document.createElement("div");
-    titleRow.className = "title-row";
-
-    const heroPlay = document.createElement("button");
-    heroPlay.className = "hero-play";
-    heroPlay.setAttribute("aria-label", "Riproduci l'album");
-    heroPlay.title = "Riproduci l'album";
-    heroPlay.innerHTML =
-      '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
-    heroPlay.addEventListener("click", () => {
-      // Se un brano di QUESTO album è in riproduzione: pausa/riprendi;
-      // altrimenti parte il primo brano dell'album
-      const cur = currentIndex();
-      if (cur >= 0 && album.songs.indexOf(cur) >= 0) togglePlay();
-      else playSong(album.songs[0], true);
-      haptic(16);
-    });
-
-    const heroDl = document.createElement("button");
-    heroDl.className = "hero-dl" + (isAlbumDownloaded(album) ? " done" : "");
-    heroDl.setAttribute("aria-label", "Ascolto offline");
-    heroDl.title = isAlbumDownloaded(album)
-      ? "Scaricato: tocca per rimuovere" : "Scarica per l'ascolto offline";
-    heroDl.innerHTML =
-      '<svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></svg>';
-    heroDl.addEventListener("click", () => downloadAlbum(album, heroDl));
-
-    titleRow.appendChild(heroPlay);
-    titleRow.appendChild(h1);       // il titolo si sposta in mezzo ai tasti
-    titleRow.appendChild(heroDl);
-    const eyebrowEl = els.albumEyebrow;
-    if (eyebrowEl && eyebrowEl.parentElement === albumHead) eyebrowEl.after(titleRow);
-    else albumHead.appendChild(titleRow);
+    const h1 = els.albumTitle;
+    if (!titleRow) {
+      titleRow = document.createElement("div");
+      titleRow.className = "title-row";
+      titleRow.appendChild(buildHeroPlay(album));
+      titleRow.appendChild(h1);      // il titolo si sposta in mezzo ai tasti
+      titleRow.appendChild(buildHeroDl(album));
+      const eyebrowEl = els.albumEyebrow;
+      if (eyebrowEl && eyebrowEl.parentElement === albumHead) eyebrowEl.after(titleRow);
+      else albumHead.appendChild(titleRow);
+    } else {
+      // aperture successive: si sostituiscono SOLO i tasti (listener
+      // freschi con l'album giusto), il titolo resta dov'è
+      const oldPlay = titleRow.querySelector(".hero-play");
+      const oldDl = titleRow.querySelector(".hero-dl");
+      if (oldPlay) oldPlay.replaceWith(buildHeroPlay(album));
+      if (oldDl) oldDl.replaceWith(buildHeroDl(album));
+    }
   }
 
   // Lista brani dell'album
