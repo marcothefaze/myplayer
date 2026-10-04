@@ -43,6 +43,9 @@ const els = {
   search: $("search"),
   searchClear: $("search-clear"),
   searchResults: $("search-results"),
+  searchView: $("search-view"),
+  searchViewClose: $("search-view-close"),
+  btnSearch: $("btn-search"),
   albumEyebrow: $("album-eyebrow"),
   trackList: $("track-list"),
   albumHero: $("album-hero"),
@@ -515,7 +518,7 @@ function runSearch(q) {
       meta.appendChild(sub);
       row.appendChild(cover);
       row.appendChild(meta);
-      row.addEventListener("click", () => { clearSearch(); openAlbum(a); });
+      row.addEventListener("click", () => { closeSearchView(); openAlbum(a); });
       box.appendChild(row);
     });
   }
@@ -549,7 +552,7 @@ function runSearch(q) {
       row.appendChild(cover);
       row.appendChild(meta);
       row.appendChild(dur);
-      row.addEventListener("click", () => playSong(idx, true));
+      row.addEventListener("click", () => { closeSearchView(); playSong(idx, true); });
       box.appendChild(row);
     });
   }
@@ -558,6 +561,22 @@ function runSearch(q) {
 function clearSearch() {
   if (els.search) els.search.value = "";
   runSearch("");
+}
+
+/* ---------- Pannello ricerca a schermo ---------- */
+function openSearchView() {
+  if (!els.searchView) return;
+  els.searchView.classList.remove("hidden");
+  els.searchView.setAttribute("aria-hidden", "false");
+  runSearch(els.search ? els.search.value : "");
+  setTimeout(() => { if (els.search) els.search.focus(); }, 60);
+}
+
+function closeSearchView() {
+  if (!els.searchView) return;
+  els.searchView.classList.add("hidden");
+  els.searchView.setAttribute("aria-hidden", "true");
+  clearSearch();
 }
 
 /* ---------- PREFERITI (cuore sui brani + pseudo-album in home) ---------- */
@@ -1365,11 +1384,22 @@ els.btnShuffle.addEventListener("click", toggleShuffle);
 els.btnRepeat.addEventListener("click", cycleRepeat);
 els.btnBack.addEventListener("click", goHome);
 
-/* ---------- RICERCA: input + cancella ---------- */
+/* ---------- RICERCA: pannello, input + cancella ---------- */
+if (els.btnSearch) {
+  els.btnSearch.addEventListener("click", () => { openSearchView(); haptic(10); });
+}
+if (els.searchViewClose) {
+  els.searchViewClose.addEventListener("click", closeSearchView);
+}
+if (els.searchView) {
+  els.searchView.addEventListener("click", (e) => {
+    if (e.target === els.searchView) closeSearchView();   // click fuori
+  });
+}
 if (els.search) {
   els.search.addEventListener("input", () => runSearch(els.search.value));
   els.search.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") { clearSearch(); els.search.blur(); }
+    if (e.key === "Escape") closeSearchView();
   });
 }
 if (els.searchClear) {
@@ -1399,14 +1429,6 @@ els.coverView.addEventListener("click", (e) => {
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && els.coverView && !els.coverView.classList.contains("hidden")) {
     closeCoverView();
-  }
-});
-/* Escape in home con ricerca attiva: la svuota */
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && els.search && els.search.value &&
-      els.home && !els.home.classList.contains("hidden") &&
-      els.fp && !els.fp.classList.contains("open")) {
-    clearSearch();
   }
 });
 
@@ -1926,7 +1948,8 @@ document.addEventListener("keydown", (e) => {
   } else if (e.key === "ArrowLeft") {
     audio.currentTime = Math.max(0, audio.currentTime - 5);
   } else if (e.key === "Escape") {
-    if (els.fp && els.fp.classList.contains("open")) closeFullPlayer();
+    if (els.searchView && !els.searchView.classList.contains("hidden")) closeSearchView();
+    else if (els.fp && els.fp.classList.contains("open")) closeFullPlayer();
     else goHome();
   }
 });

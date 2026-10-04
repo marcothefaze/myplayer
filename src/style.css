@@ -227,6 +227,7 @@ body::after {
   #sky-shooting2 { animation: none; opacity: 0; }
   .fp-bg::before { animation: none; }
   #fp-cover-wrap::before { animation: none; }
+  #fp-cover-wrap::after { animation: none; }
   .album-cover-wrap::after { animation: none; }
   .view:not(.hidden) { animation: none; }
   body.has-track .player-bar { animation: none; }
@@ -362,169 +363,6 @@ button:active { transform: scale(.94); }
 }
 
 .view { padding: 26px 28px 34px; }
-
-/* =========================================================
-   HOME: intestazione di sezione + ricerca
-   ========================================================= */
-
-.section-head {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 16px;
-}
-
-.section-title {
-  font-size: 1.02rem;
-  font-weight: 800;
-  letter-spacing: 2.2px;
-  text-transform: uppercase;
-  color: rgb(var(--album-c1));
-  white-space: nowrap;
-}
-
-/* Linea in gradiente che si estende a destra e svanisce */
-.section-head::after {
-  content: "";
-  flex: 1;
-  height: 2px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, rgba(var(--album-c1), .55), transparent);
-}
-
-/* ---------- Barra di ricerca ---------- */
-
-.search-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 11px 16px;
-  margin-bottom: 22px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, .05);
-  border: 1px solid rgba(255, 255, 255, .08);
-  transition: border-color .15s ease, background .15s ease;
-}
-.search-wrap:focus-within {
-  border-color: rgba(var(--album-c1), .5);
-  background: rgba(255, 255, 255, .07);
-}
-
-.search-icon { color: var(--dim); flex-shrink: 0; }
-
-.search-input {
-  flex: 1;
-  min-width: 0;
-  background: none;
-  border: none;
-  outline: none;
-  color: var(--text);
-  font: inherit;
-  font-size: .95rem;
-}
-.search-input::placeholder { color: var(--dim); }
-.search-input::-webkit-search-cancel-button { display: none; }
-
-.search-clear {
-  width: 26px;
-  height: 26px;
-  border: none;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, .1);
-  color: var(--dim);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  position: relative;
-  overflow: hidden;
-  transition: background .15s ease, transform .1s ease;
-}
-.search-clear:hover { background: rgba(255, 255, 255, .18); color: var(--text); }
-.search-clear:active { transform: scale(.9); }
-
-/* ---------- Risultati ricerca ---------- */
-
-.search-results { display: flex; flex-direction: column; gap: 6px; }
-
-.search-results.hidden { display: none !important; }
-
-.sr-head {
-  font-size: .72rem;
-  font-weight: 800;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--dim);
-  margin: 14px 2px 4px;
-}
-.sr-head:first-child { margin-top: 2px; }
-
-.sr-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid rgba(255, 255, 255, .05);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, .035);
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-  text-align: left;
-  position: relative;
-  overflow: hidden;
-  transition: background .15s ease, transform .12s ease, border-color .15s ease;
-  animation: row-in .3s ease backwards;
-  animation-delay: calc(var(--i, 0) * 18ms);
-}
-.sr-row:hover {
-  background: rgba(255, 255, 255, .07);
-  border-color: rgba(255, 255, 255, .12);
-  transform: translateY(-1px);
-}
-.sr-row:active { transform: scale(.985); }
-
-.sr-cover {
-  width: 44px;
-  height: 44px;
-  border-radius: 9px;
-  overflow: hidden;
-  flex-shrink: 0;
-  background: var(--surface-2);
-}
-.sr-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
-
-.sr-meta { min-width: 0; flex: 1; line-height: 1.3; }
-.sr-title {
-  font-size: .92rem;
-  font-weight: 700;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.sr-sub {
-  font-size: .76rem;
-  color: var(--dim);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.sr-dur {
-  flex-shrink: 0;
-  font-size: .76rem;
-  color: var(--dim);
-  font-variant-numeric: tabular-nums;
-}
-
-.search-empty {
-  color: var(--dim);
-  font-size: .9rem;
-  padding: 18px 4px;
-  text-align: center;
-}
 
 /* =========================================================
    HOME: griglia album (solo copertine + titolo)
@@ -1467,7 +1305,8 @@ input[type="range"] {
 
 /* ---------- AURA RADIANTE dalla copertina ----------
    Alone morbido che abbraccia TUTTO il contorno del riquadro e respira
-   lentamente (solo opacity: GPU, il blur non si ri-rasterizza mai). */
+   in sincrono con l'anello rotante (7s): la luce si irradia anche sullo
+   sfondo del full player (solo opacity: GPU, zero costo). */
 #fp-cover-wrap {
   position: relative;
   z-index: 1;   /* stacking context: l'alone resta dietro la copertina ma sopra lo sfondo */
@@ -1475,18 +1314,38 @@ input[type="range"] {
 #fp-cover-wrap::before {
   content: "";
   position: absolute;
-  inset: -14px;
-  border-radius: 32px;
-  background: rgba(var(--album-c1), .35);
-  box-shadow: 0 0 70px 24px rgba(var(--album-c1), .3);
+  inset: -22px;
+  border-radius: 38px;
+  background: rgba(var(--album-c1), .3);
+  box-shadow: 0 0 90px 34px rgba(var(--album-c1), .28);
   opacity: .7;
-  animation: fp-aura 5.5s ease-in-out infinite;
+  animation: fp-aura 7s ease-in-out infinite;
   pointer-events: none;
 }
 
 @keyframes fp-aura {
   0%, 100% { opacity: .4; }
-  50%      { opacity: .95; }
+  50%      { opacity: 1; }
+}
+
+/* Anello luminoso che gira attorno alla copertina: lo stesso effetto
+   della schermata album (gradiente conico mascherato a cornice sottile,
+   il colore dell'album, il riquadro resta fermo) */
+#fp-cover-wrap::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 21px;
+  padding: 2px;
+  background: conic-gradient(from var(--ring-a),
+    transparent 0deg, rgba(var(--album-c1), .9) 55deg,
+    rgba(var(--album-c2), .9) 110deg, transparent 170deg, transparent 360deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask-composite: exclude;
+  animation: ring-rotate 7s linear infinite;
+  pointer-events: none;
 }
 
 .fp-inner {
@@ -1614,14 +1473,18 @@ input[type="range"] {
   font-weight: 800;
   line-height: 1.15;
   word-break: break-word;
-  /* Titolo in gradiente col colore dell'album */
-  background: linear-gradient(120deg, #ffffff 15%, rgb(var(--album-c1)) 55%, rgb(var(--album-c2)) 95%);
+  color: var(--text);   /* il titolo del brano resta sempre bianco */
+}
+
+.fp-album {
+  font-size: .86rem;
+  margin-top: 4px;
+  /* Il titolo dell'album prende i colori caratteristici dell'album */
+  background: linear-gradient(120deg, rgb(var(--album-c1)) 20%, rgb(var(--album-c2)) 90%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
-
-.fp-album { font-size: .86rem; color: var(--dim); margin-top: 4px; }
 
 .fp-share {
   position: relative;
@@ -1714,6 +1577,214 @@ input[type="range"] {
 .fp-play:hover { background: #fff; transform: scale(1.05); color: #000; }
 .fp-play:active { transform: scale(.94); color: #000; }
 .fp-play .ctrl-icon { width: 30px; height: 30px; }
+
+/* =========================================================
+   RICERCA: pulsante nella barra alta + pannello a schermo
+   ========================================================= */
+
+/* Pulsante lente affianco ad aggiorna */
+.search-btn {
+  margin-left: auto;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--dim);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  transition: background .15s ease, color .15s ease, transform .1s ease;
+}
+.search-btn:hover { background: #2e2e3e; color: var(--text); transform: scale(1.05); }
+.search-btn:active { transform: scale(.92); }
+.search-btn svg { width: 17px; height: 17px; display: block; }
+.refresh-btn { margin-left: 0; }
+
+/* Pannello ricerca: copre lo schermo, input in cima + risultati sotto */
+.search-view {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(5, 5, 10, .92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  padding: calc(env(safe-area-inset-top) + 64px) 20px
+           calc(env(safe-area-inset-bottom) + 24px);
+  display: flex;
+  justify-content: center;
+}
+.search-panel {
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: view-in .24s ease backwards;
+}
+
+.search-view-close {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 12px);
+  right: 14px;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .12);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: absolute;
+  overflow: hidden;
+  transition: background .15s ease, transform .1s ease;
+}
+.search-view-close:hover { background: rgba(255, 255, 255, .22); }
+.search-view-close:active { transform: scale(.92); }
+
+/* Campo di ricerca dentro il pannello */
+.search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .06);
+  border: 1px solid rgba(255, 255, 255, .1);
+  transition: border-color .15s ease, background .15s ease;
+}
+.search-wrap:focus-within {
+  border-color: rgba(var(--album-c1), .55);
+  background: rgba(255, 255, 255, .08);
+}
+
+.search-icon { color: var(--dim); flex-shrink: 0; }
+
+.search-input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 1rem;
+}
+.search-input::placeholder { color: var(--dim); }
+.search-input::-webkit-search-cancel-button { display: none; }
+
+.search-clear {
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .1);
+  color: var(--dim);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  transition: background .15s ease, transform .1s ease;
+}
+.search-clear:hover { background: rgba(255, 255, 255, .18); color: var(--text); }
+.search-clear:active { transform: scale(.9); }
+
+/* Risultati: brani e album, righe in vetro */
+.search-results {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-right: 4px;
+}
+.search-results.hidden { display: none !important; }
+
+.sr-head {
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin: 14px 2px 4px;
+}
+.sr-head:first-child { margin-top: 2px; }
+
+.sr-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid rgba(255, 255, 255, .05);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .035);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+  transition: background .15s ease, transform .12s ease, border-color .15s ease;
+  animation: row-in .3s ease backwards;
+  animation-delay: calc(var(--i, 0) * 18ms);
+  flex-shrink: 0;
+}
+.sr-row:hover {
+  background: rgba(255, 255, 255, .07);
+  border-color: rgba(255, 255, 255, .12);
+  transform: translateY(-1px);
+}
+.sr-row:active { transform: scale(.985); }
+
+.sr-cover {
+  width: 44px;
+  height: 44px;
+  border-radius: 9px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--surface-2);
+}
+.sr-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.sr-meta { min-width: 0; flex: 1; line-height: 1.3; }
+.sr-title {
+  font-size: .92rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sr-sub {
+  font-size: .76rem;
+  color: var(--dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sr-dur {
+  flex-shrink: 0;
+  font-size: .76rem;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.search-empty {
+  color: var(--dim);
+  font-size: .9rem;
+  padding: 18px 4px;
+  text-align: center;
+}
 
 /* =========================================================
    RESPONSIVE
