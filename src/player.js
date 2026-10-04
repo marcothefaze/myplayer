@@ -241,7 +241,15 @@ document.addEventListener("pointerdown", (e) => {
 
 async function loadPlaylist() {
   try {
-    const response = await fetch(PLAYLIST_URL);
+    /* TIMEOUT di sicurezza: se la richiesta resta appesa (service worker
+       vecchio/impallato sul telefono, rete che muore) dopo 8 secondi si
+       esce con errore: niente piu' "Caricamento..." infinito */
+    const response = await Promise.race([
+      fetch(PLAYLIST_URL),
+      new Promise(function (_, rej) {
+        setTimeout(function () { rej(new Error("richiesta appesa (timeout)")); }, 8000);
+      })
+    ]);
     if (!response.ok) throw new Error("HTTP " + response.status);
     state.songs = await response.json();
     buildAlbums();
@@ -252,10 +260,16 @@ async function loadPlaylist() {
     handleDeepLink();
   } catch (err) {
     els.albumGrid.innerHTML =
-      '<div class="error">Impossibile caricare playlist.json.<br>' +
-      "Avvia il server locale (<code>python3 -m http.server</code> nella " +
-      "cartella del progetto) e ricarica la pagina.</div>";
+      '<div class="error">Impossibile caricare la playlist.<br>' +
+      "Controlla la connessione e premi il tasto refresh in alto a destra,<br>" +
+      "oppure riprova qui sotto." +
+      '<br><button id="retry-load" class="retry-btn" style="margin:14px auto 0;display:flex">Riprova</button>';
     console.error("Errore nel caricamento della playlist:", err);
+    const retry = document.getElementById("retry-load");
+    if (retry) retry.addEventListener("click", function () {
+      els.albumGrid.innerHTML = "";
+      loadPlaylist();
+    });
   }
 }
 
