@@ -1986,6 +1986,259 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+/* ---------- CIELO STELLATO IN CANVAS ----------
+   Sostituisce i vecchi tasselli CSS (si ripetevano e il brillio era per
+   intero strato). Strato STATICo dipinto UNA volta al load/resize:
+   3 piani di stelle uniche + Via Lattea con stelle dense + nebulose +
+   vignetta notturna. Strato VIVO: stelle che brillano INDIVIDUALMENTE
+   (ognuna con fase e ritmo propri) + stelle cadenti vere con scia
+   sfumata a intervalli casuali. Il loop si ferma con la scheda nascosta
+   (batteria) e con prefers-reduced-motion resta solo lo statico. */
+const SKY = (function () {
+  const staticC = $("sky-static");
+  const liveC = $("sky-live");
+  if (!staticC || !liveC || !staticC.getContext) {
+    return { resize: function () {} };
+  }
+
+  const sctx = staticC.getContext("2d");
+  const lctx = liveC.getContext("2d");
+  const DPR = Math.min(window.devicePixelRatio || 1, 2);   // il telefono non fatica
+  const reduce = window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  let W = 0, H = 0;
+  let rafId = 0;
+  let running = false;
+
+  const STARS = [];      // statico
+  const TWINKLERS = [];  // le stelle vive
+  const SHOOTERS = [];   // le cadenti attive
+
+  const TINTS = [
+    [255, 255, 255],
+    [236, 232, 255],
+    [212, 203, 255],
+    [182, 176, 255],
+    [190, 214, 255],
+    [255, 224, 178]
+  ];
+
+  function rand(a, b) { return a + Math.random() * (b - a); }
+  function rgb(c) { return "rgb(" + c[0] + "," + c[1] + "," + c[2] + ")"; }
+
+  function buildStars() {
+    STARS.length = 0;
+    TWINKLERS.length = 0;
+    // Densità in base allo schermo: un telefono non disegna 800 stelle
+    const k = Math.min(1.6, Math.max(.7, (W * H) / (400 * 800)));
+    const far = Math.round(150 * k);
+    const mid = Math.round(75 * k);
+    const near = Math.round(26 * k);
+
+    for (let i = 0; i < far; i++) {           // lontane: minuscole e tenui
+      STARS.push({ x: Math.random() * W, y: Math.random() * H,
+        r: rand(.4, .8), a: rand(.25, .5), c: TINTS[(Math.random() * TINTS.length) | 0] });
+    }
+    for (let i = 0; i < mid; i++) {           // medie
+      STARS.push({ x: Math.random() * W, y: Math.random() * H,
+        r: rand(.8, 1.3), a: rand(.4, .75), c: TINTS[(Math.random() * TINTS.length) | 0] });
+    }
+    for (let i = 0; i < near; i++) {          // vicine: brillanti, qualcuna con alone
+      STARS.push({ x: Math.random() * W, y: Math.random() * H,
+        r: rand(1.3, 2.1), a: rand(.6, .95), c: TINTS[(Math.random() * TINTS.length) | 0],
+        halo: Math.random() < .3 });
+    }
+
+    const nTw = Math.round(20 + near * .7);   // le stelle vive
+    for (let i = 0; i < nTw; i++) {
+      TWINKLERS.push({ x: Math.random() * W, y: Math.random() * H,
+        r: rand(.9, 1.7), base: rand(.45, .85), amp: rand(.2, .45),
+        phase: Math.random() * Math.PI * 2, speed: rand(.5, 1.4),
+        c: TINTS[(Math.random() * TINTS.length) | 0] });
+    }
+  }
+
+  function drawStatic() {
+    sctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    sctx.clearRect(0, 0, W, H);
+
+    // Nebulose pre-renderizzate nel canvas (il CSS non le raddoppia)
+    [[W * .12, H * .08, W * .5, "rgba(124,108,255,.2)"],
+     [W * .9, H * .88, W * .45, "rgba(79,157,255,.18)"],
+     [W * .74, H * .15, W * .35, "rgba(168,148,255,.14)"],
+     [W * .26, H * .92, W * .3, "rgba(98,142,255,.13)"]].forEach(function (n) {
+      const g = sctx.createRadialGradient(n[0], n[1], 0, n[0], n[1], n[2]);
+      g.addColorStop(0, n[3]);
+      g.addColorStop(1, "rgba(0,0,0,0)");
+      sctx.fillStyle = g;
+      sctx.fillRect(0, 0, W, H);
+    });
+
+    // VIA LATTEA: fascia diagonale sfumata con stelle dense e tenui
+    sctx.save();
+    sctx.translate(W / 2, H / 2);
+    sctx.rotate(-24 * Math.PI / 180);
+    const bandW = Math.max(W, H) * .34;
+    const bandH = Math.max(W, H) * 1.5;
+    const bg = sctx.createLinearGradient(-bandW / 2, 0, bandW / 2, 0);
+    bg.addColorStop(0, "rgba(190,180,255,0)");
+    bg.addColorStop(.35, "rgba(190,180,255,.06)");
+    bg.addColorStop(.5, "rgba(255,255,255,.09)");
+    bg.addColorStop(.65, "rgba(190,180,255,.06)");
+    bg.addColorStop(1, "rgba(190,180,255,0)");
+    sctx.fillStyle = bg;
+    sctx.fillRect(-bandW / 2, -bandH / 2, bandW, bandH);
+    const bandStars = Math.round(far * .9);
+    for (let i = 0; i < bandStars; i++) {
+      const x = rand(-bandW / 2, bandW / 2);
+      const y = rand(-bandH / 2, bandH / 2);
+      const dens = 1 - Math.abs(x) / (bandW / 2);   // più dense al centro
+      if (Math.random() > dens * .9) continue;
+      sctx.globalAlpha = rand(.15, .45);
+      sctx.fillStyle = rgb(TINTS[(Math.random() * TINTS.length) | 0]);
+      sctx.fillRect(x, y, rand(.5, 1), rand(.5, 1));
+    }
+    sctx.globalAlpha = 1;
+    sctx.restore();
+
+    // Stelle statiche (3 piani)
+    STARS.forEach(function (s) {
+      if (s.halo) {
+        const g = sctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 5);
+        g.addColorStop(0, "rgba(" + s.c[0] + "," + s.c[1] + "," + s.c[2] + ",.28)");
+        g.addColorStop(1, "rgba(0,0,0,0)");
+        sctx.fillStyle = g;
+        sctx.beginPath();
+        sctx.arc(s.x, s.y, s.r * 5, 0, 7);
+        sctx.fill();
+      }
+      sctx.globalAlpha = s.a;
+      sctx.fillStyle = rgb(s.c);
+      sctx.beginPath();
+      sctx.arc(s.x, s.y, s.r, 0, 7);
+      sctx.fill();
+    });
+    sctx.globalAlpha = 1;
+
+    // Vignetta notturna: i bordi del cielo più scuri
+    const vg = sctx.createRadialGradient(W / 2, H * .42, Math.min(W, H) * .35,
+      W / 2, H * .42, Math.max(W, H) * .78);
+    vg.addColorStop(0, "rgba(0,0,0,0)");
+    vg.addColorStop(1, "rgba(2,2,8,.5)");
+    sctx.fillStyle = vg;
+    sctx.fillRect(0, 0, W, H);
+  }
+
+  function spawnShooter() {
+    const fromTop = Math.random() < .7;
+    SHOOTERS.push({
+      x: fromTop ? rand(W * .1, W) : W * rand(1.02, 1.15),
+      y: fromTop ? -20 : rand(H * .05, H * .45),
+      vx: -rand(320, 520), vy: rand(180, 300),
+      life: 0, ttl: rand(.9, 1.5), len: rand(90, 170)
+    });
+  }
+
+  function drawLive(tSec, dt) {
+    lctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    lctx.clearRect(0, 0, W, H);
+
+    // Brillio INDIVIDUALE: ogni stella con la sua fase e il suo ritmo
+    TWINKLERS.forEach(function (s) {
+      const tw = s.base + Math.sin(tSec * s.speed * 2 + s.phase) * s.amp;
+      lctx.globalAlpha = Math.max(.06, Math.min(1, tw));
+      lctx.fillStyle = rgb(s.c);
+      lctx.beginPath();
+      lctx.arc(s.x, s.y, s.r, 0, 7);
+      lctx.fill();
+    });
+    lctx.globalAlpha = 1;
+
+    // Stelle cadenti con scia sfumata
+    for (let i = SHOOTERS.length - 1; i >= 0; i--) {
+      const sh = SHOOTERS[i];
+      sh.life += dt;
+      const k = sh.life / sh.ttl;
+      if (k >= 1) { SHOOTERS.splice(i, 1); continue; }
+      const fade = Math.sin(k * Math.PI);          // entra e esce dolcemente
+      const nx = sh.x - sh.vx * (sh.len / 400);
+      const ny = sh.y - sh.vy * (sh.len / 400);
+      const g = lctx.createLinearGradient(sh.x, sh.y, nx, ny);
+      g.addColorStop(0, "rgba(255,255,255," + (.85 * fade).toFixed(3) + ")");
+      g.addColorStop(1, "rgba(180,170,255,0)");
+      lctx.strokeStyle = g;
+      lctx.lineWidth = 1.6;
+      lctx.beginPath();
+      lctx.moveTo(sh.x, sh.y);
+      lctx.lineTo(nx, ny);
+      lctx.stroke();
+      lctx.globalAlpha = fade;
+      lctx.fillStyle = "#fff";
+      lctx.beginPath();
+      lctx.arc(sh.x, sh.y, 1.5, 0, 7);
+      lctx.fill();
+      lctx.globalAlpha = 1;
+      sh.x += sh.vx * dt;
+      sh.y += sh.vy * dt;
+    }
+  }
+
+  function loop(now) {
+    if (!running) return;
+    const dt = Math.min(.05, (now - (loop._last || now)) / 1000);
+    loop._last = now;
+    if (!loop._next || now >= loop._next) {        // una cadente ogni 4-9s
+      if (SHOOTERS.length < 3) spawnShooter();
+      loop._next = now + rand(4000, 9000);
+    }
+    drawLive(now / 1000, dt);
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function start() {
+    if (running || reduce) return;
+    running = true;
+    loop._last = 0;
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function stop() {
+    running = false;
+    if (rafId) cancelAnimationFrame(rafId);
+  }
+
+  function resize() {
+    W = window.innerWidth;
+    H = window.innerHeight;
+    [staticC, liveC].forEach(function (c) {
+      c.width = Math.round(W * DPR);
+      c.height = Math.round(H * DPR);
+      c.style.width = W + "px";
+      c.style.height = H + "px";
+    });
+    buildStars();
+    drawStatic();
+    if (!reduce) drawLive(0, 0);
+  }
+
+  // Scheda nascosta: il loop si ferma (batteria)
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) stop(); else start();
+  });
+
+  let rsT = 0;
+  window.addEventListener("resize", function () {
+    clearTimeout(rsT);
+    rsT = setTimeout(resize, 160);
+  });
+
+  resize();
+  start();
+
+  return { resize: resize };
+})();
+
 /* ---------- 14. AVVIO ---------- */
 
 /* Qualunque errore JavaScript: messaggio a comparsa (toast) + console,
