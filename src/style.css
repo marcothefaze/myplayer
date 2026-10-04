@@ -1423,15 +1423,6 @@ input[type="range"] {
 .fp-play:active { transform: scale(.94); color: #000; }
 .fp-play .ctrl-icon { width: 30px; height: 30px; }
 
-.fp-volume {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.fp-volume input { width: 150px; }
-
 /* =========================================================
    RESPONSIVE
    ========================================================= */
@@ -1539,7 +1530,6 @@ input[type="range"] {
   .fp-controls { gap: 10px; }
   .fp-controls .fp-btn { width: 44px; height: 44px; }
   .fp-play { width: 64px; height: 64px; margin: 0 6px; }
-  .fp-volume input { width: 130px; }
 
   /* Refresh su telefono: solo icona, piccolo */
   .refresh-text { display: none; }

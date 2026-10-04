@@ -89,8 +89,6 @@ const els = {
   fpIconPlay: $("fp-icon-play"),
   fpIconPause: $("fp-icon-pause"),
   fpRepBadge: $("fp-rep-badge"),
-  fpVolume: $("fp-volume"),
-  fpVolumeIcon: $("fp-volume-icon"),
   fpShare: $("fp-share"),
   fpShareMenu: $("fp-share-menu"),
   fpShareLink: $("fp-share-link"),
@@ -491,7 +489,6 @@ function applySavedState() {
   const savedVolume = storage.get("mp-volume");
   if (savedVolume !== null) {
     els.volume.value = savedVolume;
-    els.fpVolume.value = savedVolume;
     audio.volume = Number(savedVolume);
   }
 }
@@ -926,13 +923,11 @@ function setVolume(value) {
   const v = Math.max(0, Math.min(1, Number(value)));
   audio.volume = v;
   els.volume.value = v;
-  if (els.fpVolume) els.fpVolume.value = v;
   storage.set("mp-volume", v);
   if (v > 0) lastVolume = v;
 }
 
 els.volume.addEventListener("input", () => setVolume(els.volume.value));
-if (els.fpVolume) els.fpVolume.addEventListener("input", () => setVolume(els.fpVolume.value));
 
 // Click sull'icona del volume: silenzia / ripristina (su entrambe le barre)
 function toggleMute() {
@@ -945,7 +940,6 @@ function toggleMute() {
 }
 
 els.volumeIcon.addEventListener("click", toggleMute);
-if (els.fpVolumeIcon) els.fpVolumeIcon.addEventListener("click", toggleMute);
 
 /* ---------- 12. EVENTI <audio> ---------- */
 
