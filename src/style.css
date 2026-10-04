@@ -1509,15 +1509,17 @@ input[type="range"] {
   color: var(--text);   /* il titolo del brano resta sempre bianco */
 }
 
-/* Righe titolo: il cuore sta a destra del nome del pezzo */
+/* Righe titolo: il titolo resta centrato come prima (griglia a 3 colonne
+   come il mini player: i lati si bilanciano) e il cuore sta a destra */
 .fp-title-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: center;
   gap: 12px;
   width: 100%;
 }
-.fp-title-row .fp-title { flex: 1; min-width: 0; text-align: left; }
+.fp-title-row .fp-title { grid-column: 2; min-width: 0; text-align: center; }
+.fp-title-row .fp-fav { grid-column: 3; justify-self: start; }
 
 .fp-album {
   font-size: .86rem;
