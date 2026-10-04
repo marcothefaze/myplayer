@@ -222,7 +222,7 @@ body::after {
   #sky-deep { animation: none; }
   #sky-shooting2 { animation: none; opacity: 0; }
   .fp-bg::before { animation: none; }
-  #fp-sheen::before { animation: none; opacity: 0; }
+  #fp-cover-wrap::before { animation: none; }
   .album-cover-wrap::after { animation: none; }
   .view:not(.hidden) { animation: none; }
   body.has-track .player-bar { animation: none; }
@@ -1168,30 +1168,28 @@ input[type="range"] {
   pointer-events: none;
 }
 
-/* Luce che attraversa lo sfondo sfocato ogni 12s (layer separato e
-   statico sotto: il blur non si ri-rasterizza, solo la luce si muove) */
-#fp-sheen {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  overflow: hidden;
+/* ---------- AURA RADIANTE dalla copertina ----------
+   Alone morbido che abbraccia TUTTO il contorno del riquadro e respira
+   lentamente (solo opacity: GPU, il blur non si ri-rasterizza mai). */
+#fp-cover-wrap {
+  position: relative;
+  z-index: 1;   /* stacking context: l'alone resta dietro la copertina ma sopra lo sfondo */
 }
-#fp-sheen::before {
+#fp-cover-wrap::before {
   content: "";
   position: absolute;
-  top: -40%;
-  left: -25%;
-  width: 38%;
-  height: 180%;
-  background: linear-gradient(100deg, transparent 15%, rgba(190, 180, 255, .1) 50%, transparent 85%);
-  transform: translateX(-180%) skewX(-15deg);
-  animation: fp-sheen-move 12s ease-in-out infinite;
+  inset: -14px;
+  border-radius: 32px;
+  background: rgba(160, 145, 255, .35);
+  box-shadow: 0 0 70px 24px rgba(140, 125, 255, .3);
+  opacity: .7;
+  animation: fp-aura 5.5s ease-in-out infinite;
+  pointer-events: none;
 }
 
-@keyframes fp-sheen-move {
-  0%, 68%  { transform: translateX(-180%) skewX(-15deg); }
-  96%, 100% { transform: translateX(460%) skewX(-15deg); }
+@keyframes fp-aura {
+  0%, 100% { opacity: .4; }
+  50%      { opacity: .95; }
 }
 
 .fp-inner {

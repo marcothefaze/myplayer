@@ -1430,10 +1430,12 @@ function fpDriftCheck() {
     return;
   }
 
-  // Rilevamento stallo: il video non avanza (~1.2s di check di fila)
+  // Rilevamento stallo: il video non avanza (~2s di check di fila).
+  // Soglia prudente: con i timeupdate dell'audio e del video non
+  // sincronizzati tra loro, pochi check di fila possono sembrare uno stallo
   if (fpLastVideoTime >= 0 && Math.abs(fpVideoEl.currentTime - fpLastVideoTime) < 0.04) {
     fpStallChecks++;
-    if (fpStallChecks >= 5) {
+    if (fpStallChecks >= 8) {
       try {
         fpVideoEl.playbackRate = 1;
         fpVideoEl.currentTime = Math.max(0, Math.min(fpVideoEl.duration - 0.05, audio.currentTime));
@@ -1461,8 +1463,10 @@ function fpDriftCheck() {
       fpLastDriftSync = now;
     }
   } else if (now - fpLastRateNudge >= 1200) {
-    // Scarto piccolo: micro-accelerazione/rallentamento senza seek
-    try { fpVideoEl.playbackRate = drift > 0 ? 1.08 : 0.92; } catch (e) {}
+    // Scarto piccolo: micro-accelerazione/rallentamento senza seek.
+    // GENTILI (1.05x/0.95x): su iOS ogni cambio di velocità può far
+    // scattare un attimo la decodifica, più sono piccoli meno si sentono
+    try { fpVideoEl.playbackRate = drift > 0 ? 1.05 : 0.95; } catch (e) {}
     fpLastRateNudge = now;
   }
 }
