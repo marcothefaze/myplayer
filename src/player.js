@@ -2024,6 +2024,7 @@ const SKY = (function () {
   let W = 0, H = 0;
   let rafId = 0;
   let running = false;
+  const COUNTS = { far: 150, mid: 75, near: 26 };   // usati da buildStars e drawStatic
 
   const STARS = [];      // statico
   const TWINKLERS = [];  // le stelle vive
@@ -2044,27 +2045,30 @@ const SKY = (function () {
   function buildStars() {
     STARS.length = 0;
     TWINKLERS.length = 0;
-    // Densità in base allo schermo: un telefono non disegna 800 stelle
+    // Densità in base allo schermo: un telefono non disegna 800 stelle.
+    // I conteggi stanno fuori (li usa anche drawStatic per la Via Lattea:
+    // erano dichiarati qui dentro e drawStatic lanciava ReferenceError
+    // facendo morire TUTTO lo script: caricamento infinito)
     const k = Math.min(1.6, Math.max(.7, (W * H) / (400 * 800)));
-    const far = Math.round(150 * k);
-    const mid = Math.round(75 * k);
-    const near = Math.round(26 * k);
+    COUNTS.far = Math.round(150 * k);
+    COUNTS.mid = Math.round(75 * k);
+    COUNTS.near = Math.round(26 * k);
 
-    for (let i = 0; i < far; i++) {           // lontane: minuscole e tenui
+    for (let i = 0; i < COUNTS.far; i++) {           // lontane: minuscole e tenui
       STARS.push({ x: Math.random() * W, y: Math.random() * H,
         r: rand(.4, .8), a: rand(.25, .5), c: TINTS[(Math.random() * TINTS.length) | 0] });
     }
-    for (let i = 0; i < mid; i++) {           // medie
+    for (let i = 0; i < COUNTS.mid; i++) {           // medie
       STARS.push({ x: Math.random() * W, y: Math.random() * H,
         r: rand(.8, 1.3), a: rand(.4, .75), c: TINTS[(Math.random() * TINTS.length) | 0] });
     }
-    for (let i = 0; i < near; i++) {          // vicine: brillanti, qualcuna con alone
+    for (let i = 0; i < COUNTS.near; i++) {          // vicine: brillanti, qualcuna con alone
       STARS.push({ x: Math.random() * W, y: Math.random() * H,
         r: rand(1.3, 2.1), a: rand(.6, .95), c: TINTS[(Math.random() * TINTS.length) | 0],
         halo: Math.random() < .3 });
     }
 
-    const nTw = Math.round(20 + near * .7);   // le stelle vive
+    const nTw = Math.round(20 + COUNTS.near * .7);   // le stelle vive
     for (let i = 0; i < nTw; i++) {
       TWINKLERS.push({ x: Math.random() * W, y: Math.random() * H,
         r: rand(.9, 1.7), base: rand(.45, .85), amp: rand(.2, .45),
@@ -2103,7 +2107,7 @@ const SKY = (function () {
     bg.addColorStop(1, "rgba(190,180,255,0)");
     sctx.fillStyle = bg;
     sctx.fillRect(-bandW / 2, -bandH / 2, bandW, bandH);
-    const bandStars = Math.round(far * .9);
+    const bandStars = Math.round(COUNTS.far * .9);
     for (let i = 0; i < bandStars; i++) {
       const x = rand(-bandW / 2, bandW / 2);
       const y = rand(-bandH / 2, bandH / 2);
