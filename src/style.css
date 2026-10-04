@@ -15,6 +15,10 @@
   --accent-2: #4f9dff;
   --accent-soft: rgba(124, 108, 255, 0.18);
   --grad: linear-gradient(135deg, #7c6cff, #4f9dff);
+  /* Colore dell'album in riproduzione (impostato da player.js con
+     applyAlbumColors): alone, titoli, accenti e tinte dello sfondo */
+  --album-c1: 124, 108, 255;
+  --album-c2: 79, 157, 255;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -624,8 +628,8 @@ button:active { transform: scale(.94); }
   border-radius: 14px;
   padding: 2px;
   background: conic-gradient(from var(--ring-a),
-    transparent 0deg, rgba(124, 108, 255, .85) 55deg,
-    rgba(79, 157, 255, .85) 110deg, transparent 170deg, transparent 360deg);
+    transparent 0deg, rgba(var(--album-c1), .85) 55deg,
+    rgba(var(--album-c2), .85) 110deg, transparent 170deg, transparent 360deg);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
           mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
@@ -658,7 +662,7 @@ button:active { transform: scale(.94); }
   font-size: .7rem;
   font-weight: 700;
   letter-spacing: 2.5px;
-  color: var(--accent);
+  color: rgb(var(--album-c1));
   text-transform: uppercase;
   display: inline-flex;
   align-items: center;
@@ -670,7 +674,7 @@ button:active { transform: scale(.94); }
   width: 20px;
   height: 2px;
   border-radius: 2px;
-  background: var(--grad);
+  background: linear-gradient(90deg, rgb(var(--album-c1)), rgb(var(--album-c2)));
 }
 
 .album-title {
@@ -679,8 +683,8 @@ button:active { transform: scale(.94); }
   margin: 4px 0 8px;
   line-height: 1.1;
   word-break: break-word;
-  /* Titolo in gradiente: bianco che scende nel viola/blu dell'app */
-  background: linear-gradient(120deg, #ffffff 15%, #cdc4ff 55%, #8fb5ff 95%);
+  /* Titolo in gradiente col colore dell'album */
+  background: linear-gradient(120deg, #ffffff 15%, rgb(var(--album-c1)) 55%, rgb(var(--album-c2)) 95%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -761,7 +765,7 @@ button:active { transform: scale(.94); }
 .track-row.active .row-eq i {
   flex: 1;
   height: 100%;
-  background: var(--accent);
+  background: rgb(var(--album-c1));
   border-radius: 1px;
   transform-origin: bottom;
   transform: scaleY(.3);
@@ -798,12 +802,12 @@ body.is-playing .track-row.active .row-eq i:nth-child(3) { animation-delay: .36s
 }
 
 .track-row.active {
-  background: linear-gradient(135deg, rgba(124, 108, 255, .22), rgba(79, 157, 255, .12));
-  border-color: rgba(124, 108, 255, .5);
-  box-shadow: 0 0 0 1px rgba(124, 108, 255, .2), 0 4px 20px rgba(124, 108, 255, .18);
+  background: linear-gradient(135deg, rgba(var(--album-c1), .22), rgba(var(--album-c2), .12));
+  border-color: rgba(var(--album-c1), .5);
+  box-shadow: 0 0 0 1px rgba(var(--album-c1), .2), 0 4px 20px rgba(var(--album-c1), .18);
 }
 .track-row.active .track-title {
-  background: linear-gradient(120deg, #fff 30%, #cdc4ff 85%);
+  background: linear-gradient(120deg, #fff 30%, rgb(var(--album-c1)) 85%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -1147,9 +1151,10 @@ input[type="range"] {
   content: "";
   position: absolute;
   inset: 0;
+  /* Le tinte dello sfondo seguono il colore dell'album */
   background:
-    radial-gradient(70% 60% at 20% 15%, rgba(124, 108, 255, .22), transparent 60%),
-    radial-gradient(60% 55% at 85% 90%, rgba(79, 157, 255, .16), transparent 60%);
+    radial-gradient(70% 60% at 20% 15%, rgba(var(--album-c1), .22), transparent 60%),
+    radial-gradient(60% 55% at 85% 90%, rgba(var(--album-c2), .16), transparent 60%);
   pointer-events: none;
   animation: neb-breathe 14s ease-in-out infinite;
 }
@@ -1180,8 +1185,8 @@ input[type="range"] {
   position: absolute;
   inset: -14px;
   border-radius: 32px;
-  background: rgba(160, 145, 255, .35);
-  box-shadow: 0 0 70px 24px rgba(140, 125, 255, .3);
+  background: rgba(var(--album-c1), .35);
+  box-shadow: 0 0 70px 24px rgba(var(--album-c1), .3);
   opacity: .7;
   animation: fp-aura 5.5s ease-in-out infinite;
   pointer-events: none;
@@ -1317,8 +1322,8 @@ input[type="range"] {
   font-weight: 800;
   line-height: 1.15;
   word-break: break-word;
-  /* Titolo in gradiente: coerente con il titolo della schermata album */
-  background: linear-gradient(120deg, #ffffff 15%, #cdc4ff 55%, #8fb5ff 95%);
+  /* Titolo in gradiente col colore dell'album */
+  background: linear-gradient(120deg, #ffffff 15%, rgb(var(--album-c1)) 55%, rgb(var(--album-c2)) 95%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;

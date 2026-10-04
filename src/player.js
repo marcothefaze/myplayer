@@ -425,6 +425,28 @@ function toast(msg) {
   el._t = setTimeout(() => el.classList.remove("show"), 2600);
 }
 
+/* ---------- COLORE PER ALBUM ----------
+   L'alone della copertina, i titoli, gli accenti e le tinte dello sfondo
+   del full player si adattano ai colori della copertina dell'album
+   (richiesta di Marco). I colori sono triplette "r, g, b" usate con
+   rgb()/rgba() nelle variabili CSS --album-c1 / --album-c2. */
+const ALBUM_COLORS = {
+  "Non è SSG":               { c1: "245, 205, 60",  c2: "255, 170, 60" },
+  "Testamento - ssg":        { c1: "90, 145, 220",  c2: "230, 190, 90" },
+  "Giorni Migliori - SSG":   { c1: "175, 195, 220", c2: "222, 228, 238" },
+  "LUCCIOLE - SSG":          { c1: "85, 200, 175",  c2: "235, 200, 110" },
+  "COCONUT ICE CREAM - SSG": { c1: "70, 205, 230",  c2: "240, 90, 170" },
+  "SINGOLI : EXTRA - SSG":   { c1: "140, 85, 225",  c2: "245, 80, 65" },
+  "SOLO AVANZI - SSG":       { c1: "235, 75, 85",   c2: "185, 230, 75" },
+  "D.A.M.S. - SSG":          { c1: "235, 45, 45",   c2: "255, 120, 60" }
+};
+
+function applyAlbumColors(albumTitle) {
+  const c = ALBUM_COLORS[albumTitle] || { c1: "124, 108, 255", c2: "79, 157, 255" };
+  document.documentElement.style.setProperty("--album-c1", c.c1);
+  document.documentElement.style.setProperty("--album-c2", c.c2);
+}
+
 /* Ordine di visualizzazione degli album richiesto */
 const ALBUM_ORDER = [
   "Non è SSG",
@@ -592,6 +614,7 @@ function closeCoverView() {
 }
 
 function openAlbum(album) {
+  applyAlbumColors(album.title);   // alone/titoli/accenti del colore dell'album
   els.albumTitle.textContent = album.title;
   els.albumMeta.textContent =
     album.songs.length + " brani · " + formatMinutes(album.totalSec) +
@@ -724,6 +747,7 @@ async function playSong(songIdx, openFull) {
 }
 
 function updatePlayerInfo(song) {
+  applyAlbumColors(song.album);   // il full player si veste del colore dell'album
   els.songTitle.textContent = song.titolo || fileTitle(song.file);
   els.songArtist.textContent = isRealArtist(song.artista)
     ? song.artista
