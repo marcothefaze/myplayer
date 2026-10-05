@@ -972,10 +972,6 @@ function openAlbum(album) {
     title.className = "track-title";
     title.textContent = song.titolo || fileTitle(song.file);
 
-    const artist = document.createElement("span");
-    artist.className = "track-artist";
-    artist.textContent = isRealArtist(song.artista) ? song.artista : "";
-
     const dur = document.createElement("span");
     dur.className = "track-dur";
     dur.textContent = formatTime(song.durata);
@@ -1003,8 +999,7 @@ function openAlbum(album) {
 
     row.appendChild(num);
     row.appendChild(title);
-    row.appendChild(heart);      /* accanto al nome del pezzo */
-    row.appendChild(artist);
+    row.appendChild(heart);      /* accanto al nome del pezzo (PC: proprio prima del minutaggio) */
     row.appendChild(dur);
     row.addEventListener("click", () => playSong(songIdx, true));
 
