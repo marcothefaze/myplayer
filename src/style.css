@@ -821,16 +821,24 @@ body.is-playing .track-row.active .row-eq i:nth-child(3) { animation-delay: .36s
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 7px 14px;
-  border-top: 1px solid var(--border);
-  /* Sfondo sfumato col colore dell'album (non totale: il gradiente
-     svanisce verso la base scura, testo e pulsanti restano leggibili) */
+  gap: 12px;
+  /* Pill flottante staccata dai bordi, vetro con bordo luminoso */
+  margin: 0 12px calc(10px + env(safe-area-inset-bottom));
+  padding: 9px 14px 9px 9px;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 20px;
+  /* Luci in composizione propria: alone radiale dietro la copertina
+     + riflesso diagonale tenue, poi la base scura */
   background:
-    linear-gradient(100deg, rgba(var(--album-c1), .30) 0%, rgba(var(--album-c1), .10) 45%, rgba(16, 16, 24, 0) 75%),
-    rgba(16, 16, 24, .82);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+    radial-gradient(130% 170% at 0% 50%, rgba(var(--album-c1), .36) 0%, rgba(var(--album-c1), .12) 38%, rgba(16, 16, 24, 0) 70%),
+    linear-gradient(135deg, rgba(var(--album-c2), .14), rgba(16, 16, 24, 0) 55%),
+    rgba(16, 16, 24, .78);
+  backdrop-filter: blur(18px) saturate(1.25);
+  -webkit-backdrop-filter: blur(18px) saturate(1.25);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .09),
+    0 12px 32px rgba(0, 0, 0, .5),
+    0 0 26px rgba(var(--album-c1), .14);
 }
 
 /* Nascosti nel miniplayer (restano nel DOM: li usa il JS) */
@@ -862,16 +870,27 @@ body.has-track .player-bar { animation: bar-in .3s cubic-bezier(.32, .72, 0, 1) 
 
 .player-bar .cover {
   position: relative;
-  width: 38px;
-  height: 38px;
-  border-radius: 8px;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
   flex-shrink: 0;
   overflow: hidden;
   background: var(--surface-2);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, .1),
+    0 0 16px rgba(var(--album-c1), .4);
 }
 
 .player-bar .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .player-bar .cover.ph span.ph-title { font-size: .8rem; font-weight: 800; color: rgba(255,255,255,.7); }
+
+.player-bar .track-title { font-size: .92rem; }
+
+.player-bar .btn-play {
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, .5),
+    0 0 18px rgba(var(--album-c1), .4);
+}
 
 /* Equalizzatore animato sopra la copertina quando il brano riproduce */
 .eq {
@@ -1774,7 +1793,8 @@ input[type="range"] {
 
 .player-bar {
     gap: 8px;
-    padding: 6px 10px calc(10px + env(safe-area-inset-bottom)); /* incasso barra gestuale */
+    margin: 0 8px calc(8px + env(safe-area-inset-bottom));
+    padding: 7px 10px 7px 7px;
   }
   .controls { gap: 2px; }
   .player-bar .cover { width: 34px; height: 34px; border-radius: 7px; }
