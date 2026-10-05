@@ -101,8 +101,8 @@ button:active { transform: scale(.94); }
   z-index: 2;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 20px;
+  gap: 13px;
+  padding: 14px 22px;
   flex-shrink: 0;
   border-bottom: 1px solid var(--border);
 }
@@ -132,12 +132,12 @@ button:active { transform: scale(.94); }
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
+  padding: 7px 14px;
   border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--surface-2);
   color: var(--dim);
-  font-size: .74rem;
+  font-size: .77rem;
   font-weight: 700;
   letter-spacing: .3px;
   cursor: pointer;
@@ -146,7 +146,7 @@ button:active { transform: scale(.94); }
   overflow: hidden;            /* il ripple resta dentro la pill */
   transition: background .15s ease, color .15s ease, border-color .15s ease, transform .1s ease;
 }
-.refresh-btn svg { width: 16px; height: 16px; display: block; }
+.refresh-btn svg { width: 17px; height: 17px; display: block; }
 .refresh-btn:hover { background: #2e2e3e; color: var(--accent-2); border-color: #3c3c4c; }
 .refresh-btn:active { transform: scale(.95); }
 
@@ -157,9 +157,9 @@ button:active { transform: scale(.94); }
 }
 
 .brand-mark {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  width: 46px;
+  height: 46px;
+  border-radius: 11px;
   object-fit: cover;
   box-shadow: 0 4px 18px rgba(0, 0, 0, .45);
 }
@@ -167,7 +167,7 @@ button:active { transform: scale(.94); }
 .brand-text { line-height: 1.2; }
 
 .brand-name {
-  font-size: 1.08rem;
+  font-size: 1.22rem;
   font-weight: 800;
   letter-spacing: .2px;
   /* Camaleontica: luci neon che viaggiano dentro la scritta + bagliore
@@ -274,7 +274,7 @@ button:active { transform: scale(.94); }
     width: 100%;
   }
 
-  .album-cover-wrap { width: min(300px, 30vh); height: min(300px, 30vh); border-radius: 16px; }
+  .album-cover-wrap { width: min(265px, 27vh); height: min(265px, 27vh); border-radius: 16px; }
 
   .eyebrow { font-size: .82rem; }
 
@@ -290,11 +290,11 @@ button:active { transform: scale(.94); }
     padding-right: 8px;
   }
 
-  .track-row { padding: 18px 24px; border-radius: 14px; gap: 20px; }
+  .track-row { padding: 12px 18px; border-radius: 12px; gap: 16px; }
 
-  .track-num { width: 34px; height: 34px; font-size: 1.05rem; border-radius: 10px; }
+  .track-num { width: 30px; height: 30px; font-size: 1rem; border-radius: 9px; }
 
-  .track-title { font-size: 1.25rem; }
+  .track-title { font-size: 1.18rem; }
 
   .track-dur { font-size: 1rem; }
 
@@ -541,8 +541,8 @@ button:active { transform: scale(.94); }
 .album-cover-wrap {
   position: relative;
   z-index: 1;
-  width: 150px;
-  height: 150px;
+  width: 135px;
+  height: 135px;
   flex-shrink: 0;
   border-radius: 14px;
   overflow: hidden;
@@ -695,28 +695,27 @@ button:active { transform: scale(.94); }
   to { transform: rotate(360deg); }
 }
 
-/* ---------- Lista brani: righe vetro con ingresso scaglionato ----------
-   I bordi della lista sfumano (maschera): le righe entrano ed escono
-   dolcemente mentre si scrolla, effetto premium. */
+/* ---------- Lista brani: righe vetro compatte, scorrimento naturale ----------
+   Niente maschera sfumata ai bordi: il riquadro del primo e dell'ultimo
+   brano resta sempre visibile per intero. */
 .track-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
-          mask-image: linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+  gap: 5px;
+  padding: 6px 2px;
 }
 
 .track-row {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   width: 100%;
   background: rgba(255, 255, 255, .035);
   border: 1px solid rgba(255, 255, 255, .05);
   color: inherit;
   font: inherit;
-  padding: 12px 16px;
-  border-radius: 14px;
+  padding: 9px 14px;
+  border-radius: 12px;
   cursor: pointer;
   position: relative;
   overflow: hidden;            /* il ripple resta dentro la riga */
@@ -741,15 +740,15 @@ button:active { transform: scale(.94); }
 .track-row:active { transform: scale(.985); }
 
 .track-num {
-  width: 30px;
-  height: 30px;
-  border-radius: 9px;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, .06);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-size: .78rem;
+  font-size: .74rem;
   font-weight: 700;
   color: var(--dim);
   font-variant-numeric: tabular-nums;
@@ -778,7 +777,7 @@ body.is-playing .track-row.active .row-eq i:nth-child(2) { animation-delay: .18s
 body.is-playing .track-row.active .row-eq i:nth-child(3) { animation-delay: .36s; }
 
 .track-title {
-  font-size: .92rem;
+  font-size: .88rem;
   font-weight: 600;
   flex: 1;    /* riempie la riga: il cuore resta a destra, prima del minutaggio */
   min-width: 0;
@@ -1465,8 +1464,8 @@ input[type="range"] {
 /* Pulsante lente affianco ad aggiorna */
 .search-btn {
   margin-left: auto;
-  width: 34px;
-  height: 34px;
+  width: 38px;
+  height: 38px;
   border: 1px solid var(--border);
   border-radius: 50%;
   background: var(--surface-2);
@@ -1482,7 +1481,7 @@ input[type="range"] {
 }
 .search-btn:hover { background: #2e2e3e; color: var(--text); transform: scale(1.05); }
 .search-btn:active { transform: scale(.92); }
-.search-btn svg { width: 17px; height: 17px; display: block; }
+.search-btn svg { width: 18px; height: 18px; display: block; }
 .refresh-btn { margin-left: 0; }
 
 /* Pannello ricerca: copre lo schermo, input in cima + risultati sotto */
@@ -1717,7 +1716,7 @@ input[type="range"] {
   /* Hero bloccato in alto: la copertina sale fin sotto i pulsanti
      indietro/aggiorna e riempie il vuoto lasciato dal titolo nascosto */
   body.album-open .album-hero { flex: 0 0 auto; margin-bottom: 14px; padding-top: 6px; }
-  body.album-open .album-cover-wrap { width: min(46vw, 38vh); height: min(46vw, 38vh); }
+  body.album-open .album-cover-wrap { width: min(42vw, 34vh); height: min(42vw, 34vh); }
 
   /* Solo la tracklist scorre */
   body.album-open .track-list {
