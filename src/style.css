@@ -1237,6 +1237,12 @@ input[type="range"] {
   50%      { transform: translateY(-7px) rotate(var(--hr, 0deg)); }
 }
 
+/* Preferiti: hero in tonalità rosa sfumata al posto del cielo stellato,
+   si comporta come gli altri hero (stessa maschera di dissolvenza) */
+.album-hero.hero-favs {
+  background: linear-gradient(160deg, #57182e, #a83a68 48%, #641f3d);
+}
+
 /* Vignetta statica sullo sfondo sfocato: profondità notturna */
 .fp-bg::after {
   content: "";

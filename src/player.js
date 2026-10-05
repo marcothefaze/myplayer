@@ -13,7 +13,7 @@
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
 const APP_VERSION = "23";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v102";   // versione visibile in alto (brand-sub): bumpare a ogni release
+const APP_BUILD = "v103";   // versione visibile in alto (brand-sub): bumpare a ogni release
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
 const $ = (id) => document.getElementById(id);
@@ -453,6 +453,7 @@ function toast(msg) {
    rgb()/rgba() nelle variabili CSS --album-c1 / --album-c2. */
 const ALBUM_COLORS = {
   "Non è SSG":               { c1: "245, 205, 60",  c2: "255, 170, 60" },
+  "Preferiti":               { c1: "255, 107, 157", c2: "247, 168, 196" },
   "Testamento":        { c1: "90, 145, 220",  c2: "230, 190, 90" },
   "Giorni Migliori":   { c1: "175, 195, 220", c2: "222, 228, 238" },
   "Lucciole":          { c1: "85, 200, 175",  c2: "235, 200, 110" },
@@ -931,31 +932,13 @@ function openAlbum(album) {
   } else {
     els.heroBg.style.backgroundImage = "";
   }
+  // Preferiti: hero rosa sfumato al posto del cielo stellato
+  if (els.albumHero) els.albumHero.classList.toggle("hero-favs", !!album.isFavs);
 
-  // Preferiti: pioggia di cuoricini rosa/gialli nello sfondo dell'hero,
-  // tutto rosa. Gli altri album svuotano il contenitore.
-  if (els.heroHearts) {
+  // Preferiti: i cuoricini si piazzano dopo showView (vedi placeHearts).
+  // Gli altri album svuotano il contenitore subito.
+  if (els.heroHearts && !album.isFavs) {
     els.heroHearts.innerHTML = "";
-    if (album.isFavs) {
-      const pinks = ["#ff6b9d", "#ff8fb8", "#f7a8c4", "#e75480", "#ffc2d4"];
-      for (let h = 0; h < 14; h++) {
-        const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        s.setAttribute("viewBox", "0 0 24 24");
-        s.setAttribute("aria-hidden", "true");
-        const size = 14 + Math.round(Math.random() * 22);
-        s.style.width = size + "px";
-        s.style.height = size + "px";
-        s.style.left = (Math.random() * 92) + "%";
-        s.style.top = (Math.random() * 88) + "%";
-        s.style.setProperty("--hr", Math.round(Math.random() * 40 - 20) + "deg");
-        s.style.animationDelay = (-Math.random() * 7).toFixed(2) + "s";
-        s.style.animationDuration = (5 + Math.random() * 4).toFixed(2) + "s";
-        s.style.color = pinks[h % pinks.length];
-        s.style.opacity = (0.25 + Math.random() * 0.35).toFixed(2);
-        s.innerHTML = '<path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>';
-        els.heroHearts.appendChild(s);
-      }
-    }
   }
 
   const albumHead = document.querySelector(".album-head");
@@ -1044,7 +1027,56 @@ function openAlbum(album) {
 
   els.btnBack.classList.remove("hidden");
   showView("album");
+  placeHearts(album);   // dopo showView: i rettangoli sono misurabili
   highlightActive();
+}
+
+/* Cuoricini rosa nello sfondo dell'hero Preferiti, piazzati SOLO nelle
+   zone libere: mai sopra/sotto la copertina né sopra/vicino ai testi.
+   Si misura tutto a runtime così vale su telefono e PC. */
+function placeHearts(album) {
+  const box = els.heroHearts;
+  if (!box) return;
+  box.innerHTML = "";
+  if (!album.isFavs || !els.albumHero) return;
+  const heroR = els.albumHero.getBoundingClientRect();
+  const coverR = els.albumCoverWrap.getBoundingClientRect();
+  const headEl = document.querySelector(".album-head");
+  const headR = headEl ? headEl.getBoundingClientRect() : null;
+  if (heroR.width < 10 || heroR.height < 10) return;
+  const M = 26;   // margine di sicurezza attorno a copertina e testi
+  const rel = (r) => ({
+    l: r.left - heroR.left - M, rgt: r.right - heroR.left + M,
+    t: r.top - heroR.top - M, b: r.bottom - heroR.top + M
+  });
+  const c = rel(coverR);
+  const h = headR ? rel(headR) : null;
+  const pinks = ["#ff6b9d", "#ff8fb8", "#f7a8c4", "#e75480", "#ffc2d4"];
+  let placed = 0, tries = 0;
+  while (placed < 14 && tries < 140) {
+    tries++;
+    const size = 14 + Math.round(Math.random() * 22);
+    const x = Math.random() * Math.max(1, heroR.width - size);
+    const y = Math.random() * Math.max(1, heroR.height - size);
+    const hitC = x < c.rgt && x + size > c.l && y < c.b && y + size > c.t;
+    const hitH = h && x < h.rgt && x + size > h.l && y < h.b && y + size > h.t;
+    if (hitC || hitH) continue;
+    const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    s.setAttribute("viewBox", "0 0 24 24");
+    s.setAttribute("aria-hidden", "true");
+    s.style.width = size + "px";
+    s.style.height = size + "px";
+    s.style.left = (x / heroR.width * 100).toFixed(2) + "%";
+    s.style.top = (y / heroR.height * 100).toFixed(2) + "%";
+    s.style.setProperty("--hr", Math.round(Math.random() * 40 - 20) + "deg");
+    s.style.animationDelay = (-Math.random() * 7).toFixed(2) + "s";
+    s.style.animationDuration = (5 + Math.random() * 4).toFixed(2) + "s";
+    s.style.color = pinks[placed % pinks.length];
+    s.style.opacity = (0.25 + Math.random() * 0.35).toFixed(2);
+    s.innerHTML = '<path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>';
+    box.appendChild(s);
+    placed++;
+  }
 }
 
 /* ---------- 8. NAVIGAZIONE VISTE ---------- */
