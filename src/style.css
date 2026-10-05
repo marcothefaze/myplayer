@@ -56,7 +56,6 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   #sky-live { display: none; }
-  .brand-name::after { animation: none; display: none; }
   .fp-bg::before { animation: none; }
   #fp-cover-wrap::before { animation: none; }
   #fp-cover-wrap::after { animation: none; }
@@ -170,12 +169,11 @@ button:active { transform: scale(.94); }
 .brand-text { line-height: 1.2; }
 
 .brand-name {
-  position: relative;
   font-size: 1.22rem;
   font-weight: 800;
   letter-spacing: .2px;
-  /* Testo statico e nitido: il movimento vive solo sul riflesso (::after),
-     così iOS non deve ridisegnare le lettere a ogni frame */
+  /* Testo statico e nitido col suo bagliore neon fisso (niente riflessi
+     che si muovono sopra: davano lettere fantasma) */
   background: linear-gradient(90deg, #8f86ff, #5ea2ff 45%, #c9bcff 70%, #8f86ff);
   -webkit-background-clip: text;
   background-clip: text;
@@ -184,31 +182,6 @@ button:active { transform: scale(.94); }
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   text-shadow: 0 0 14px rgba(124, 108, 255, .35);
-}
-
-/* Riflesso di luce che attraversa la scritta: stesso testo duplicato,
-   si muove SOLO con transform (GPU, zero repaint del testo sotto) */
-.brand-name::after {
-  content: attr(data-text);
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: -80%;
-  width: 80%;
-  color: transparent;
-  background: linear-gradient(100deg, transparent 20%, rgba(255, 255, 255, .9) 50%, transparent 80%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  opacity: 0;
-  pointer-events: none;
-  animation: neon-sheen 5.5s ease-in-out infinite;
-}
-
-@keyframes neon-sheen {
-  0%   { transform: translateX(0); opacity: 0; }
-  12%  { opacity: 1; }
-  55%  { opacity: 1; }
-  75%, 100% { transform: translateX(250%); opacity: 0; }
 }
 
 .brand-sub {
