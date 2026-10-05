@@ -25,13 +25,12 @@ const storage = {
   set(key, value) { try { window.localStorage.setItem(key, String(value)); } catch (e) {} }
 };
 
-/* Su telefono: blocca lo zoom con due dita e il doppio tap (iOS/Android) */
+/* Su telefono: blocca lo zoom con due dita e il doppio tap (iOS/Android).
+   Il pinch-zoom è già bloccato nativamente via CSS (touch-action sul body),
+   così nessun listener JS rallenta lo scroll: il touchmove qui NON serve. */
 if ("gesturestart" in window) {
   document.addEventListener("gesturestart", (e) => e.preventDefault());
 }
-document.addEventListener("touchmove", (e) => {
-  if (e.touches.length > 1) e.preventDefault();
-}, { passive: false });
 
 /* ---------- 2. ELEMENTI DEL DOM ---------- */
 
@@ -914,7 +913,16 @@ function openAlbum(album) {
     (isRealArtist(album.artist) ? " · " + album.artist : "");
   currentAlbum = album;
 
-  buildCover(els.albumCoverWrap, album.cover, album.title);
+  if (album.isFavs) {
+    // Preferiti: cuore rosa come nella home, niente "P" del segnaposto
+    els.albumCoverWrap.classList.remove("ph");
+    els.albumCoverWrap.classList.add("fav-cover");
+    els.albumCoverWrap.innerHTML =
+      '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>';
+  } else {
+    els.albumCoverWrap.classList.remove("fav-cover");
+    buildCover(els.albumCoverWrap, album.cover, album.title);
+  }
 
   // Sfondo sfocato dell'intestazione: usa la stessa copertina
   if (album.cover) {
@@ -2239,6 +2247,18 @@ const SKY = (function () {
   // Scheda nascosta: il loop si ferma (batteria)
   document.addEventListener("visibilitychange", function () {
     if (document.hidden) stop(); else start();
+  });
+
+  // Scroll in corso: il loop live si ferma (il telefono non fatica),
+  // riparte da solo 220ms dopo l'ultimo scroll. Le stelle fisse restano.
+  let scrollT = 0;
+  function busyScroll() {
+    stop();
+    clearTimeout(scrollT);
+    scrollT = setTimeout(function () { if (!document.hidden) start(); }, 220);
+  }
+  [els.main, els.trackList, els.searchResults].forEach(function (el) {
+    if (el) el.addEventListener("scroll", busyScroll, { passive: true });
   });
 
   let rsT = 0;

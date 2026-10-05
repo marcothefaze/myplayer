@@ -33,6 +33,9 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  /* Blocca pinch-zoom e doppio-tap nativamente (compositor, senza JS):
+     lo scroll resta fluidissimo anche con listener touch attivi */
+  touch-action: pan-x pan-y;
 }
 
 /* ---------- Cielo stellato in CANVAS ----------
@@ -221,6 +224,9 @@ button:active { transform: scale(.94); }
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;   /* inerzia nativa su iOS */
+  overscroll-behavior-y: contain;      /* niente rimbalzi a catena tra scroller */
+  touch-action: pan-y;                 /* scroll verticale diretto sul compositor */
 }
 
 .view { padding: 26px 28px 34px; }
@@ -402,6 +408,14 @@ button:active { transform: scale(.94); }
   height: 34%;
   color: #ff6b9d;
   filter: drop-shadow(0 4px 16px rgba(255, 107, 157, .45));
+}
+
+/* Preferiti anche dentro l'album: stesso cuore rosa della home */
+.album-cover-wrap.fav-cover {
+  background: linear-gradient(150deg, #3b2a72, #1d1438 55%, #0d0a1c);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* ---------- Cuore sui brani (preferiti) ---------- */
@@ -720,6 +734,16 @@ button:active { transform: scale(.94); }
   flex-direction: column;
   gap: 5px;
   padding: 6px 2px;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+}
+
+/* Le righe fuori schermo non vengono renderizzate: liste lunghe
+   restano fluide anche sui telefoni meno potenti */
+.track-row, .sr-row, .album-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 64px;
 }
 
 .track-row {
@@ -1642,6 +1666,9 @@ input[type="range"] {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
   display: flex;
   flex-direction: column;
   gap: 6px;
