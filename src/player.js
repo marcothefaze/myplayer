@@ -13,7 +13,7 @@
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
 const APP_VERSION = "23";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v100";   // versione visibile in alto (brand-sub): bumpare a ogni release
+const APP_BUILD = "v101";   // versione visibile in alto (brand-sub): bumpare a ogni release
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
 const $ = (id) => document.getElementById(id);
@@ -47,6 +47,7 @@ const els = {
   searchViewClose: $("search-view-close"),
   btnSearch: $("btn-search"),
   albumEyebrow: $("album-eyebrow"),
+  heroHearts: $("hero-hearts"),
   trackList: $("track-list"),
   albumHero: $("album-hero"),
   heroBg: $("hero-bg"),
@@ -929,6 +930,32 @@ function openAlbum(album) {
     els.heroBg.style.backgroundImage = 'url("' + resolvePath(album.cover) + '")';
   } else {
     els.heroBg.style.backgroundImage = "";
+  }
+
+  // Preferiti: pioggia di cuoricini rosa/gialli nello sfondo dell'hero,
+  // tutto rosa. Gli altri album svuotano il contenitore.
+  if (els.heroHearts) {
+    els.heroHearts.innerHTML = "";
+    if (album.isFavs) {
+      const pinks = ["#ff6b9d", "#ff8fb8", "#f7a8c4", "#e75480", "#ffc2d4"];
+      for (let h = 0; h < 14; h++) {
+        const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        s.setAttribute("viewBox", "0 0 24 24");
+        s.setAttribute("aria-hidden", "true");
+        const size = 14 + Math.round(Math.random() * 22);
+        s.style.width = size + "px";
+        s.style.height = size + "px";
+        s.style.left = (Math.random() * 92) + "%";
+        s.style.top = (Math.random() * 88) + "%";
+        s.style.setProperty("--hr", Math.round(Math.random() * 40 - 20) + "deg");
+        s.style.animationDelay = (-Math.random() * 7).toFixed(2) + "s";
+        s.style.animationDuration = (5 + Math.random() * 4).toFixed(2) + "s";
+        s.style.color = pinks[h % pinks.length];
+        s.style.opacity = (0.25 + Math.random() * 0.35).toFixed(2);
+        s.innerHTML = '<path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>';
+        els.heroHearts.appendChild(s);
+      }
+    }
   }
 
   const albumHead = document.querySelector(".album-head");

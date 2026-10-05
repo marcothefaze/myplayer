@@ -56,6 +56,7 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   #sky-live { display: none; }
+  .hero-hearts svg { animation: none; }
   .fp-bg::before { animation: none; }
   #fp-cover-wrap::before { animation: none; }
   #fp-cover-wrap::after { animation: none; }
@@ -1216,6 +1217,24 @@ input[type="range"] {
 @keyframes neb-breathe {
   0%, 100% { opacity: .55; }
   50%      { opacity: 1; }
+}
+
+/* Cuoricini rosa sparsi nello sfondo dell'hero Preferiti: il JS li
+   genera in posizioni/calibro casuali, galleggiano piano (solo transform,
+   GPU). Niente animazione con reduced-motion. */
+.hero-hearts {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.hero-hearts svg {
+  position: absolute;
+  animation: heart-float 7s ease-in-out infinite;
+}
+@keyframes heart-float {
+  0%, 100% { transform: translateY(0) rotate(var(--hr, 0deg)); }
+  50%      { transform: translateY(-7px) rotate(var(--hr, 0deg)); }
 }
 
 /* Vignetta statica sullo sfondo sfocato: profondità notturna */
