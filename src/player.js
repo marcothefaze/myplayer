@@ -12,7 +12,7 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "22";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_VERSION = "23";   // cambia l'URL di playlist.json: niente cache stantia
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
 const $ = (id) => document.getElementById(id);
@@ -452,13 +452,13 @@ function toast(msg) {
    rgb()/rgba() nelle variabili CSS --album-c1 / --album-c2. */
 const ALBUM_COLORS = {
   "Non è SSG":               { c1: "245, 205, 60",  c2: "255, 170, 60" },
-  "Testamento - ssg":        { c1: "90, 145, 220",  c2: "230, 190, 90" },
-  "Giorni Migliori - SSG":   { c1: "175, 195, 220", c2: "222, 228, 238" },
-  "LUCCIOLE - SSG":          { c1: "85, 200, 175",  c2: "235, 200, 110" },
-  "COCONUT ICE CREAM - SSG": { c1: "70, 205, 230",  c2: "240, 90, 170" },
-  "SINGOLI : EXTRA - SSG":   { c1: "140, 85, 225",  c2: "245, 80, 65" },
-  "SOLO AVANZI - SSG":       { c1: "235, 75, 85",   c2: "185, 230, 75" },
-  "D.A.M.S. - SSG":          { c1: "235, 45, 45",   c2: "255, 120, 60" }
+  "Testamento":        { c1: "90, 145, 220",  c2: "230, 190, 90" },
+  "Giorni Migliori":   { c1: "175, 195, 220", c2: "222, 228, 238" },
+  "Lucciole":          { c1: "85, 200, 175",  c2: "235, 200, 110" },
+  "Coconut Ice Cream": { c1: "70, 205, 230",  c2: "240, 90, 170" },
+  "Singoli & Extra":   { c1: "140, 85, 225",  c2: "245, 80, 65" },
+  "Solo Avanzi":       { c1: "235, 75, 85",   c2: "185, 230, 75" },
+  "D.A.M.S.":          { c1: "235, 45, 45",   c2: "255, 120, 60" }
 };
 
 function applyAlbumColors(albumTitle) {
@@ -674,13 +674,13 @@ async function downloadAlbum(album, btn) {
 /* ---------- ORDINE DI VISUALIZZAZIONE DEGLI ALBUM RICHIESTO ---------- */
 const ALBUM_ORDER = [
   "Non è SSG",
-  "Testamento - ssg",
-  "Giorni Migliori - SSG",
-  "SINGOLI : EXTRA - SSG",
-  "SOLO AVANZI - SSG",
-  "COCONUT ICE CREAM - SSG",
-  "LUCCIOLE - SSG",
-  "D.A.M.S. - SSG"
+  "Testamento",
+  "Giorni Migliori",
+  "Singoli & Extra",
+  "Solo Avanzi",
+  "Coconut Ice Cream",
+  "Lucciole",
+  "D.A.M.S."
 ];
 
 function buildAlbums() {
