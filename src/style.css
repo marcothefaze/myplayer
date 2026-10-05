@@ -53,7 +53,7 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   #sky-live { display: none; }
-  .brand-name { animation: none; }
+  .brand-name::after { animation: none; display: none; }
   .fp-bg::before { animation: none; }
   #fp-cover-wrap::before { animation: none; }
   #fp-cover-wrap::after { animation: none; }
@@ -167,28 +167,45 @@ button:active { transform: scale(.94); }
 .brand-text { line-height: 1.2; }
 
 .brand-name {
+  position: relative;
   font-size: 1.22rem;
   font-weight: 800;
   letter-spacing: .2px;
-  /* Camaleontica: luci neon che viaggiano dentro la scritta + bagliore
-     che pulsa come un'insegna al neon */
-  background: linear-gradient(90deg, #7c6cff, #4f9dff 30%, #b18cff 55%, #4f9dff 80%, #7c6cff);
-  background-size: 300% 100%;
+  /* Testo statico e nitido: il movimento vive solo sul riflesso (::after),
+     così iOS non deve ridisegnare le lettere a ogni frame */
+  background: linear-gradient(90deg, #8f86ff, #5ea2ff 45%, #c9bcff 70%, #8f86ff);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  color: transparent;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  animation: neon-move 6s linear infinite, neon-pulse 2.4s ease-in-out infinite;
+  text-shadow: 0 0 14px rgba(124, 108, 255, .35);
 }
 
-@keyframes neon-move {
-  to { background-position: 300% 0; }
+/* Riflesso di luce che attraversa la scritta: stesso testo duplicato,
+   si muove SOLO con transform (GPU, zero repaint del testo sotto) */
+.brand-name::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -80%;
+  width: 80%;
+  color: transparent;
+  background: linear-gradient(100deg, transparent 20%, rgba(255, 255, 255, .9) 50%, transparent 80%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  opacity: 0;
+  pointer-events: none;
+  animation: neon-sheen 5.5s ease-in-out infinite;
 }
 
-@keyframes neon-pulse {
-  0%, 100% { text-shadow: 0 0 6px rgba(124, 108, 255, .35), 0 0 16px rgba(124, 108, 255, .22); }
-  50%      { text-shadow: 0 0 10px rgba(124, 108, 255, .6), 0 0 26px rgba(124, 108, 255, .38); }
+@keyframes neon-sheen {
+  0%   { transform: translateX(0); opacity: 0; }
+  12%  { opacity: 1; }
+  55%  { opacity: 1; }
+  75%, 100% { transform: translateX(250%); opacity: 0; }
 }
 
 .brand-sub {
