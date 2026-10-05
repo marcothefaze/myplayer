@@ -999,12 +999,8 @@ body.is-playing .eq { opacity: 1; }
   color: var(--accent);
 }
 
-/* ---------- Avanzamento + volume ---------- */
-
-.right-side {
-  display: flex;
-  justify-content: flex-end;
-}
+/* ---------- Avanzamento + volume (solo full player: .seek/.time/.seek-fill;
+   il resto è legacy del vecchio miniplayer, resta nascosto) ---------- */
 
 .progress-area {
   display: flex;
