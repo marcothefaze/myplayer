@@ -13,7 +13,7 @@
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
 const APP_VERSION = "23";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v101";   // versione visibile in alto (brand-sub): bumpare a ogni release
+const APP_BUILD = "v102";   // versione visibile in alto (brand-sub): bumpare a ogni release
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
 const $ = (id) => document.getElementById(id);
@@ -2048,7 +2048,18 @@ const SKY = (function () {
 
   const sctx = staticC.getContext("2d");
   const lctx = liveC.getContext("2d");
-  const DPR = Math.min(window.devicePixelRatio || 1, 2);   // il telefono non fatica
+  // Connessione lenta o risparmio dati attivo: si alleggerisce il cielo
+  // (niente stelle cadenti, poche vive, risoluzione base). Protetto con
+  // try/catch: se l'API non esiste non cambia nulla e non si rompe niente.
+  let ecoMode = false;
+  try {
+    const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (conn && (conn.saveData === true ||
+        (typeof conn.effectiveType === "string" && conn.effectiveType.indexOf("2g") >= 0))) {
+      ecoMode = true;
+    }
+  } catch (e) {}
+  const DPR = ecoMode ? 1 : Math.min(window.devicePixelRatio || 1, 2);
   const reduce = window.matchMedia &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -2099,7 +2110,7 @@ const SKY = (function () {
         halo: Math.random() < .3 });
     }
 
-    const nTw = Math.round(20 + COUNTS.near * .7);   // le stelle vive
+    const nTw = ecoMode ? 6 : Math.round(20 + COUNTS.near * .7);   // le stelle vive
     for (let i = 0; i < nTw; i++) {
       TWINKLERS.push({ x: Math.random() * W, y: Math.random() * H,
         r: rand(.9, 1.7), base: rand(.45, .85), amp: rand(.2, .45),
@@ -2238,7 +2249,7 @@ const SKY = (function () {
     const dt = Math.min(.05, (now - (loop._last || now)) / 1000);
     loop._last = now;
     if (!loop._next || now >= loop._next) {        // una cadente ogni 4-9s
-      if (SHOOTERS.length < 3) spawnShooter();
+      if (!ecoMode && SHOOTERS.length < 3) spawnShooter();
       loop._next = now + rand(4000, 9000);
     }
     drawLive(now / 1000, dt);

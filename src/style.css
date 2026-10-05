@@ -1868,6 +1868,18 @@ input[type="range"] {
     width: 38px;
     height: 38px;
   }
+  /* Su telefono e iPad tenere premuto NON deve evidenziare testi né aprire
+     il menu iOS (Copia/Cerca/Traduci). L'input di ricerca resta scrivibile. */
+  body {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  input, textarea {
+    -webkit-user-select: text;
+    user-select: text;
+    -webkit-touch-callout: default;
+  }
 }
 
 /* =========================================================
