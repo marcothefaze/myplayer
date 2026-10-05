@@ -3,9 +3,13 @@
    telefono non si deve rompere (e niente cache dei file grandi).
    GLI AUDIO: online rete diretta, offline escono dalla cache se sono
    stati scaricati col tasto "Scarica" (ascolto offline).
-   Tutto il resto (pagina, JS, CSS, JSON, copertine): stale-while-revalidate. */
+   Asset VERSIONATI (?v=): immutabili per costruzione (stesso URL = stessi
+   byte per sempre) -> cache-first: istantanei, sicuri, zero riscaricamenti.
+   SHELL e resto (index.html, navigazioni): network-first con fallback in
+   cache -> la pagina punta SEMPRE ai ?v giusti, gli aggiornamenti si vedono
+   alla prima apertura. Copertine: stale-while-revalidate. */
 
-const CACHE = "ssg-cache-v7";
+const CACHE = "ssg-cache-v8";
 /* Cache degli audio SCARICATI per l'ascolto offline (tasto "Scarica"
    sull'album): online va sempre in rete (streaming nativo intatto),
    offline i brani scaricati escono dalla cache locale. */
@@ -66,6 +70,21 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
+  /* Asset VERSIONATI (?v=): immutabili per costruzione, quindi
+     cache-first senza rischi: se l'URL è lo stesso, i byte sono gli stessi.
+     Vale per style.css, player.js, playlist.json e tutto ciò che ha ?v=. */
+  if (url.searchParams.has("v")) {
+    e.respondWith((async () => {
+      const cache = await caches.open(CACHE);
+      const cached = await cache.match(e.request);
+      if (cached) return cached;
+      const net = await fetch(e.request);
+      if (net && net.ok) cache.put(e.request, net.clone());
+      return net;
+    })());
+    return;
+  }
+
   /* Copertine e immagini: CACHE-FIRST (stale-while-revalidate).
      La copia in cache risponde ALL'ISTANTE (niente più secondini a ogni
      cambio brano) e in background si aggiorna dal server, così resta
@@ -85,21 +104,21 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
+  /* SHELL e navigazioni (index.html incluso): NETWORK-FIRST con fallback
+     in cache. La shell punta sempre ai ?v giusti, quindi ogni apertura
+     mostra l'ultima versione; offline si ripiega sulla copia in cache. */
   e.respondWith(
     (async () => {
       const cache = await caches.open(CACHE);
-      const cached = await cache.match(e.request);
-      /* STALE-WHILE-REVALIDATE: la copia in cache risponde ALL'ISTANTE
-         (l'app si apre in un lampo anche con la connessione scarsa) e in
-         background si scarica la versione nuova, che vale per la prossima
-         apertura. A ogni release la versione della cache cambia
-         (ssg-cache-vN): la prima apertura dopo un rilascio prende sempre
-         la versione fresca dal server. */
-      const netFetch = fetch(e.request).then((net) => {
+      try {
+        const net = await fetch(e.request);
         if (net && net.ok) cache.put(e.request, net.clone());
         return net;
-      }).catch(() => {});
-      return cached || netFetch;
+      } catch (err) {
+        const cached = await cache.match(e.request);
+        if (cached) return cached;
+        throw err;
+      }
     })()
   );
 });
