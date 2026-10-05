@@ -818,7 +818,11 @@ body.is-playing .track-row.active .row-eq i:nth-child(3) { animation-delay: .36s
   position: relative;
   z-index: 2;
   flex-shrink: 0;
-  background: rgba(16, 16, 24, .82);
+  /* Sfondo sfumato col colore dell'album (non totale: il gradiente svanisce
+     verso la base scura così testo e pulsanti restano leggibili) */
+  background:
+    linear-gradient(100deg, rgba(var(--album-c1), .30) 0%, rgba(var(--album-c1), .10) 45%, rgba(16, 16, 24, 0) 75%),
+    rgba(16, 16, 24, .82);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-top: 1px solid var(--border);
