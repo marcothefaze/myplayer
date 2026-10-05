@@ -13,6 +13,7 @@
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
 const APP_VERSION = "23";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v96";    // versione visibile in alto (brand-sub): bumpare a ogni release
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
 const $ = (id) => document.getElementById(id);
@@ -745,7 +746,7 @@ function setPlayIcons(playing) {
 
 function updateBrandCount() {
   els.brandCount.textContent =
-    state.songs.length + " brani · " + state.albums.length + " album";
+    state.songs.length + " brani · " + state.albums.length + " album · " + APP_BUILD;
 }
 
 /* ---------- 6. HOME: griglia album + card Preferiti ---------- */

@@ -809,32 +809,40 @@ body.is-playing .track-row.active .row-eq i:nth-child(3) { animation-delay: .36s
 }
 
 /* =========================================================
-   MINIPLAYER stile Spotify: UNA sola riga compatta (dimezzata):
-   copertina, titolo, shuffle, play/pausa, skip. Nient'altro:
-   via avanzamento, artista, precedente, repeat, volume e orari.
+   MINIPLAYER stile Spotify — UNA sola riga compatta:
+   [copertina] [titolo] ... [shuffle] [play] [skip]
+   Tutto il resto (avanzamento, orari, precedente, repeat,
+   volume, artista) resta nel DOM per il JS ma è nascosto.
    ========================================================= */
 
 .player-bar {
   position: relative;
   z-index: 2;
   flex-shrink: 0;
-  /* Sfondo sfumato col colore dell'album (non totale: il gradiente svanisce
-     verso la base scura così testo e pulsanti restano leggibili) */
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 14px;
+  border-top: 1px solid var(--border);
+  /* Sfondo sfumato col colore dell'album (non totale: il gradiente
+     svanisce verso la base scura, testo e pulsanti restano leggibili) */
   background:
     linear-gradient(100deg, rgba(var(--album-c1), .30) 0%, rgba(var(--album-c1), .10) 45%, rgba(16, 16, 24, 0) 75%),
     rgba(16, 16, 24, .82);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-top: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 7px 14px;
 }
 
-/* All'apertura dell'app il miniplayer è invisibile; compare solo quando
-   si avvia un brano (classe "has-track" aggiunta dal player), entrando
-   con una risalita rapida invece che apparire di colpo */
+/* Nascosti nel miniplayer (restano nel DOM: li usa il JS) */
+.player-bar .player-progress,
+.player-bar .right-side,
+.player-bar #btn-prev,
+.player-bar #btn-repeat,
+.player-bar #song-artist {
+  display: none;
+}
+
+/* Compare solo quando parte un brano, con risalita rapida */
 body:not(.has-track) .player-bar { display: none; }
 body.has-track .player-bar { animation: bar-in .3s cubic-bezier(.32, .72, 0, 1) both; }
 
@@ -843,14 +851,8 @@ body.has-track .player-bar { animation: bar-in .3s cubic-bezier(.32, .72, 0, 1) 
   to   { transform: none; }
 }
 
-/* Tutto ciò che non va mostrato resta nel DOM per il JS ma è nascosto */
-.player-progress { display: none; }
-.right-side { display: none; }
-#btn-prev { display: none; }
-#btn-repeat { display: none; }
-#song-artist { display: none; }
-
-.track-info {
+/* Blocco copertina + titolo: occupa tutto lo spazio libero */
+.player-bar .track-info {
   flex: 1;
   min-width: 0;
   display: flex;
@@ -858,7 +860,7 @@ body.has-track .player-bar { animation: bar-in .3s cubic-bezier(.32, .72, 0, 1) 
   gap: 10px;
 }
 
-.cover {
+.player-bar .cover {
   position: relative;
   width: 38px;
   height: 38px;
@@ -868,8 +870,8 @@ body.has-track .player-bar { animation: bar-in .3s cubic-bezier(.32, .72, 0, 1) 
   background: var(--surface-2);
 }
 
-.cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.cover.ph span.ph-title { font-size: .8rem; font-weight: 800; color: rgba(255,255,255,.7); }
+.player-bar .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.player-bar .cover.ph span.ph-title { font-size: .8rem; font-weight: 800; color: rgba(255,255,255,.7); }
 
 /* Equalizzatore animato sopra la copertina quando il brano riproduce */
 .eq {
@@ -1775,7 +1777,7 @@ input[type="range"] {
     padding: 6px 10px calc(10px + env(safe-area-inset-bottom)); /* incasso barra gestuale */
   }
   .controls { gap: 2px; }
-  .cover { width: 34px; height: 34px; border-radius: 7px; }
+  .player-bar .cover { width: 34px; height: 34px; border-radius: 7px; }
 
   /* Pulsanti miniplayer: compatti come Spotify */
   .ctrl-btn { width: 36px; height: 36px; }
