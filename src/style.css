@@ -809,7 +809,9 @@ body.is-playing .track-row.active .row-eq i:nth-child(3) { animation-delay: .36s
 }
 
 /* =========================================================
-   PLAYER FISSO IN BASSO - 3 colonne
+   MINIPLAYER stile Spotify: UNA sola riga compatta (dimezzata):
+   copertina, titolo, shuffle, play/pausa, skip. Nient'altro:
+   via avanzamento, artista, precedente, repeat, volume e orari.
    ========================================================= */
 
 .player-bar {
@@ -820,14 +822,10 @@ body.is-playing .track-row.active .row-eq i:nth-child(3) { animation-delay: .36s
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-top: 1px solid var(--border);
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  grid-template-areas:
-    "progress progress progress"
-    "info     controls right";
+  display: flex;
   align-items: center;
-  gap: 6px 18px;
-  padding: 8px 20px 12px;
+  gap: 10px;
+  padding: 7px 14px;
 }
 
 /* All'apertura dell'app il miniplayer è invisibile; compare solo quando
@@ -841,26 +839,26 @@ body.has-track .player-bar { animation: bar-in .3s cubic-bezier(.32, .72, 0, 1) 
   to   { transform: none; }
 }
 
-.player-progress { grid-area: progress; }
-.track-info { grid-area: info; }
-.controls { grid-area: controls; }
-.right-side { grid-area: right; }
-
-/* Barra di avanzamento a tutta larghezza, sopra i controlli */
-.player-progress .seek { flex: 1; }
+/* Tutto ciò che non va mostrato resta nel DOM per il JS ma è nascosto */
+.player-progress { display: none; }
+.right-side { display: none; }
+#btn-prev { display: none; }
+#btn-repeat { display: none; }
+#song-artist { display: none; }
 
 .track-info {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
-  gap: 12px;
-  min-width: 0;
+  gap: 10px;
 }
 
 .cover {
   position: relative;
-  width: 54px;
-  height: 54px;
-  border-radius: 10px;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
   flex-shrink: 0;
   overflow: hidden;
   background: var(--surface-2);
@@ -935,14 +933,14 @@ body.is-playing .eq { opacity: 1; }
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 4px;
 }
 
 /* ---------- Controlli stile Spotify: icone grigie che schiariscono a
    hover/tocco (con lieve ingrandimento), nessun cerchio di sfondo ---------- */
 .ctrl-btn {
-  width: 38px;
-  height: 38px;
+  width: 34px;
+  height: 34px;
   border: none;
   border-radius: 50%;
   background: none;
@@ -960,11 +958,11 @@ body.is-playing .eq { opacity: 1; }
 
 /* Pulsante play: cerchio BIANCO con icona NERA, la firma di Spotify */
 .btn-play {
-  width: 52px;
-  height: 52px;
+  width: 42px;
+  height: 42px;
   background: #fff;
   color: #000;
-  margin: 0 6px;
+  margin: 0;
   box-shadow: 0 4px 16px rgba(0, 0, 0, .5);
 }
 .btn-play:hover { background: #fff; transform: scale(1.06); color: #000; }
@@ -1749,21 +1747,15 @@ input[type="range"] {
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 .player-bar {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "info"
-      "progress"
-      "controls";
-    gap: 6px;
-    padding: 10px 14px calc(14px + env(safe-area-inset-bottom)); /* incasso barra gestuale */
+    gap: 8px;
+    padding: 6px 10px calc(10px + env(safe-area-inset-bottom)); /* incasso barra gestuale */
   }
-  .controls { gap: 6px; }
-  .right-side { display: none; }   /* volume nascosto su telefono */
-  .cover { width: 42px; height: 42px; }
+  .controls { gap: 2px; }
+  .cover { width: 34px; height: 34px; border-radius: 7px; }
 
-  /* Pulsanti più grandi, facili da toccare col dito */
-  .ctrl-btn { width: 44px; height: 44px; }
-  .btn-play { width: 48px; height: 48px; }
+  /* Pulsanti miniplayer: compatti come Spotify */
+  .ctrl-btn { width: 36px; height: 36px; }
+  .btn-play { width: 42px; height: 42px; margin: 0; }
   .seek { height: 6px; }
 
   /* Full player su telefono: compatta il contenuto */
