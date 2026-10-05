@@ -13,7 +13,8 @@
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
 const APP_VERSION = "23";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v103";   // versione visibile in alto (brand-sub): bumpare a ogni release
+const APP_BUILD = "v104";   // versione in console (brand-sub nascosto): bumpare a ogni release
+console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
 const $ = (id) => document.getElementById(id);
@@ -585,7 +586,10 @@ function openSearchView() {
   els.searchView.classList.remove("hidden");
   els.searchView.setAttribute("aria-hidden", "false");
   runSearch(els.search ? els.search.value : "");
-  setTimeout(() => { if (els.search) els.search.focus(); }, 60);
+  // Focus SINCRONO nel gesto del tap: solo così iOS apre la tastiera
+  // subito (un setTimeout spezzerebbe la catena del gesto e la tastiera
+  // non si aprirebbe su iPhone/iPad)
+  if (els.search) els.search.focus();
 }
 
 function closeSearchView() {

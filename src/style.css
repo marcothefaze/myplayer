@@ -186,8 +186,7 @@ button:active { transform: scale(.94); }
 }
 
 .brand-sub {
-  font-size: .72rem;
-  color: var(--dim);
+  display: none;   /* conteggi e versione nascosti: resta solo il titolo, centrato */
 }
 
 /* ---------- Zona principale ---------- */
