@@ -9,7 +9,7 @@
    cache -> la pagina punta SEMPRE ai ?v giusti, gli aggiornamenti si vedono
    alla prima apertura. Copertine: stale-while-revalidate. */
 
-const CACHE = "ssg-cache-v23";
+const CACHE = "ssg-cache-v24";
 /* Cache degli audio SCARICATI per l'ascolto offline (tasto "Scarica"
    sull'album): online va sempre in rete (streaming nativo intatto),
    offline i brani scaricati escono dalla cache locale. */

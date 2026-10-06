@@ -65,9 +65,27 @@ body {
   body.has-track .player-bar { animation: none; }
   .ripple { animation-duration: .01s; }
   .skel-cover, .skel-line { animation: none; }
+  #boot { display: none; }
 }
 
 .hidden { display: none !important; }
+
+/* Splash minutissimo all'apertura: copre il primo paint e svanisce da
+   solo in 0.5s. pointer-events:none sempre: non blocca mai i tocchi. */
+#boot {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(60% 50% at 50% 42%, rgba(124,108,255,.22), transparent 70%), #0a0a10;
+  pointer-events: none;
+  animation: boot-out .35s ease .18s forwards;
+}
+#boot img { width: 72px; border-radius: 18px; animation: boot-pop .35s ease; }
+@keyframes boot-out { to { opacity: 0; visibility: hidden; } }
+@keyframes boot-pop { from { transform: scale(.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
 /* Al tocco: niente alone blu, niente selezione del testo. La pressione
    usa TRANSFORM (GPU, un solo compositing) invece di filter (che ridisegnava

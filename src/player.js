@@ -13,7 +13,7 @@
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
 const APP_VERSION = "23";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v109";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_BUILD = "v110";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -2691,6 +2691,12 @@ const SKY = (function () {
       ecoMode = true;
     }
   } catch (e) {}
+  // Anche hardware modesto (pochi core / poca RAM): stesso trattamento
+  // leggero. Soglie conservative: solo telefoni davvero deboli, mai i medi.
+  try {
+    if (!ecoMode && typeof navigator.hardwareConcurrency === "number" && navigator.hardwareConcurrency <= 4) ecoMode = true;
+    if (!ecoMode && typeof navigator.deviceMemory === "number" && navigator.deviceMemory <= 2) ecoMode = true;
+  } catch (e) {}
   const DPR = ecoMode ? 1 : Math.min(window.devicePixelRatio || 1, 2);
   const reduce = window.matchMedia &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -2827,7 +2833,7 @@ const SKY = (function () {
     (function () {
       const hw = Math.max(PH.dusk, PH.day * 0.55);
       if (hw <= 0.02) return;
-      const hc = PH.dusk >= PH.day * 0.55 ? [255, 141, 74] : [122, 168, 255];
+      const hc = PH.dusk >= PH.day * 0.55 ? [255, 141, 74] : mix3([122, 168, 255], [255, 200, 130], PH.day * 0.45);
       const hg = sctx.createLinearGradient(0, H * .66, 0, H);
       hg.addColorStop(0, "rgba(0,0,0,0)");
       hg.addColorStop(1, "rgba(" + hc[0] + "," + hc[1] + "," + hc[2] + "," + (0.16 * hw).toFixed(3) + ")");
@@ -2844,7 +2850,7 @@ const SKY = (function () {
       const dp = Math.min(1, Math.max(0, ((PH.h || 12) - 6) / 14));
       const sx = W * (0.28 + 0.44 * dp);
       const sy = H * (1.0 - 0.78 * PH.day);
-      const warm = Math.max(PH.dusk, 1 - PH.day);
+      const warm = Math.max(PH.dusk, 1 - PH.day, PH.day * 0.25);
       const glow = mix3([200, 220, 255], [255, 170, 95], warm);
       const R = Math.min(W, H) * 0.042 * (1 + 0.3 * (1 - PH.day));
       const gg = sctx.createRadialGradient(sx, sy, 0, sx, sy, Math.min(W, H) * 0.5);
@@ -2857,6 +2863,23 @@ const SKY = (function () {
       sctx.beginPath();
       sctx.arc(sx, sy, Math.max(1, R), 0, 7);
       sctx.fill();
+    })();
+
+    // CIRRI SOTTILI di giorno: 3 strisce chiare alte, quasi impercettibili
+    (function () {
+      const ca = Math.max(PH.day * 0.7, PH.dusk * 0.4);
+      if (ca <= 0.02) return;
+      const cc = mix3([170, 200, 240], [255, 200, 150], Math.min(1, PH.dusk * 1.2));
+      [[0.18, 0.05], [0.3, 0.035], [0.42, 0.045]].forEach(function (c) {
+        const y0 = H * c[0], hh = Math.max(8, H * c[1]);
+        const cg = sctx.createLinearGradient(0, y0 - hh, 0, y0 + hh);
+        const a = (0.05 * ca).toFixed(3);
+        cg.addColorStop(0, "rgba(0,0,0,0)");
+        cg.addColorStop(0.5, "rgba(" + cc[0] + "," + cc[1] + "," + cc[2] + "," + a + ")");
+        cg.addColorStop(1, "rgba(0,0,0,0)");
+        sctx.fillStyle = cg;
+        sctx.fillRect(0, y0 - hh, W, hh * 2);
+      });
     })();
 
     // VIA LATTEA: fascia diagonale sfumata con stelle dense e tenui
