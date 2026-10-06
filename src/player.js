@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "27";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v117";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "28";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v118";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /

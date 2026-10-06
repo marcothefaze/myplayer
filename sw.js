@@ -1,7 +1,8 @@
 /* Service worker: aggiornamento automatico.
    I VIDEO non vengono intercettati: lo streaming a range requests del
    telefono non si deve rompere (e niente cache dei file grandi).
-   GLI AUDIO: online rete diretta, offline escono dalla cache se sono
+   GLI AUDIO: online rete diretta in no-store (niente accumulo nella
+   cache HTTP nascosta del browser), offline escono dalla cache se sono
    stati scaricati col tasto "Scarica" (ascolto offline).
    Asset VERSIONATI (?v=): immutabili per costruzione (stesso URL = stessi
    byte per sempre) -> cache-first: istantanei, sicuri, zero riscaricamenti.
@@ -9,7 +10,7 @@
    cache -> la pagina punta SEMPRE ai ?v giusti, gli aggiornamenti si vedono
    alla prima apertura. Copertine: stale-while-revalidate. */
 
-const CACHE = "ssg-cache-v31";
+const CACHE = "ssg-cache-v32";
 /* Cache degli audio SCARICATI per l'ascolto offline (tasto "Scarica"
    sull'album): online va sempre in rete (streaming nativo intatto),
    offline i brani scaricati escono dalla cache locale. */
@@ -54,13 +55,21 @@ self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET" || url.origin !== location.origin) return;
   if (url.pathname.includes("/assets/video/")) return;   // streaming video: range requests diretti
 
-  /* AUDIO: ONLINE rete diretta (lo streaming resta nativo); OFFLINE i
-     brani scaricati per l'ascolto offline escono dalla cache locale */
+  /* AUDIO: ONLINE rete diretta in no-store (lo streaming resta nativo MA
+     il browser non lo salva più nella sua cache HTTP nascosta, che nessuna
+     pagina può svuotare e che cresceva a ogni ascolto; il Range per la
+     barra di avanzamento viene inoltrato); OFFLINE i brani scaricati per
+     l'ascolto offline escono dalla cache locale */
   if (url.pathname.includes("/assets/audio/")) {
     e.respondWith((async () => {
       const cache = await caches.open(AUDIO_CACHE);
       try {
-        return await fetch(e.request);
+        const hdrs = {};
+        try {
+          const rg = e.request.headers.get("range");
+          if (rg) hdrs.Range = rg;
+        } catch (err) {}
+        return await fetch(e.request.url, { cache: "no-store", headers: hdrs });
       } catch (err) {
         const cached = await cache.match(e.request);
         if (cached) return cached;
