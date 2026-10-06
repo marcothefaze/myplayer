@@ -12,7 +12,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/icons/icon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/icons/icon-180.png">
   <link rel="manifest" href="../manifest.json">
-  <link rel="stylesheet" href="style.css?v=118">
+  <link rel="stylesheet" href="style.css?v=119">
   <!-- Il ?v=N forza il browser a scaricare di nuovo i file a ogni rilascio,
        evitando che resti in cache una versione vecchia dell'app. -->
 </head>
@@ -141,6 +141,14 @@
         </div>
       </div>
       <div class="set-section">
+        <div class="set-head">Riproduzione</div>
+        <div class="set-sub">Pulsante coda nel full player</div>
+        <div id="set-queue" class="chip-row">
+          <button class="chip" data-queue="on">Attiva</button>
+          <button class="chip" data-queue="off">Spenta</button>
+        </div>
+      </div>
+      <div class="set-section">
         <div class="set-head">Brani offline</div>
         <div id="set-dl-info" class="set-sub"></div>
         <div id="set-dl-list" class="set-list"></div>
@@ -260,6 +268,11 @@
         <button id="fp-eq" class="fp-collapse" title="Equalizzatore" aria-label="Equalizzatore">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
             <path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/>
+          </svg>
+        </button>
+        <button id="fp-queue-btn" class="fp-collapse fp-queue-btn" title="Coda di riproduzione" aria-label="Coda di riproduzione">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+            <path d="M15 6H3v2h12V6zm0 4H3v2h12v-2zM3 16h8v-2H3v2zM17 6v8.18c-.31-.11-.65-.18-1-.18-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3V8h3V6h-5z"/>
           </svg>
         </button>
         <button id="fp-video-toggle" class="fp-share fp-video-toggle hidden" title="Mostra/nascondi il video del brano" aria-label="Mostra o nascondi il video del brano">
@@ -391,6 +404,18 @@
           </svg>
         </button>
       </div>
+
+      <!-- Coda Up Next: brano in corso + prossimi brani (tocca per saltare, ✕ per togliere) -->
+      <div id="fp-queue-sheet" class="fp-eq-sheet hidden" aria-hidden="true">
+        <div class="fp-eq-card fp-queue-card">
+          <div class="fp-eq-head">
+            <span>Up Next</span>
+            <button id="fp-queue-close" class="fp-eq-close" aria-label="Chiudi coda">✕</button>
+          </div>
+          <div id="fp-queue-now" class="fp-queue-now"></div>
+          <div id="fp-queue-list" class="fp-queue-list"></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -419,6 +444,6 @@
     </div>
   </div>
 
-  <script src="player.js?v=118"></script>
+  <script src="player.js?v=119"></script>
 </body>
 </html>

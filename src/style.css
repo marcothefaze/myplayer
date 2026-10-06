@@ -1436,6 +1436,115 @@ input[type="range"] {
 }
 .fp-collapse:hover { background: rgba(255, 255, 255, .18); }
 .fp-collapse:active { transform: scale(.9); }
+/* Pulsante Coda: cerchietto come EQ, subito a sinistra di esso */
+.fp-queue-btn { right: 58px; }
+
+/* Coda Up Next: riusa il guscio dello sheet EQ, lista interna a scroll */
+.fp-queue-card { max-height: 72%; display: flex; flex-direction: column; }
+.fp-queue-now {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(var(--album-c1), .22), rgba(var(--album-c2), .12));
+  border: 1px solid rgba(var(--album-c1), .5);
+  margin-bottom: 10px;
+}
+.fp-queue-now .qn-label {
+  font-size: .66rem;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+  color: var(--dim);
+  margin-bottom: 2px;
+}
+.fp-queue-now .qn-title {
+  font-weight: 800;
+  font-size: .92rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fp-queue-now .qn-sub {
+  font-size: .74rem;
+  color: var(--dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fp-queue-list {
+  overflow-y: auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+.fp-q-sep {
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--dim);
+  text-align: center;
+  padding: 8px 0 2px;
+}
+.fp-q-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .035);
+  border: 1px solid rgba(255, 255, 255, .05);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.fp-q-row:active { transform: scale(.98); }
+.fp-q-num {
+  flex-shrink: 0;
+  width: 20px;
+  font-size: .72rem;
+  font-weight: 800;
+  color: var(--dim);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.fp-q-meta { flex: 1; min-width: 0; }
+.fp-q-title {
+  font-weight: 700;
+  font-size: .85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fp-q-sub {
+  font-size: .72rem;
+  color: var(--dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fp-q-x {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--dim);
+  font-size: .8rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.fp-q-x:active { transform: scale(.9); }
+.fp-q-empty {
+  color: var(--dim);
+  font-size: .85rem;
+  text-align: center;
+  padding: 14px 6px;
+  line-height: 1.5;
+}
 
 .fp-cover {
   position: relative;

@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "31";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v121";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "32";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v122";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -119,6 +119,9 @@ const els = {
   fpEqSheet: $("fp-eq-sheet"),
   fpEqClose: $("fp-eq-close"),
   fpEqBody: $("fp-eq-body"),
+  fpQueueBtn: $("fp-queue-btn"),
+  fpQueueSheet: $("fp-queue-sheet"),
+  fpQueueClose: $("fp-queue-close"),
   setNet: $("set-net"),
   main: $("main")
 };
@@ -1043,6 +1046,7 @@ function fmtMin(sec) {
 function renderSettings() {
   syncSkyChips();
   syncVizChips();
+  syncQueueChips();
   // Statistiche
   if (els.setStats) {
     const st = statsGet();
@@ -1949,6 +1953,7 @@ async function playSong(songIdx, openFull) {
   riprovaPlay(myToken);
   updatePlayerInfo(song);
   highlightActive();
+  refreshQueueIfOpen();
   if (openFull) openFullPlayer();   // selezione esplicita -> full player automatico
 }
 
@@ -2067,12 +2072,14 @@ function toggleShuffle() {
     state.queue = state.flat.slice();
     state.queuePos = cur >= 0 ? state.queue.indexOf(cur) : 0;
   }
+  refreshQueueIfOpen();
 }
 
 function cycleRepeat() {
   const order = ["off", "all", "one"];
   state.repeat = order[(order.indexOf(state.repeat) + 1) % order.length];
   updateModeButtons();
+  refreshQueueIfOpen();
 }
 
 /* ---------- 11. AVANZAMENTO, SEEK, VOLUME ---------- */
@@ -2332,6 +2339,28 @@ document.querySelectorAll("#set-viz .chip").forEach((b) => {
     haptic(10);
   });
 });
+/* ---------- RIPRODUZIONE: pulsante coda nel full player on/off ---------- */
+function syncQueueChips() {
+  const cur = storage.get("ssg-queue") || "on";
+  document.querySelectorAll("#set-queue .chip").forEach((c) => {
+    c.classList.toggle("on", c.dataset.queue === cur);
+  });
+}
+function applyQueueVisibility() {
+  try {
+    const on = queueEnabled();
+    if (els.fpQueueBtn) els.fpQueueBtn.classList.toggle("hidden", !on);
+    if (!on) closeQueue();
+  } catch (e) {}
+}
+document.querySelectorAll("#set-queue .chip").forEach((b) => {
+  b.addEventListener("click", () => {
+    storage.set("ssg-queue", b.dataset.queue === "off" ? "off" : "on");
+    syncQueueChips();
+    applyQueueVisibility();
+    haptic(10);
+  });
+});
 if (els.settingsViewClose) {
   els.settingsViewClose.addEventListener("click", closeSettingsView);
 }
@@ -2551,6 +2580,129 @@ function closeFpEq() {
   els.fpEqSheet.setAttribute("aria-hidden", "true");
 }
 
+/* ---------- CODA UP NEXT (pulsante nel full player) ----------
+   Prossimi brani in ordine di coda: tocca per saltare, ✕ per togliere.
+   Con repeat/shuffle attivi si ricomincia da capo (segnato "Poi"). */
+function queueEnabled() {
+  return storage.get("ssg-queue") !== "off";   // attiva di default: si spegne in Impostazioni → Riproduzione
+}
+function queueUpcoming() {
+  const q = state.queue, pos = state.queuePos, out = [];
+  if (!q.length || pos < 0) return out;
+  for (let k = pos + 1; k < q.length && out.length < 40; k++) out.push({ idx: q[k], qp: k });
+  if ((state.repeat !== "off" || state.shuffle) && out.length < 40) {
+    for (let k = 0; k < pos && out.length < 40; k++) out.push({ idx: q[k], qp: k, wrapped: true });
+  }
+  return out;
+}
+function removeQueueAt(qp) {
+  if (qp < 0 || qp >= state.queue.length || qp === state.queuePos) return;
+  state.queue.splice(qp, 1);
+  if (qp < state.queuePos) state.queuePos--;
+  renderQueue();
+}
+function renderQueue() {
+  const list = document.getElementById("fp-queue-list");
+  const now = document.getElementById("fp-queue-now");
+  if (!list || !now) return;
+  list.innerHTML = "";
+  now.innerHTML = "";
+  const cur = currentIndex();
+  if (cur < 0 || !state.songs[cur]) {
+    const d = document.createElement("div");
+    d.className = "fp-q-empty";
+    d.textContent = "Niente in riproduzione: scegli un brano e qui vedrai i prossimi.";
+    now.appendChild(d);
+    return;
+  }
+  const s = state.songs[cur];
+  const lab = document.createElement("div");
+  lab.className = "qn-label";
+  lab.textContent = "IN RIPRODUZIONE";
+  const t = document.createElement("div");
+  t.className = "qn-title";
+  t.textContent = s.titolo || fileTitle(s.file);
+  const sub = document.createElement("div");
+  sub.className = "qn-sub";
+  sub.textContent = s.album || "";
+  now.appendChild(lab);
+  now.appendChild(t);
+  now.appendChild(sub);
+  const up = queueUpcoming();
+  if (!up.length) {
+    const d = document.createElement("div");
+    d.className = "fp-q-empty";
+    d.textContent = state.repeat !== "off" || state.shuffle
+      ? "Ultimo brano: poi si ricomincia."
+      : "Fine della coda: attiva Ripeti per continuare.";
+    list.appendChild(d);
+    return;
+  }
+  let sepDone = false;
+  up.forEach((e, n) => {
+    if (e.wrapped && !sepDone) {
+      sepDone = true;
+      const sep = document.createElement("div");
+      sep.className = "fp-q-sep";
+      sep.textContent = "POI SI RICOMINCIA";
+      list.appendChild(sep);
+    }
+    const song = state.songs[e.idx];
+    if (!song) return;
+    const row = document.createElement("button");
+    row.className = "fp-q-row";
+    const num = document.createElement("span");
+    num.className = "fp-q-num";
+    num.textContent = String(n + 1);
+    const meta = document.createElement("div");
+    meta.className = "fp-q-meta";
+    const tt = document.createElement("div");
+    tt.className = "fp-q-title";
+    tt.textContent = song.titolo || fileTitle(song.file);
+    const ss = document.createElement("div");
+    ss.className = "fp-q-sub";
+    ss.textContent = song.album || "";
+    meta.appendChild(tt);
+    meta.appendChild(ss);
+    const x = document.createElement("span");
+    x.className = "fp-q-x";
+    x.textContent = "✕";
+    x.setAttribute("role", "button");
+    x.setAttribute("aria-label", "Togli dalla coda");
+    x.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      removeQueueAt(e.qp);
+      haptic(8);
+    });
+    row.appendChild(num);
+    row.appendChild(meta);
+    row.appendChild(x);
+    row.addEventListener("click", () => {
+      playSong(e.idx);
+      haptic(12);
+    });
+    list.appendChild(row);
+  });
+}
+/* Ridisegna la coda solo se il pannello è aperto (playSong la chiama sempre) */
+function refreshQueueIfOpen() {
+  try {
+    const sh = document.getElementById("fp-queue-sheet");
+    if (sh && !sh.classList.contains("hidden")) renderQueue();
+  } catch (e) {}
+}
+function openQueue() {
+  if (!els.fpQueueSheet || !queueEnabled()) return;
+  renderQueue();
+  els.fpQueueSheet.classList.remove("hidden");
+  els.fpQueueSheet.setAttribute("aria-hidden", "false");
+}
+function closeQueue() {
+  if (!els.fpQueueSheet) return;
+  els.fpQueueSheet.classList.add("hidden");
+  els.fpQueueSheet.setAttribute("aria-hidden", "true");
+}
+
 /* ---------- 14. FULL PLAYER a tendina ---------- */
 
 function openFullPlayer() {
@@ -2573,6 +2725,7 @@ function closeFullPlayer() {
   els.fp.classList.remove("open");
   els.fp.setAttribute("aria-hidden", "true");
   closeFpEq();   // il pannello EQ segue sempre il player: niente stati fantasma
+  closeQueue();    // idem per la coda
   if (fpVideoEl) {
     fpVideoEl.pause();
     /* NIENTE rilascio del src: la versione con removeAttribute+load()
@@ -2932,6 +3085,18 @@ if (els.fp) {
     haptic(10);
   });
   if (els.fpEqClose) els.fpEqClose.addEventListener("click", closeFpEq);
+  if (els.fpQueueBtn) els.fpQueueBtn.addEventListener("click", () => {
+    if (!els.fpQueueSheet) return;
+    if (els.fpQueueSheet.classList.contains("hidden")) openQueue();
+    else closeQueue();
+    haptic(10);
+  });
+  if (els.fpQueueClose) els.fpQueueClose.addEventListener("click", closeQueue);
+  if (els.fpQueueSheet) {
+    els.fpQueueSheet.addEventListener("click", (e) => {
+      if (e.target === els.fpQueueSheet) closeQueue();   // click fuori dalla card
+    });
+  }
   els.fpPlay.addEventListener("click", togglePlay);
   els.fpNext.addEventListener("click", skipNext);
   els.fpPrev.addEventListener("click", skipPrev);
@@ -3023,6 +3188,7 @@ document.addEventListener("keydown", (e) => {
     else if (els.settingsView && !els.settingsView.classList.contains("hidden")) closeSettingsView();
     else if (els.searchView && !els.searchView.classList.contains("hidden")) closeSearchView();
     else if (els.fpEqSheet && !els.fpEqSheet.classList.contains("hidden")) closeFpEq();
+    else if (els.fpQueueSheet && !els.fpQueueSheet.classList.contains("hidden")) closeQueue();
     else if (els.fp && els.fp.classList.contains("open")) closeFullPlayer();
     else goHome();
   }
@@ -3481,6 +3647,7 @@ if ("serviceWorker" in navigator) {
 
 try {
   vizBuild();     // barre del visualizzatore (nascoste finché non serve)
+  applyQueueVisibility();   // pulsante coda visibile salvo disattivazione
   renderSkeletons();
   loadPlaylist();
 } catch (err) {
