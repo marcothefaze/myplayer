@@ -1831,6 +1831,87 @@ body.album-open #btn-refresh { order: 4; }
   line-height: 1.7;
   color: var(--text);
 }
+/* Statistiche eleganti: riquadri con numeri grandi + classifica brani */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.stat-tile {
+  border-radius: 14px;
+  padding: 12px 8px;
+  text-align: center;
+  background: rgba(255, 255, 255, .04);
+  border: 1px solid rgba(255, 255, 255, .07);
+}
+.stat-num {
+  font-size: 1.15rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.stat-label {
+  font-size: .68rem;
+  color: var(--dim);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.stat-top-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 4px;
+  font-size: .86rem;
+  border-top: 1px solid rgba(255, 255, 255, .05);
+}
+.stat-rank {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .72rem;
+  font-weight: 800;
+  color: var(--accent-2);
+  background: rgba(79, 157, 255, .12);
+}
+.stat-top-name {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.stat-top-count {
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+.set-empty {
+  color: var(--dim);
+  font-size: .86rem;
+  padding: 6px 2px;
+}
+/* Pannello impostazioni: sfondo pieno e leggibile */
+#settings-view .search-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 22px 20px;
+  max-height: 100%;
+  overflow-y: auto;
+}
 .set-sub {
   font-size: .82rem;
   color: var(--dim);

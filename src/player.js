@@ -13,7 +13,7 @@
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
 const APP_VERSION = "23";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v108";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_BUILD = "v109";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -936,7 +936,7 @@ function renderSettings() {
       .slice(0, 3)
       .map((e) => {
         const s = state.songs.find((x) => x.file === e.k);
-        return (s ? (s.titolo || fileTitle(s.file)) : "Brano") + " · " + e.n + "×";
+        return { title: s ? (s.titolo || fileTitle(s.file)) : "Brano", n: e.n };
       });
     const byAlbum = {};
     entries.forEach((k) => {
@@ -946,18 +946,51 @@ function renderSettings() {
     });
     const topAlbum = Object.keys(byAlbum).sort((a, b) => byAlbum[b] - byAlbum[a])[0];
     els.setStats.innerHTML = "";
-    const lines = [
-      "Brani avviati: " + totalPlays,
-      "Ascolto totale: " + fmtMin(st.seconds || 0)
-    ];
-    if (top.length) lines.push("Top brani: " + top.join(" — "));
-    if (topAlbum) lines.push("Album preferito: " + topAlbum);
-    if (!totalPlays) lines.push("Ascolta qualcosa e qui vedrai le tue statistiche.");
-    lines.forEach((t) => {
+    if (!totalPlays && !topAlbum) {
       const d = document.createElement("div");
-      d.textContent = t;
+      d.className = "set-empty";
+      d.textContent = "Ascolta qualcosa e qui vedrai le tue statistiche.";
       els.setStats.appendChild(d);
-    });
+    } else {
+      const grid = document.createElement("div");
+      grid.className = "stat-grid";
+      const tiles = [
+        [String(totalPlays), totalPlays === 1 ? "brano avviato" : "brani avviati"],
+        [fmtMin(st.seconds || 0), "di ascolto"]
+      ];
+      if (topAlbum) tiles.push([topAlbum, "album preferito"]);
+      tiles.forEach(([v, l]) => {
+        const t = document.createElement("div");
+        t.className = "stat-tile";
+        const vv = document.createElement("div");
+        vv.className = "stat-num";
+        vv.textContent = v;
+        const ll = document.createElement("div");
+        ll.className = "stat-label";
+        ll.textContent = l;
+        t.appendChild(vv);
+        t.appendChild(ll);
+        grid.appendChild(t);
+      });
+      els.setStats.appendChild(grid);
+      top.forEach((e, i) => {
+        const r = document.createElement("div");
+        r.className = "stat-top-row";
+        const rank = document.createElement("span");
+        rank.className = "stat-rank";
+        rank.textContent = String(i + 1);
+        const name = document.createElement("span");
+        name.className = "stat-top-name";
+        name.textContent = e.title;
+        const cnt = document.createElement("span");
+        cnt.className = "stat-top-count";
+        cnt.textContent = e.n + "×";
+        r.appendChild(rank);
+        r.appendChild(name);
+        r.appendChild(cnt);
+        els.setStats.appendChild(r);
+      });
+    }
   }
   // Equalizzatore
   buildEQControls(els.setEq);
@@ -2176,6 +2209,7 @@ function closeFullPlayer() {
   if (!els.fp) return;
   els.fp.classList.remove("open");
   els.fp.setAttribute("aria-hidden", "true");
+  closeFpEq();   // il pannello EQ segue sempre il player: niente stati fantasma
   if (fpVideoEl) {
     fpVideoEl.pause();
     /* NIENTE rilascio del src: la versione con removeAttribute+load()
