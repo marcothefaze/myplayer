@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "25";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v115";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "26";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v116";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -1015,12 +1015,14 @@ function renderSettings() {
 
 async function updateDlInfo() {
   if (!els.setDlInfo) return;
-  let txt = "Nessun album scaricato.";
+  let n = 0;
+  try { n = (await dlCachedFiles()).length; } catch (e) {}
+  let txt = n ? (n + (n === 1 ? " brano offline." : " brani offline.")) : "Nessun album scaricato.";
   try {
     if (navigator.storage && navigator.storage.estimate) {
       const est = await navigator.storage.estimate();
       const mb = ((est.usage || 0) / 1048576).toFixed(0);
-      txt = "Spazio usato dall'app: circa " + mb + " MB.";
+      txt += " Spazio usato dall'app: circa " + mb + " MB.";
     }
   } catch (e) {}
   els.setDlInfo.textContent = txt;
@@ -1050,38 +1052,103 @@ function refreshDlFlag(album, cachedSet) {
   storage.set("ssg-dl-" + album.title, all ? "1" : "0");
 }
 
-async function removeAlbumDl(album) {
+/* Confronto normalizzato tra URL in cache (niente query/hash/encoding):
+   due URL uguali nella sostanza corrispondono sempre, anche se uno è
+   stato salvato con ?v= o con gli spazi codificati diversamente */
+function dlNorm(u) {
   try {
-    const cache = await caches.open(AUDIO_CACHE);
-    await Promise.all(album.songs.map((i) => {
-      try { return cache.delete(dlUrlFor(i)).catch(() => {}); }
-      catch (e) { return Promise.resolve(false); }
-    }));
+    let s = String((u && u.url) || u || "");
+    s = s.split("?")[0].split("#")[0];
+    try { s = decodeURI(s); } catch (e) {}
+    return s;
+  } catch (e) { return ""; }
+}
+
+/* Cancella URL audio da TUTTE le cache e VERIFICA che siano spariti:
+   restituisce true solo se non resta nessuna copia (niente più
+   eliminazioni "a vuoto" che lasciano brani e memoria occupata) */
+async function dlDeleteUrls(urls) {
+  const want = new Set(urls.map(dlNorm).filter(Boolean));
+  if (!want.size) return true;
+  try {
+    if (!("caches" in window)) return false;
+    const wipe = async () => {
+      const names = await caches.keys();
+      for (const name of names) {
+        try {
+          const cache = await caches.open(name);
+          const keys = await cache.keys();
+          for (const r of keys) {
+            if (want.has(dlNorm(r.url))) {
+              try { await cache.delete(r); } catch (e) {}
+            }
+          }
+        } catch (e) {}
+      }
+    };
+    await wipe();
+    const names = await caches.keys();
+    for (const name of names) {
+      try {
+        const cache = await caches.open(name);
+        const keys = await cache.keys();
+        for (const r of keys) if (want.has(dlNorm(r.url))) return false;
+      } catch (e) {}
+    }
+    return true;
+  } catch (e) { return false; }
+}
+
+/* Dopo un'eliminazione dai download, il tasto nuvola dell'album APERTO
+   va risincronizzato (renderHome ridisegna solo la griglia home, la
+   pagina album restava con la vecchia spunta) */
+function refreshHeroDl() {
+  try {
+    if (!currentAlbum) return;
+    const btn = document.querySelector(".hero-dl");
+    if (!btn) return;
+    const done = isAlbumDownloaded(currentAlbum);
+    btn.classList.toggle("done", done);
+    btn.innerHTML = done ? DL_ICON_DONE : DL_ICON_DOWN;
+    btn.title = done ? "Scaricato: tocca per rimuovere" : "Scarica per l'ascolto offline";
   } catch (e) {}
-  storage.set("ssg-dl-" + album.title, "0");
+}
+
+async function removeAlbumDl(album) {
+  const gone = await dlDeleteUrls(album.songs.map(dlUrlFor));
+  if (gone) storage.set("ssg-dl-" + album.title, "0");
+  refreshHeroDl();
+  return gone;
 }
 
 async function removeTrackDl(songIdx) {
-  try {
-    const cache = await caches.open(AUDIO_CACHE);
-    await cache.delete(dlUrlFor(songIdx));
-  } catch (e) {}
+  const gone = await dlDeleteUrls([dlUrlFor(songIdx)]);
   const song = state.songs[songIdx];
   const album = state.albums.find((a) => a.title === song.album);
   if (album) refreshDlFlag(album, new Set(await dlCachedFiles()));
+  refreshHeroDl();
+  return gone;
 }
 
 async function deleteAllDownloads() {
   const ok = await askConfirm("Eliminare tutti i download?",
     "Verranno rimossi tutti i brani scaricati per l'ascolto offline.", "Elimina tutto");
   if (!ok) return;
+  const all = [];
+  state.albums.forEach((a) => a.songs.forEach((i) => all.push(dlUrlFor(i))));
+  const gone = await dlDeleteUrls(all);
   try { await caches.delete(AUDIO_CACHE); } catch (e) {}
-  state.albums.forEach((a) => storage.set("ssg-dl-" + a.title, "0"));
-  dlExpanded.clear();
+  if (gone) {
+    state.albums.forEach((a) => storage.set("ssg-dl-" + a.title, "0"));
+    dlExpanded.clear();
+    toast("Download eliminati");
+  } else {
+    toast("Eliminazione non riuscita: premi refresh e riprova");
+  }
   renderDlList();
   renderHome();
+  refreshHeroDl();
   updateDlInfo();
-  toast("Download eliminati");
 }
 
 function renderDlList() {
@@ -1134,7 +1201,8 @@ function renderDlList() {
         const ok = await askConfirm("Rimuovere l'album?",
           "Verranno eliminati i brani scaricati di \"" + album.title + "\".", "Rimuovi");
         if (!ok) return;
-        await removeAlbumDl(album);
+        const gone = await removeAlbumDl(album);
+        if (!gone) toast("Eliminazione non riuscita: premi refresh e riprova");
         dlExpanded.delete(album.title);
         renderDlList();
         renderHome();
@@ -1162,7 +1230,8 @@ function renderDlList() {
             const ok = await askConfirm("Rimuovere il brano?",
               "Verrà eliminato \"" + (s0.titolo || fileTitle(s0.file)) + "\" dai download.", "Rimuovi");
             if (!ok) return;
-            await removeTrackDl(i);
+            const gone = await removeTrackDl(i);
+            if (!gone) toast("Eliminazione non riuscita: premi refresh e riprova");
             renderDlList();
             renderHome();
             updateDlInfo();
@@ -1217,10 +1286,15 @@ function isAlbumDownloaded(album) {
 async function downloadAlbum(album, btn) {
   if (!("caches" in window)) { toast("Ascolto offline non supportato qui"); return; }
   if (isAlbumDownloaded(album)) {
-    // Rimuovi dalla cache offline
-    await removeAlbumDl(album);
-    if (btn) { btn.classList.remove("done"); btn.innerHTML = DL_ICON_DOWN; }
-    toast("Album rimosso dall'ascolto offline");
+    // Rimuovi dalla cache offline (solo se sparisce davvero)
+    const gone = await removeAlbumDl(album);
+    if (gone) {
+      if (btn) { btn.classList.remove("done"); btn.innerHTML = DL_ICON_DOWN; }
+      toast("Album rimosso dall'ascolto offline");
+    } else {
+      if (btn) { btn.classList.add("done"); btn.innerHTML = DL_ICON_DONE; }
+      toast("Eliminazione non riuscita: premi refresh e riprova");
+    }
     return;
   }
   if (btn) { btn.classList.add("busy"); btn.disabled = true; }
