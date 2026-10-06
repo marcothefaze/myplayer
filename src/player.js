@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "29";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v119";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "30";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v120";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -1042,7 +1042,6 @@ function fmtMin(sec) {
 
 function renderSettings() {
   syncSkyChips();
-  syncThemeChips();
   syncVizChips();
   // Statistiche
   if (els.setStats) {
@@ -2298,36 +2297,6 @@ function syncSkyChips() {
     c.classList.toggle("on", c.dataset.sky === cur);
   });
 }
-/* ---------- TEMA CHIARO/SCURO (Auto segue il sistema) ---------- */
-function applyTheme() {
-  const mode = storage.get("ssg-theme") || "auto";
-  let light = mode === "chiaro";
-  if (mode === "auto") {
-    try { light = !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches); }
-    catch (e) {}
-  }
-  try { document.documentElement.dataset.theme = light ? "light" : "dark"; }
-  catch (e) {}
-  syncThemeChips();
-}
-function syncThemeChips() {
-  const cur = storage.get("ssg-theme") || "auto";
-  document.querySelectorAll("#set-theme .chip").forEach((c) => {
-    c.classList.toggle("on", c.dataset.theme === cur);
-  });
-}
-document.querySelectorAll("#set-theme .chip").forEach((b) => {
-  b.addEventListener("click", () => {
-    storage.set("ssg-theme", b.dataset.theme || "auto");
-    applyTheme();
-    haptic(10);
-  });
-});
-try {
-  const colMq = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)");
-  if (colMq && colMq.addEventListener) colMq.addEventListener("change", applyTheme);
-  else if (colMq && colMq.addListener) colMq.addListener(applyTheme);
-} catch (e) {}
 /* ---------- EFFETTI: visualizzatore audio on/off ---------- */
 function syncVizChips() {
   const cur = storage.get("ssg-viz") || "on";
@@ -3492,7 +3461,6 @@ if ("serviceWorker" in navigator) {
 }
 
 try {
-  applyTheme();   // tema chiaro/scuro prima del primo paint
   vizBuild();     // barre del visualizzatore (nascoste finché non serve)
   renderSkeletons();
   loadPlaylist();
