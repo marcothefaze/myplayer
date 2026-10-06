@@ -12,7 +12,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/icons/icon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/icons/icon-180.png">
   <link rel="manifest" href="../manifest.json">
-  <link rel="stylesheet" href="style.css?v=113">
+  <link rel="stylesheet" href="style.css?v=114">
   <!-- Il ?v=N forza il browser a scaricare di nuovo i file a ogni rilascio,
        evitando che resti in cache una versione vecchia dell'app. -->
 </head>
@@ -136,6 +136,16 @@
         <div class="set-head">Brani offline</div>
         <div id="set-dl-info" class="set-sub"></div>
         <div id="set-dl-list" class="set-list"></div>
+      </div>
+      <div class="set-section">
+        <div class="set-head">Reset totale</div>
+        <div class="set-sub">Azzera TUTTA la memoria dell'app su questo dispositivo: brani offline, copertine in cache e dati locali (statistiche, preferiti, equalizzatore). Poi l'app si ricarica da zero: serve connessione.</div>
+        <div class="set-list">
+          <button id="btn-memory-reset" class="dl-btn danger dl-trash">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+            <span>Reset memoria locale</span>
+          </button>
+        </div>
       </div>
       <div class="set-section">
         <div class="set-head">Sfondo</div>
@@ -399,6 +409,6 @@
     </div>
   </div>
 
-  <script src="player.js?v=113"></script>
+  <script src="player.js?v=114"></script>
 </body>
 </html>

@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "26";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v116";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "27";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v117";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -1015,14 +1015,30 @@ function renderSettings() {
 
 async function updateDlInfo() {
   if (!els.setDlInfo) return;
-  let n = 0;
-  try { n = (await dlCachedFiles()).length; } catch (e) {}
+  /* Diagnostica visibile: quanti brani offline + quante voci nelle cache
+     (audio vs resto dell'app), così si vede subito dove sta la memoria */
+  let n = 0, others = 0;
+  try {
+    if ("caches" in window) {
+      const names = await caches.keys();
+      for (const name of names) {
+        try {
+          const c = await caches.open(name);
+          const k = await c.keys();
+          if (name === AUDIO_CACHE) n = k.length;
+          else others += k.length;
+        } catch (e) {}
+      }
+    }
+  } catch (e) {}
   let txt = n ? (n + (n === 1 ? " brano offline." : " brani offline.")) : "Nessun album scaricato.";
   try {
     if (navigator.storage && navigator.storage.estimate) {
       const est = await navigator.storage.estimate();
       const mb = ((est.usage || 0) / 1048576).toFixed(0);
-      txt += " Spazio usato dall'app: circa " + mb + " MB.";
+      txt += " Spazio usato dall'app: circa " + mb + " MB (voci in cache: " + n + " audio, " + others + " app).";
+    } else {
+      txt += " (voci in cache: " + n + " audio, " + others + " app).";
     }
   } catch (e) {}
   els.setDlInfo.textContent = txt;
@@ -2193,6 +2209,71 @@ if (els.settingsView) {
   m.addEventListener("click", (e) => {
     if (e.target === m) closeConfirm(false);   // click fuori
   });
+})();
+
+/* RESET DEFINITIVO della memoria locale (richiesta di Marco): azzera
+   tutto ciò che l'app ha salvato sul dispositivo — tutte le cache,
+   service worker, localStorage e IndexedDB — poi ricarica da zero.
+   Se qualche archivio resiste, lo dice invece di fingere di aver pulito. */
+async function resetLocalMemory() {
+  if (navigator.onLine === false) {
+    toast("Serve connessione: il reset ricarica l'app da zero");
+    return;
+  }
+  const ok = await askConfirm("Reset totale della memoria?",
+    "Elimina TUTTO ciò che l'app ha salvato qui: brani offline, cache e dati locali (statistiche, preferiti, equalizzatore). Poi l'app si ricarica da zero.",
+    "Resetta tutto");
+  if (!ok) return;
+  toast("Pulizia memoria in corso\u2026");
+  try {
+    if ("caches" in window) {
+      const names = await caches.keys();
+      for (const name of names) {
+        try {
+          const cache = await caches.open(name);
+          const keys = await cache.keys();
+          for (const r of keys) {
+            try { await cache.delete(r); } catch (e) {}
+          }
+          try { await caches.delete(name); } catch (e) {}
+        } catch (e) {}
+      }
+    }
+  } catch (e) {}
+  try {
+    if ("serviceWorker" in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for (const reg of regs) {
+        try { await reg.unregister(); } catch (e) {}
+      }
+    }
+  } catch (e) {}
+  try {
+    if (window.indexedDB && indexedDB.databases) {
+      const dbs = await indexedDB.databases();
+      for (const d of dbs) {
+        if (!d || !d.name) continue;
+        try {
+          await new Promise((res) => {
+            const q = indexedDB.deleteDatabase(d.name);
+            q.onsuccess = q.onerror = q.onblocked = () => res();
+          });
+        } catch (e) {}
+      }
+    }
+  } catch (e) {}
+  try { window.localStorage.clear(); } catch (e) {}
+  let left = -1;
+  try { left = (await caches.keys()).length; } catch (e) {}
+  if (left === 0) toast("Memoria azzerata: ricarico");
+  else if (left > 0) toast("Restano " + left + " archivi: chiudi e riapri l'app");
+  else toast("Pulizia fatta: ricarico");
+  setTimeout(() => { try { location.reload(); } catch (e) {} }, 900);
+}
+(function bindMemoryReset() {
+  const b = document.getElementById("btn-memory-reset");
+  if (!b) return;
+  b.addEventListener("click", resetLocalMemory);
 })();
 if (els.installHide) {
   els.installHide.addEventListener("click", () => {
