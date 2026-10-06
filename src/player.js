@@ -13,7 +13,7 @@
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
 const APP_VERSION = "23";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v105";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_BUILD = "v106";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -2443,6 +2443,30 @@ const SKY = (function () {
   const reduce = window.matchMedia &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+  // Fase giorno/notte dall'ora locale (leggera: non stravolge il look).
+  // day: 0 = notte fonda, 1 = giorno soft. dusk: toni caldi bassi
+  // solo attorno ad alba e tramonto. Transizioni morbide (smoothstep).
+  let PH = { day: 0, dusk: 0 };
+  function skyPhase() {
+    const d = new Date();
+    const h = d.getHours() + d.getMinutes() / 60;
+    const ramp = (x, a, b) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+    return {
+      day: ramp(h, 6, 9) * (1 - ramp(h, 17, 20)),
+      dusk: Math.max(ramp(h, 5, 6.5) * (1 - ramp(h, 8, 9.5)),
+                     ramp(h, 16.5, 18) * (1 - ramp(h, 19.5, 21)))
+    };
+  }
+  function mix3(a, b, t) { return [0, 1, 2].map((i) => Math.round(a[i] + (b[i] - a[i]) * t)); }
+  function applySkyBg() {
+    try {
+      let c = mix3([10, 10, 16], [38, 50, 74], PH.day);   // notte -> blu soft
+      c = mix3(c, [46, 28, 44], PH.dusk * 0.7);           // caldo ad alba/tramonto
+      document.documentElement.style.setProperty("--bg",
+        "rgb(" + c[0] + "," + c[1] + "," + c[2] + ")");
+    } catch (e) {}
+  }
+
   let W = 0, H = 0;
   let rafId = 0;
   let running = false;
@@ -2503,7 +2527,9 @@ const SKY = (function () {
     sctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     sctx.clearRect(0, 0, W, H);
 
-    // Nebulose pre-renderizzate nel canvas (il CSS non le raddoppia)
+    // Nebulose pre-renderizzate nel canvas (il CSS non le raddoppia).
+    // Di giorno si attenuano (resta un accenno, niente stravolgimenti).
+    sctx.globalAlpha = 1 - 0.45 * PH.day;
     [[W * .12, H * .08, W * .5, "rgba(124,108,255,.2)"],
      [W * .9, H * .88, W * .45, "rgba(79,157,255,.18)"],
      [W * .74, H * .15, W * .35, "rgba(168,148,255,.14)"],
@@ -2514,11 +2540,22 @@ const SKY = (function () {
       sctx.fillStyle = g;
       sctx.fillRect(0, 0, W, H);
     });
+    sctx.globalAlpha = 1;
+
+    // Alba/tramonto: velo caldo basso
+    if (PH.dusk > 0.02) {
+      const dw = sctx.createRadialGradient(W / 2, H * 1.02, 0, W / 2, H * 1.02, W * .75);
+      dw.addColorStop(0, "rgba(255,150,90," + (0.16 * PH.dusk).toFixed(3) + ")");
+      dw.addColorStop(1, "rgba(0,0,0,0)");
+      sctx.fillStyle = dw;
+      sctx.fillRect(0, 0, W, H);
+    }
 
     // VIA LATTEA: fascia diagonale sfumata con stelle dense e tenui
     sctx.save();
     sctx.translate(W / 2, H / 2);
     sctx.rotate(-24 * Math.PI / 180);
+    sctx.globalAlpha = 1 - 0.9 * PH.day;   // di giorno quasi sparisce
     const bandW = Math.max(W, H) * .34;
     const bandH = Math.max(W, H) * 1.5;
     const bg = sctx.createLinearGradient(-bandW / 2, 0, bandW / 2, 0);
@@ -2535,16 +2572,17 @@ const SKY = (function () {
       const y = rand(-bandH / 2, bandH / 2);
       const dens = 1 - Math.abs(x) / (bandW / 2);   // più dense al centro
       if (Math.random() > dens * .9) continue;
-      sctx.globalAlpha = rand(.15, .45);
+      sctx.globalAlpha = rand(.15, .45) * (1 - 0.9 * PH.day);
       sctx.fillStyle = rgb(TINTS[(Math.random() * TINTS.length) | 0]);
       sctx.fillRect(x, y, rand(.5, 1), rand(.5, 1));
     }
     sctx.globalAlpha = 1;
     sctx.restore();
 
-    // Stelle statiche (3 piani)
+    // Stelle statiche (3 piani). Di giorno restano accennate, mai sparite del tutto.
     STARS.forEach(function (s) {
       if (s.halo) {
+        sctx.globalAlpha = 1 - 0.85 * PH.day;
         const g = sctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 5);
         g.addColorStop(0, "rgba(" + s.c[0] + "," + s.c[1] + "," + s.c[2] + ",.28)");
         g.addColorStop(1, "rgba(0,0,0,0)");
@@ -2553,7 +2591,7 @@ const SKY = (function () {
         sctx.arc(s.x, s.y, s.r * 5, 0, 7);
         sctx.fill();
       }
-      sctx.globalAlpha = s.a;
+      sctx.globalAlpha = s.a * (1 - 0.85 * PH.day);
       sctx.fillStyle = rgb(s.c);
       sctx.beginPath();
       sctx.arc(s.x, s.y, s.r, 0, 7);
@@ -2587,7 +2625,7 @@ const SKY = (function () {
     // Brillio INDIVIDUALE: ogni stella con la sua fase e il suo ritmo
     TWINKLERS.forEach(function (s) {
       const tw = s.base + Math.sin(tSec * s.speed * 2 + s.phase) * s.amp;
-      lctx.globalAlpha = Math.max(.06, Math.min(1, tw));
+      lctx.globalAlpha = Math.max(.02, Math.min(1, tw)) * (1 - 0.8 * PH.day);
       lctx.fillStyle = rgb(s.c);
       lctx.beginPath();
       lctx.arc(s.x, s.y, s.r, 0, 7);
@@ -2629,7 +2667,7 @@ const SKY = (function () {
     const dt = Math.min(.05, (now - (loop._last || now)) / 1000);
     loop._last = now;
     if (!loop._next || now >= loop._next) {        // una cadente ogni 4-9s
-      if (!ecoMode && SHOOTERS.length < 3) spawnShooter();
+      if (PH.day < 0.5 && SHOOTERS.length < 3) spawnShooter();   // di giorno niente cadenti
       loop._next = now + rand(4000, 9000);
     }
     drawLive(now / 1000, dt);
@@ -2649,6 +2687,8 @@ const SKY = (function () {
   }
 
   function resize() {
+    PH = skyPhase();
+    applySkyBg();
     W = window.innerWidth;
     H = window.innerHeight;
     [staticC, liveC].forEach(function (c) {
@@ -2687,6 +2727,17 @@ const SKY = (function () {
 
   resize();
   start();
+
+  // Se l'app resta aperta per ore e si attraversa alba/tramonto,
+  // si ricalcola la fase (ridisegno statico, niente reshuffle).
+  setInterval(function () {
+    const p = skyPhase();
+    if (Math.abs(p.day - PH.day) > 0.02 || Math.abs(p.dusk - PH.dusk) > 0.02) {
+      PH = p;
+      applySkyBg();
+      drawStatic();
+    }
+  }, 10 * 60 * 1000);
 
   return { resize: resize };
 })();
