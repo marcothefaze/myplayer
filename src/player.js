@@ -13,7 +13,7 @@
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
 const APP_VERSION = "23";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v107";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_BUILD = "v108";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -2670,6 +2670,7 @@ const SKY = (function () {
     const h = d.getHours() + d.getMinutes() / 60;
     const ramp = (x, a, b) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
     return {
+      h: h,
       day: ramp(h, 6, 9) * (1 - ramp(h, 17, 20)),
       dusk: Math.max(ramp(h, 5, 6.5) * (1 - ramp(h, 8, 9.5)),
                      ramp(h, 16.5, 18) * (1 - ramp(h, 19.5, 21)))
@@ -2769,6 +2770,61 @@ const SKY = (function () {
       sctx.fillRect(0, 0, W, H);
     }
 
+    // Nebulose di fase: magenta/arancio ad alba e tramonto, azzurrino tenue di giorno
+    if (PH.dusk > 0.02) {
+      [[W * .3, H * .7, W * .4, "255,120,80"],
+       [W * .75, H * .6, W * .38, "200,80,160"]].forEach(function (n) {
+        const g = sctx.createRadialGradient(n[0], n[1], 0, n[0], n[1], n[2]);
+        g.addColorStop(0, "rgba(" + n[3] + "," + (0.2 * PH.dusk).toFixed(3) + ")");
+        g.addColorStop(1, "rgba(0,0,0,0)");
+        sctx.fillStyle = g;
+        sctx.fillRect(0, 0, W, H);
+      });
+    }
+    if (PH.day > 0.02) {
+      const cw = sctx.createRadialGradient(W * .5, H * .3, 0, W * .5, H * .3, W * .6);
+      cw.addColorStop(0, "rgba(150,190,255," + (0.1 * PH.day).toFixed(3) + ")");
+      cw.addColorStop(1, "rgba(0,0,0,0)");
+      sctx.fillStyle = cw;
+      sctx.fillRect(0, 0, W, H);
+    }
+
+    // Fascia luminosa all'orizzonte: calda ad alba/tramonto, azzurrina di giorno
+    (function () {
+      const hw = Math.max(PH.dusk, PH.day * 0.55);
+      if (hw <= 0.02) return;
+      const hc = PH.dusk >= PH.day * 0.55 ? [255, 141, 74] : [122, 168, 255];
+      const hg = sctx.createLinearGradient(0, H * .66, 0, H);
+      hg.addColorStop(0, "rgba(0,0,0,0)");
+      hg.addColorStop(1, "rgba(" + hc[0] + "," + hc[1] + "," + hc[2] + "," + (0.16 * hw).toFixed(3) + ")");
+      sctx.fillStyle = hg;
+      sctx.fillRect(0, H * .66, W, H * .34);
+    })();
+
+    // SOLE: disco + alone. Sale col giorno (alto a mezzogiorno), basso e
+    // caldo ad alba/tramonto (percorre il cielo da sinistra a destra).
+    // Di notte resta spento: la notte non si tocca.
+    (function () {
+      const sunA = Math.max(PH.day, PH.dusk);
+      if (sunA <= 0.02 || W < 10 || H < 10) return;
+      const dp = Math.min(1, Math.max(0, ((PH.h || 12) - 6) / 14));
+      const sx = W * (0.28 + 0.44 * dp);
+      const sy = H * (1.0 - 0.78 * PH.day);
+      const warm = Math.max(PH.dusk, 1 - PH.day);
+      const glow = mix3([200, 220, 255], [255, 170, 95], warm);
+      const R = Math.min(W, H) * 0.042 * (1 + 0.3 * (1 - PH.day));
+      const gg = sctx.createRadialGradient(sx, sy, 0, sx, sy, Math.min(W, H) * 0.5);
+      gg.addColorStop(0, "rgba(" + glow[0] + "," + glow[1] + "," + glow[2] + "," + (0.5 * sunA).toFixed(3) + ")");
+      gg.addColorStop(1, "rgba(0,0,0,0)");
+      sctx.fillStyle = gg;
+      sctx.fillRect(0, 0, W, H);
+      const disc = mix3([235, 242, 255], [255, 236, 210], warm);
+      sctx.fillStyle = "rgba(" + disc[0] + "," + disc[1] + "," + disc[2] + "," + (0.95 * sunA).toFixed(3) + ")";
+      sctx.beginPath();
+      sctx.arc(sx, sy, Math.max(1, R), 0, 7);
+      sctx.fill();
+    })();
+
     // VIA LATTEA: fascia diagonale sfumata con stelle dense e tenui
     sctx.save();
     sctx.translate(W / 2, H / 2);
@@ -2791,18 +2847,20 @@ const SKY = (function () {
       const dens = 1 - Math.abs(x) / (bandW / 2);   // più dense al centro
       if (Math.random() > dens * .9) continue;
       sctx.globalAlpha = rand(.15, .45) * (1 - 0.9 * PH.day);
-      sctx.fillStyle = rgb(TINTS[(Math.random() * TINTS.length) | 0]);
+      sctx.fillStyle = rgb(mix3(TINTS[(Math.random() * TINTS.length) | 0], [255, 196, 130], PH.dusk * 0.45));
       sctx.fillRect(x, y, rand(.5, 1), rand(.5, 1));
     }
     sctx.globalAlpha = 1;
     sctx.restore();
 
     // Stelle statiche (3 piani). Di giorno restano accennate, mai sparite del tutto.
+    // Ad alba/tramonto prendono una tinta ambrata.
     STARS.forEach(function (s) {
+      const sc = mix3(s.c, [255, 196, 130], PH.dusk * 0.45);
       if (s.halo) {
         sctx.globalAlpha = 1 - 0.85 * PH.day;
         const g = sctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 5);
-        g.addColorStop(0, "rgba(" + s.c[0] + "," + s.c[1] + "," + s.c[2] + ",.28)");
+        g.addColorStop(0, "rgba(" + sc[0] + "," + sc[1] + "," + sc[2] + ",.28)");
         g.addColorStop(1, "rgba(0,0,0,0)");
         sctx.fillStyle = g;
         sctx.beginPath();
@@ -2810,7 +2868,7 @@ const SKY = (function () {
         sctx.fill();
       }
       sctx.globalAlpha = s.a * (1 - 0.85 * PH.day);
-      sctx.fillStyle = rgb(s.c);
+      sctx.fillStyle = rgb(sc);
       sctx.beginPath();
       sctx.arc(s.x, s.y, s.r, 0, 7);
       sctx.fill();
@@ -2844,7 +2902,7 @@ const SKY = (function () {
     TWINKLERS.forEach(function (s) {
       const tw = s.base + Math.sin(tSec * s.speed * 2 + s.phase) * s.amp;
       lctx.globalAlpha = Math.max(.02, Math.min(1, tw)) * (1 - 0.8 * PH.day);
-      lctx.fillStyle = rgb(s.c);
+      lctx.fillStyle = rgb(mix3(s.c, [255, 196, 130], PH.dusk * 0.45));
       lctx.beginPath();
       lctx.arc(s.x, s.y, s.r, 0, 7);
       lctx.fill();
@@ -2862,7 +2920,8 @@ const SKY = (function () {
       const ny = sh.y - sh.vy * (sh.len / 400);
       const g = lctx.createLinearGradient(sh.x, sh.y, nx, ny);
       g.addColorStop(0, "rgba(255,255,255," + (.85 * fade).toFixed(3) + ")");
-      g.addColorStop(1, "rgba(180,170,255,0)");
+      const tail = mix3([180, 170, 255], [255, 170, 110], PH.dusk);
+      g.addColorStop(1, "rgba(" + tail[0] + "," + tail[1] + "," + tail[2] + ",0)");
       lctx.strokeStyle = g;
       lctx.lineWidth = 1.6;
       lctx.beginPath();
