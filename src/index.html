@@ -12,7 +12,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/icons/icon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/icons/icon-180.png">
   <link rel="manifest" href="../manifest.json">
-  <link rel="stylesheet" href="style.css?v=109">
+  <link rel="stylesheet" href="style.css?v=110">
   <!-- Il ?v=N forza il browser a scaricare di nuovo i file a ogni rilascio,
        evitando che resti in cache una versione vecchia dell'app. -->
 </head>
@@ -136,6 +136,16 @@
         <div class="set-head">Brani offline</div>
         <div id="set-dl-info" class="set-sub"></div>
         <div id="set-dl-list" class="set-list"></div>
+      </div>
+      <div class="set-section">
+        <div class="set-head">Sfondo</div>
+        <div id="set-sky" class="chip-row">
+          <button class="chip" data-sky="auto">Auto</button>
+          <button class="chip" data-sky="giorno">Giorno</button>
+          <button class="chip" data-sky="alba">Alba</button>
+          <button class="chip" data-sky="tramonto">Tramonto</button>
+          <button class="chip" data-sky="notte">Notte</button>
+        </div>
       </div>
     </div>
   </div>
@@ -376,6 +386,19 @@
     <img id="cover-view-img" class="cover-view-img" alt="Copertina album">
   </div>
 
-  <script src="player.js?v=109"></script>
+  <!-- ============ CONFERMA elegante (es. elimina download) ============
+       Si apre solo via JS (askConfirm), si chiude con Annulla, fuori o Esc. -->
+  <div id="confirm-modal" class="confirm-modal hidden" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+    <div class="confirm-card">
+      <div id="confirm-title" class="confirm-title">Sicuro?</div>
+      <div id="confirm-msg" class="confirm-msg"></div>
+      <div class="confirm-btns">
+        <button id="confirm-cancel" class="chip">Annulla</button>
+        <button id="confirm-ok" class="chip chip-danger">Elimina</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="player.js?v=110"></script>
 </body>
 </html>

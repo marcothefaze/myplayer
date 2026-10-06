@@ -13,7 +13,7 @@
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
 const APP_VERSION = "23";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v112";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_BUILD = "v113";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -897,6 +897,25 @@ function updateNetStatus() {
 window.addEventListener("online", updateNetStatus);
 window.addEventListener("offline", updateNetStatus);
 
+/* Modale di conferma elegante: resolve(true/false), una sola alla volta */
+let confirmResolve = null;
+function askConfirm(title, msg, okLabel) {
+  return new Promise((resolve) => {
+    const m = document.getElementById("confirm-modal");
+    if (!m) { resolve(false); return; }
+    document.getElementById("confirm-title").textContent = title;
+    document.getElementById("confirm-msg").textContent = msg;
+    document.getElementById("confirm-ok").textContent = okLabel || "Elimina";
+    confirmResolve = resolve;
+    m.classList.remove("hidden");
+  });
+}
+function closeConfirm(v) {
+  const m = document.getElementById("confirm-modal");
+  if (m) m.classList.add("hidden");
+  if (confirmResolve) { const r = confirmResolve; confirmResolve = null; r(v); }
+}
+
 /* ---------- PANNELLO IMPOSTAZIONI ---------- */
 function openSettingsView() {
   if (!els.settingsView) return;
@@ -919,6 +938,7 @@ function fmtMin(sec) {
 }
 
 function renderSettings() {
+  syncSkyChips();
   // Statistiche
   if (els.setStats) {
     const st = statsGet();
@@ -1052,6 +1072,9 @@ async function removeTrackDl(songIdx) {
 }
 
 async function deleteAllDownloads() {
+  const ok = await askConfirm("Eliminare tutti i download?",
+    "Verranno rimossi tutti i brani scaricati per l'ascolto offline.", "Elimina tutto");
+  if (!ok) return;
   try { await caches.delete(AUDIO_CACHE); } catch (e) {}
   state.albums.forEach((a) => storage.set("ssg-dl-" + a.title, "0"));
   dlExpanded.clear();
@@ -1101,6 +1124,9 @@ function renderDlList() {
       btn.className = "dl-btn";
       btn.textContent = "Rimuovi";
       btn.addEventListener("click", async () => {
+        const ok = await askConfirm("Rimuovere l'album?",
+          "Verranno eliminati i brani scaricati di \"" + album.title + "\".", "Rimuovi");
+        if (!ok) return;
         await removeAlbumDl(album);
         dlExpanded.delete(album.title);
         renderDlList();
@@ -1125,6 +1151,10 @@ function renderDlList() {
           x.textContent = "✕";
           x.setAttribute("aria-label", "Elimina brano scaricato");
           x.addEventListener("click", async () => {
+            const s0 = state.songs[i];
+            const ok = await askConfirm("Rimuovere il brano?",
+              "Verrà eliminato \"" + (s0.titolo || fileTitle(s0.file)) + "\" dai download.", "Rimuovi");
+            if (!ok) return;
             await removeTrackDl(i);
             renderDlList();
             renderHome();
@@ -2046,6 +2076,21 @@ if (els.btnSearch) {
 if (els.btnSettings) {
   els.btnSettings.addEventListener("click", () => { openSettingsView(); haptic(10); });
 }
+/* Scelta sfondo: Auto (orario) oppure fase fissa, applicata subito */
+document.querySelectorAll("#set-sky .chip").forEach((b) => {
+  b.addEventListener("click", () => {
+    storage.set("ssg-sky", b.dataset.sky || "auto");
+    syncSkyChips();
+    try { SKY.resize(); } catch (e) {}
+    haptic(10);
+  });
+});
+function syncSkyChips() {
+  const cur = storage.get("ssg-sky") || "auto";
+  document.querySelectorAll("#set-sky .chip").forEach((c) => {
+    c.classList.toggle("on", c.dataset.sky === cur);
+  });
+}
 if (els.settingsViewClose) {
   els.settingsViewClose.addEventListener("click", closeSettingsView);
 }
@@ -2054,6 +2099,17 @@ if (els.settingsView) {
     if (e.target === els.settingsView) closeSettingsView();   // click fuori
   });
 }
+(function bindConfirmModal() {
+  const m = document.getElementById("confirm-modal");
+  if (!m) return;
+  const cancel = document.getElementById("confirm-cancel");
+  const ok = document.getElementById("confirm-ok");
+  if (cancel) cancel.addEventListener("click", () => closeConfirm(false));
+  if (ok) ok.addEventListener("click", () => closeConfirm(true));
+  m.addEventListener("click", (e) => {
+    if (e.target === m) closeConfirm(false);   // click fuori
+  });
+})();
 if (els.installHide) {
   els.installHide.addEventListener("click", () => {
     storage.set("ssg-install-hide", "1");
@@ -2655,7 +2711,9 @@ document.addEventListener("keydown", (e) => {
   } else if (e.key === "ArrowLeft") {
     audio.currentTime = Math.max(0, audio.currentTime - 5);
   } else if (e.key === "Escape") {
-    if (els.settingsView && !els.settingsView.classList.contains("hidden")) closeSettingsView();
+    const cm = document.getElementById("confirm-modal");
+    if (cm && !cm.classList.contains("hidden")) closeConfirm(false);
+    else if (els.settingsView && !els.settingsView.classList.contains("hidden")) closeSettingsView();
     else if (els.searchView && !els.searchView.classList.contains("hidden")) closeSearchView();
     else if (els.fpEqSheet && !els.fpEqSheet.classList.contains("hidden")) closeFpEq();
     else if (els.fp && els.fp.classList.contains("open")) closeFullPlayer();
@@ -2706,6 +2764,14 @@ const SKY = (function () {
   // solo attorno ad alba e tramonto. Transizioni morbide (smoothstep).
   let PH = { day: 0, dusk: 0 };
   function skyPhase() {
+    // Scelta manuale dalle impostazioni: Auto (orario) oppure fase fissa
+    try {
+      const mode = storage.get("ssg-sky") || "auto";
+      if (mode === "giorno") return { h: 12, day: 1, dusk: 0 };
+      if (mode === "notte") return { h: 0, day: 0, dusk: 0 };
+      if (mode === "alba") return { h: 7, day: 0.26, dusk: 1 };
+      if (mode === "tramonto") return { h: 19, day: 0.26, dusk: 1 };
+    } catch (e) {}
     const d = new Date();
     const h = d.getHours() + d.getMinutes() / 60;
     const ramp = (x, a, b) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
@@ -2719,9 +2785,8 @@ const SKY = (function () {
   function mix3(a, b, t) { return [0, 1, 2].map((i) => Math.round(a[i] + (b[i] - a[i]) * t)); }
   function applySkyBg() {
     try {
-      let c = mix3([10, 10, 16], [96, 118, 154], PH.day);   // notte -> giorno chiaro soft
-      c = mix3(c, [150, 120, 95], PH.day * 0.25);           // colpetto caldo di sole nel giorno
-      c = mix3(c, [46, 28, 44], PH.dusk * 0.7);             // caldo ad alba/tramonto
+      let c = mix3([10, 10, 16], [38, 50, 74], PH.day);   // notte -> blu soft
+      c = mix3(c, [46, 28, 44], PH.dusk * 0.7);           // caldo ad alba/tramonto
       document.documentElement.style.setProperty("--bg",
         "rgb(" + c[0] + "," + c[1] + "," + c[2] + ")");
     } catch (e) {}

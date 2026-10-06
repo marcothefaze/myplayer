@@ -68,6 +68,7 @@ body {
   .view:not(.hidden) { animation: none; }
   body.has-track .player-bar { animation: none; }
   .ripple { animation-duration: .01s; }
+  .confirm-card { animation: none; }
   .skel-cover, .skel-line { animation: none; }
   #boot { display: none; }
 }
@@ -1597,8 +1598,10 @@ body.album-open .brand { order: 2; }
 body.album-open #btn-settings { order: 3; margin-left: auto; }
 body.album-open #btn-refresh { order: 4; }
 
-/* Solo PC: in vista album la lente va a destra, prima delle impostazioni */
-@media (min-width: 1200px) {
+/* Solo PC (mouse): in vista album la lente va a destra, prima delle
+   impostazioni. Niente min-width: un portatile stretto o un iPad restano
+   col layout touch. */
+@media (hover: hover) {
   body.album-open .brand { order: 1; }
   body.album-open #btn-search { order: 2; margin-left: auto; }
   body.album-open #btn-settings { order: 3; margin-left: 0; }
@@ -2012,6 +2015,55 @@ body.album-open #btn-refresh { order: 4; }
   flex-shrink: 0;
 }
 .dl-btn:active { transform: scale(.95); }
+
+/* Modale di conferma elegante (es. elimina download) */
+.confirm-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(5, 5, 10, .7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.confirm-card {
+  width: 100%;
+  max-width: 340px;
+  border-radius: 22px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  padding: 22px 20px;
+  text-align: center;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .6);
+  animation: confirm-in .22s ease-out backwards;
+}
+@keyframes confirm-in {
+  from { opacity: 0; transform: translateY(10px) scale(.97); }
+  to   { opacity: 1; transform: none; }
+}
+.confirm-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+.confirm-msg {
+  font-size: .86rem;
+  color: var(--dim);
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+.confirm-btns {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+.chip-danger {
+  color: #ff8a8a;
+  border-color: rgba(255, 91, 91, .4);
+}
 .dl-btn.danger { color: #ff8a8a; border-color: rgba(255, 91, 91, .4); }
 .dl-tracks { display: flex; flex-direction: column; gap: 4px; margin: 2px 0 6px 10px; }
 .dl-track {
