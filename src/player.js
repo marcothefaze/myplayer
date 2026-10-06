@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "28";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v118";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "29";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v119";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -774,7 +774,14 @@ function ensureEQ() {
       node = flt;
       return flt;
     });
-    node.connect(eqCtx.destination);
+    /* Analyser per il visualizzatore, in SERIE in coda al grafo
+       (filtri -> analyser -> casse): costo quasi zero quando nessuno
+       legge i dati, e niente doppio audio */
+    eqAnalyser = eqCtx.createAnalyser();
+    eqAnalyser.fftSize = 64;              // 32 bande: bastano per 28 barre
+    eqAnalyser.smoothingTimeConstant = 0.72;
+    node.connect(eqAnalyser);
+    eqAnalyser.connect(eqCtx.destination);
     eqReady = true;
     applyEQPreset(storage.get("ssg-eq") || "piatto", true);
     return true;
@@ -882,6 +889,102 @@ function syncEQControls() {
   });
 }
 
+/* ---------- VISUALIZZATORE AUDIO (full player, barre neon) ----------
+   Usa un AnalyserNode nello stesso grafo dell'equalizzatore (una sola
+   MediaElementSource per l'elemento audio). Gira solo a full player
+   aperto + brano in corso + opzione attiva: zero costo il resto del tempo. */
+const VIZ_BARS = 28;
+let eqAnalyser = null;
+let vizRaf = 0;
+let vizFreq = null;
+const vizLvl = new Float32Array(VIZ_BARS);
+
+function vizEnabled() {
+  try {
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
+  } catch (e) {}
+  return storage.get("ssg-viz") !== "off";   // attivo di default: si spegne in Impostazioni → Effetti
+}
+function vizBox() {
+  try { return document.getElementById("fp-viz"); }
+  catch (e) { return null; }
+}
+function vizBuild() {
+  const box = vizBox();
+  if (!box || !box.children || box.children.length) return;
+  for (let i = 0; i < VIZ_BARS; i++) {
+    try { box.appendChild(document.createElement("i")); }
+    catch (e) { return; }
+  }
+}
+function vizFlat() {
+  const box = vizBox();
+  if (!box || !box.children) return;
+  const kids = box.children;
+  for (let i = 0; i < kids.length; i++) {
+    try { kids[i].style.transform = "scaleY(.06)"; } catch (e) {}
+    vizLvl[i] = 0;
+  }
+}
+function vizTick() {
+  vizRaf = 0;
+  if (!vizEnabled() || document.hidden || audio.paused || !eqAnalyser) return vizStop(true);
+  try {
+    if (!els.fp || !els.fp.classList.contains("open")) return vizStop(true);
+  } catch (e) { return vizStop(true); }
+  try {
+    eqAnalyser.getByteFrequencyData(vizFreq);
+    const box = vizBox();
+    const kids = box ? box.children : [];
+    const n = Math.min(kids.length, VIZ_BARS);
+    for (let i = 0; i < n; i++) {
+      const v = (vizFreq[i + 1] || 0) / 255;   // salta la bin 0 (componente continua)
+      const lv = Math.max(v, (vizLvl[i] || 0) - 0.06);   // attacco rapido, caduta morbida
+      vizLvl[i] = lv;
+      kids[i].style.transform = "scaleY(" + Math.max(.06, lv).toFixed(3) + ")";
+    }
+  } catch (e) {}
+  vizRaf = requestAnimationFrame(vizTick);
+}
+function vizStart() {
+  if (vizRaf) return;
+  if (!vizEnabled()) return;
+  /* Senza gesto attivo non si crea il grafo: un AudioContext nato sospeso
+     ammutolirebbe l'audio (l'elemento viene instradato nel grafo). Si aspetta
+     il primo tap vero; i cambi brano automatici usano il grafo esistente */
+  try {
+    if (!eqReady && navigator.userActivation && navigator.userActivation.isActive === false) return;
+  } catch (e) {}
+  try { if (!ensureEQ()) return; } catch (e) { return; }   // crea il grafo (con analyser) se manca
+  if (!eqAnalyser) return;
+  /* Se il contesto nasce sospeso (play partito fuori da un gesto diretto,
+     es. cambio brano automatico su browser severi), si prova a svegliarlo
+     subito e al primo tocco: finché dorme le barre restano piatte */
+  try {
+    if (eqCtx && eqCtx.state === "suspended") {
+      eqCtx.resume().catch(() => {});
+      document.addEventListener("pointerdown", function vizWake() {
+        try { if (eqCtx && eqCtx.state === "suspended") eqCtx.resume().catch(() => {}); }
+        catch (e) {}
+      }, { once: true });
+    }
+  } catch (e) {}
+  if (!vizFreq || vizFreq.length !== eqAnalyser.frequencyBinCount) {
+    try { vizFreq = new Uint8Array(eqAnalyser.frequencyBinCount); }
+    catch (e) { return; }
+  }
+  vizBuild();
+  const box = vizBox();
+  if (box) box.classList.remove("hidden");
+  vizRaf = requestAnimationFrame(vizTick);
+}
+function vizStop(silent) {
+  if (vizRaf) { try { cancelAnimationFrame(vizRaf); } catch (e) {} vizRaf = 0; }
+  const box = vizBox();
+  if (box) box.classList.add("hidden");
+  if (!silent) vizFlat();
+}
+
 /* Stato connessione nelle impostazioni (si aggiorna da solo) */
 function updateNetStatus() {
   if (!els.setNet) return;
@@ -939,6 +1042,8 @@ function fmtMin(sec) {
 
 function renderSettings() {
   syncSkyChips();
+  syncThemeChips();
+  syncVizChips();
   // Statistiche
   if (els.setStats) {
     const st = statsGet();
@@ -2035,11 +2140,13 @@ audio.addEventListener("play", () => {
   setPlayIcons(true);
   document.body.classList.add("is-playing");
   syncPlaybackState();
+  vizStart();
 });
 audio.addEventListener("pause", () => {
   setPlayIcons(false);
   document.body.classList.remove("is-playing");
   syncPlaybackState();
+  vizStop();
 });
 /* Il brano è partito DAVVERO: i retry di sicurezza non devono più toccare
    nulla (nemmeno se l'utente mette in pausa subito dopo il via) */
@@ -2191,6 +2298,52 @@ function syncSkyChips() {
     c.classList.toggle("on", c.dataset.sky === cur);
   });
 }
+/* ---------- TEMA CHIARO/SCURO (Auto segue il sistema) ---------- */
+function applyTheme() {
+  const mode = storage.get("ssg-theme") || "auto";
+  let light = mode === "chiaro";
+  if (mode === "auto") {
+    try { light = !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches); }
+    catch (e) {}
+  }
+  try { document.documentElement.dataset.theme = light ? "light" : "dark"; }
+  catch (e) {}
+  syncThemeChips();
+}
+function syncThemeChips() {
+  const cur = storage.get("ssg-theme") || "auto";
+  document.querySelectorAll("#set-theme .chip").forEach((c) => {
+    c.classList.toggle("on", c.dataset.theme === cur);
+  });
+}
+document.querySelectorAll("#set-theme .chip").forEach((b) => {
+  b.addEventListener("click", () => {
+    storage.set("ssg-theme", b.dataset.theme || "auto");
+    applyTheme();
+    haptic(10);
+  });
+});
+try {
+  const colMq = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)");
+  if (colMq && colMq.addEventListener) colMq.addEventListener("change", applyTheme);
+  else if (colMq && colMq.addListener) colMq.addListener(applyTheme);
+} catch (e) {}
+/* ---------- EFFETTI: visualizzatore audio on/off ---------- */
+function syncVizChips() {
+  const cur = storage.get("ssg-viz") || "on";
+  document.querySelectorAll("#set-viz .chip").forEach((c) => {
+    c.classList.toggle("on", c.dataset.viz === cur);
+  });
+}
+document.querySelectorAll("#set-viz .chip").forEach((b) => {
+  b.addEventListener("click", () => {
+    storage.set("ssg-viz", b.dataset.viz === "off" ? "off" : "on");
+    syncVizChips();
+    try { if (vizEnabled() && !audio.paused) vizStart(); else vizStop(); }
+    catch (e) {}
+    haptic(10);
+  });
+});
 if (els.settingsViewClose) {
   els.settingsViewClose.addEventListener("click", closeSettingsView);
 }
@@ -2416,6 +2569,7 @@ function openFullPlayer() {
   if (!els.fp) return;
   els.fp.classList.add("open");
   els.fp.setAttribute("aria-hidden", "false");
+  try { if (!audio.paused) vizStart(); } catch (e) {}
   /* Se il video era stato rilasciato alla chiusura (per liberare memoria
      su iOS) lo si ricarica subito qui, prima che l'utente lo veda */
   if (fpHasVideo && fpVideoEl && !fpVideoEl.getAttribute("src") &&
@@ -3338,6 +3492,8 @@ if ("serviceWorker" in navigator) {
 }
 
 try {
+  applyTheme();   // tema chiaro/scuro prima del primo paint
+  vizBuild();     // barre del visualizzatore (nascoste finché non serve)
   renderSkeletons();
   loadPlaylist();
 } catch (err) {
