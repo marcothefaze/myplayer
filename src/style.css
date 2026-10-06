@@ -1395,14 +1395,31 @@ input[type="range"] {
   top: 0;
   left: 0;
   right: 0;
-  height: 48px;
+  min-height: 48px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   padding: 8px 18px;
   touch-action: none;
   cursor: grab;
   z-index: 2;
+}
+/* Con video (Goleador/GTA VI): Condividi va a capo sotto il tasto Video,
+   così non copre i cerchietti Coda/EQ in alto a destra */
+#fp-video-toggle:not(.hidden) ~ .fp-share-wrap,
+#fp-video-fs:not(.hidden) ~ .fp-share-wrap {
+  flex-basis: 100%;
+  order: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin-top: 2px;
+}
+#fp-video-toggle:not(.hidden) ~ .fp-share-wrap .fp-share-menu,
+#fp-video-fs:not(.hidden) ~ .fp-share-wrap .fp-share-menu {
+  left: auto;
+  right: 0;
 }
 
 .fp-handle::before {
@@ -1438,6 +1455,7 @@ input[type="range"] {
 .fp-collapse:active { transform: scale(.9); }
 /* Pulsante Coda: cerchietto come EQ, subito a sinistra di esso */
 .fp-queue-btn { right: 58px; }
+#fp-eq, .fp-queue-btn { z-index: 3; }   /* sopra ogni altro strato della barra alta */
 
 /* Coda Up Next: riusa il guscio dello sheet EQ, lista interna a scroll */
 .fp-queue-card { max-height: 72%; display: flex; flex-direction: column; }

@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "32";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v122";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "33";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v123";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -2560,6 +2560,8 @@ els.main.addEventListener("touchend", (e) => {
 let fpSwipeY = null, fpSwipeX = null;
 els.fp.addEventListener("touchstart", (e) => {
   if (!els.fp.classList.contains("open")) return;
+  // Coda aperta: il tocco serve a scorrerla, non ad armare la chiusura
+  try { if (e.target.closest && e.target.closest("#fp-queue-sheet")) return; } catch (err) {}
   const t = e.changedTouches[0];
   fpSwipeY = t.clientY;
   fpSwipeX = t.clientX;
@@ -2571,7 +2573,11 @@ els.fp.addEventListener("touchend", (e) => {
   const dy = t.clientY - fpSwipeY;
   const dx = t.clientX - fpSwipeX;
   fpSwipeY = fpSwipeX = null;
-  if (dy > 70 && Math.abs(dx) < 90) closeFullPlayer();
+  if (dy > 70 && Math.abs(dx) < 90) {
+    // Coda aperta: niente chiusura del player (rete di sicurezza)
+    try { if (els.fpQueueSheet && !els.fpQueueSheet.classList.contains("hidden")) return; } catch (err) {}
+    closeFullPlayer();
+  }
 }, { passive: true });
 
 function closeFpEq() {
@@ -2827,6 +2833,29 @@ function ensureFpVideo() {
       if (!fpVideoEl.paused && audio.paused) audio.play().catch(() => {});
     }, 300);
   });
+  /* Metadati pronti in ritardo (rete lenta): si riallinea e si fa partire
+     subito, senza aspettare il prossimo timeupdate */
+  fpVideoEl.addEventListener("canplay", () => {
+    if (fpHasVideo && fpVideoOn && !audio.paused) syncFpVideoToAudio();
+  });
+  /* Il video resta in buffering mentre la canzone va: dopo 1.2s lo si
+     riporta sul punto della canzone e lo si fa ripartire */
+  fpVideoEl.addEventListener("waiting", () => {
+    if (!fpHasVideo || !fpVideoOn || audio.paused) return;
+    setTimeout(() => {
+      try {
+        if (!fpHasVideo || !fpVideoOn || audio.paused || fpVideoEl.paused) return;
+        if (fpVideoEl.readyState >= 3) return;   // si è ripreso da solo
+        if (isFinite(fpVideoEl.duration) && isFinite(audio.duration) &&
+            Math.abs(fpVideoEl.duration - audio.duration) < 3) {
+          fpVideoEl.playbackRate = 1;
+          fpVideoEl.currentTime = audio.currentTime % fpVideoEl.duration;
+        }
+        const p = fpVideoEl.play();
+        if (p && p.catch) p.catch(() => {});
+      } catch (e) {}
+    }, 1200);
+  });
   /* La correzione di deriva e il rilevamento stalli girano sul TIMEUPDATE
      dell'AUDIO (fpDriftCheck): l'audio è il conduttore e i suoi eventi
      arrivano sempre, anche quando il video è congelato: così si riprende. */
@@ -2837,6 +2866,14 @@ function updateFpVideo(song) {
   if (!els.fp) return;
   const src = TRACK_VIDEOS[song.titolo];
   fpHasVideo = !!src;
+  /* Nuovo brano: si ri-armano i flag di sync (con gli skip rapidissimi il
+     "playing" del brano prima non scatta e il riallineo resterebbe
+     disattivato per il brano dopo, che partirebbe fuori sync) */
+  fpStartSyncPending = false;
+  fpStallChecks = 0;
+  fpLastVideoTime = -1;
+  fpLastDriftSync = 0;
+  fpLastRateNudge = 0;
   const toggle = els.fpVideoToggle;
 
   if (!fpHasVideo) {
@@ -2945,6 +2982,7 @@ function fpAlignVideoOnPlaying() {
    currentTime del video (altrimenti il seek dell'utente verrebbe annullato). */
 function syncFpVideoToAudio() {
   if (!fpVideoEl || !fpHasVideo) return;
+  if (!fpVideoOn) { try { fpVideoEl.pause(); } catch (e) {} return; }   // video nascosto: mai farlo girare
   if (fpVideoFullscreen()) {
     if (audio.paused !== fpVideoEl.paused) {
       if (fpVideoEl.paused) audio.pause(); else audio.play().catch(() => {});
@@ -2974,7 +3012,7 @@ function syncFpVideoToAudio() {
          la decodifica non si interrompe mai, il video non scatta e non
          si blocca, e riallinea la deriva in un paio di secondi. */
 function fpDriftCheck() {
-  if (!fpHasVideo || !fpVideoEl || audio.paused) return;
+  if (!fpHasVideo || !fpVideoEl || !fpVideoOn || audio.paused) return;
   if (!isFinite(audio.duration) || !isFinite(fpVideoEl.duration)) return;
   const durMatch = Math.abs(fpVideoEl.duration - audio.duration) < 3;
   const drift = (audio.currentTime || 0) - (fpVideoEl.currentTime || 0);
