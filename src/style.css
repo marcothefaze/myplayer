@@ -19,6 +19,9 @@
      applyAlbumColors): alone, titoli, accenti e tinte dello sfondo */
   --album-c1: 124, 108, 255;
   --album-c2: 79, 157, 255;
+  /* Valore base dell'angolo dell'anello: senza @property (Android vecchi)
+     l'anello resta visibile ma statico, come promesso dal commento */
+  --ring-a: 0deg;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -226,6 +229,46 @@ button:active { transform: scale(.94); }
   touch-action: pan-y;                 /* scroll verticale diretto sul compositor */
 }
 
+/* ---------- Scroll FLUIDO sul telefono ----------
+   Mentre il dito scorre (body.scrolling, messo/tolto dal JS con gli
+   stessi timer delle stelle) si congela tutto ciò che costa per-frame:
+   animazioni infinite in pausa, tela live nascosta (quella statica resta
+   come sfondo) e barra senza blur (tinta quasi piena, indistinguibile
+   mentre il contenuto scorre dietro). A dito fermo riparte tutto da solo. */
+body.scrolling *, body.scrolling *::before, body.scrolling *::after {
+  animation-play-state: paused !important;
+}
+body.scrolling #sky-live { visibility: hidden; }
+body.scrolling .player-bar {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: rgba(13, 13, 20, .97);
+}
+
+/* ---------- Compatibilità Android vecchi ----------
+   WebView congelate (Chrome <87/88): "inset" e "aspect-ratio" non esistono
+   e le dichiarazioni verrebbero scartate. Qui solo i gusci che senza
+   posizionamento/dimensione si romperebbero davvero; il resto degrada
+   da solo (niente blur, niente anello rotante, griglia a colonna). */
+@supports not (inset: 0) {
+  body, #sky-static, #sky-live, #boot, .full-player, .search-view,
+  .fp-eq-sheet, .cover-view, .confirm-modal,
+  .hero-bg, .hero-bg::after, .album-hero::after, .hero-hearts,
+  .fp-bg, .fp-bg::before, .fp-bg::after,
+  .album-cover-wrap::after, .fav-btn.pop::after, .fp-fav.pop::after {
+    top: 0; right: 0; bottom: 0; left: 0;
+  }
+  #fp-cover-wrap::after { top: -3px; right: -3px; bottom: -3px; left: -3px; }
+  #fp-cover-wrap::before { top: -8px; right: -8px; bottom: -8px; left: -8px; }
+}
+@supports not (aspect-ratio: 1 / 1) {
+  /* Senza aspect-ratio le img tengono comunque le proporzioni da sole
+     (width 100% + height auto); qui si evita solo che scheletri e
+     segnaposto senza immagine collassino a zero */
+  .card-cover, .skel-cover, .card-cover.ph { min-height: 150px; }
+  .fp-cover { min-height: 200px; }
+}
+
 .view { padding: 26px 28px 34px; }
 
 /* =========================================================
@@ -234,6 +277,8 @@ button:active { transform: scale(.94); }
 
 .album-grid {
   display: grid;
+  /* Riga sotto: fallback per Android vecchi senza min()/max() (Chrome <79) */
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
   gap: 26px;
 }
@@ -268,7 +313,7 @@ button:active { transform: scale(.94); }
      griglie di album con i titoli restano sempre tutte visibili senza scroll */
   .album-card { display: flex; flex-direction: column; align-items: center; }
 
-  .card-cover { width: min(100%, var(--cover-max, 38vh)); aspect-ratio: 1 / 1; }
+  .card-cover { width: 100%; width: min(100%, var(--cover-max, 38vh)); aspect-ratio: 1 / 1; }
 
   .card-caption { text-align: center; }
 
@@ -294,11 +339,11 @@ button:active { transform: scale(.94); }
     width: 100%;
   }
 
-  .album-cover-wrap { width: min(265px, 27vh); height: min(265px, 27vh); border-radius: 16px; }
+  .album-cover-wrap { width: 265px; height: 265px; width: min(265px, 27vh); height: min(265px, 27vh); border-radius: 16px; }
 
   .eyebrow { font-size: .82rem; }
 
-  .album-title { font-size: clamp(2rem, 3.4vw, 3.2rem); }
+  .album-title { font-size: 2rem; font-size: clamp(2rem, 3.4vw, 3.2rem); }
 
   .album-meta { font-size: .98rem; }
 
@@ -649,6 +694,7 @@ button:active { transform: scale(.94); }
 }
 
 .album-title {
+  font-size: 1.5rem;
   font-size: clamp(1.5rem, 4vw, 2.4rem);
   font-weight: 800;
   margin: 4px 0 8px;
@@ -743,6 +789,9 @@ button:active { transform: scale(.94); }
   content-visibility: auto;
   contain-intrinsic-size: auto 64px;
 }
+/* Le card album sono alte ~200-240px (copertina + titolo): stima giusta
+   per non far saltare la scrollbar al primo passaggio */
+.album-card { contain-intrinsic-size: auto 240px; }
 
 .track-row {
   display: flex;
@@ -862,6 +911,7 @@ body.is-playing .track-row.active .row-eq i:nth-child(3) { animation-delay: .36s
   align-items: center;
   gap: 12px;
   /* Pill flottante staccata dai bordi, vetro con bordo luminoso */
+  margin: 0 12px 10px;   /* fallback senza safe-area (Android vecchi senza env()) */
   margin: 0 12px calc(10px + env(safe-area-inset-bottom));
   padding: 9px 14px 9px 9px;
   border: 1px solid rgba(255, 255, 255, .1);
@@ -1390,6 +1440,8 @@ input[type="range"] {
 .fp-cover {
   position: relative;
   z-index: 1;
+  width: 74vw;
+  max-width: 460px;
   width: min(74vw, 56vh, 460px);
   aspect-ratio: var(--fp-ar, 1);   /* si adatta al formato reale della copertina (default quadrato) */
   border-radius: 18px;
@@ -1426,6 +1478,8 @@ input[type="range"] {
    leggermente più largo, così il clip si vede tutto dentro di esso */
 .fp-cover.playing-video {
   aspect-ratio: 9 / 5.2;          /* rettangolo largo: entra tutto il 16:9 */
+  width: 88vw;
+  max-width: 560px;
   width: min(88vw, 66vh, 560px);
 }
 
@@ -1443,6 +1497,7 @@ input[type="range"] {
 .fp-meta { position: relative; z-index: 1; width: 100%; min-width: 0; }
 
 .fp-title {
+  font-size: 1.3rem;
   font-size: clamp(1.3rem, 5vw, 1.7rem);
   font-weight: 800;
   line-height: 1.15;
@@ -2281,6 +2336,7 @@ body.album-open #btn-refresh { order: 4; }
 
 .player-bar {
     gap: 8px;
+    margin: 0 8px;   /* fallback senza safe-area (Android vecchi senza env()) */
     margin: 0 8px calc(8px + env(safe-area-inset-bottom));
     padding: 7px 10px 7px 7px;
   }

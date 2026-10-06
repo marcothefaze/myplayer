@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "23";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v113";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "24";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v114";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -471,7 +471,7 @@ const ALBUM_COLORS = {
   "Non è SSG":               { c1: "245, 205, 60",  c2: "255, 170, 60" },
   "Preferiti":               { c1: "255, 107, 157", c2: "247, 168, 196" },
   "Testamento":        { c1: "90, 145, 220",  c2: "230, 190, 90" },
-  "Giorni Migliori":   { c1: "175, 195, 220", c2: "222, 228, 238" },
+  "Giorni Migliori":   { c1: "40, 190, 255",  c2: "185, 240, 255" },
   "Lucciole":          { c1: "85, 200, 175",  c2: "235, 200, 110" },
   "Coconut Ice Cream": { c1: "70, 205, 230",  c2: "240, 90, 170" },
   "Singoli & Extra":   { c1: "140, 85, 225",  c2: "245, 80, 65" },
@@ -3109,11 +3109,18 @@ const SKY = (function () {
 
   // Scroll in corso: il loop live si ferma (il telefono non fatica),
   // riparte da solo 220ms dopo l'ultimo scroll. Le stelle fisse restano.
+  // In più si alza body.scrolling: il CSS congela animazioni infinite,
+  // nasconde la tela live e toglie il blur della barra (lo scroll sul
+  // telefono resta fluido, tutto riparte da solo a dito fermo).
   let scrollT = 0;
   function busyScroll() {
     stop();
+    document.body.classList.add("scrolling");
     clearTimeout(scrollT);
-    scrollT = setTimeout(function () { if (!document.hidden) start(); }, 220);
+    scrollT = setTimeout(function () {
+      document.body.classList.remove("scrolling");
+      if (!document.hidden) start();
+    }, 220);
   }
   [els.main, els.trackList, els.searchResults].forEach(function (el) {
     if (el) el.addEventListener("scroll", busyScroll, { passive: true });
