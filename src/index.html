@@ -12,7 +12,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/icons/icon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/icons/icon-180.png">
   <link rel="manifest" href="../manifest.json">
-  <link rel="stylesheet" href="style.css?v=103">
+  <link rel="stylesheet" href="style.css?v=104">
   <!-- Il ?v=N forza il browser a scaricare di nuovo i file a ogni rilascio,
        evitando che resti in cache una versione vecchia dell'app. -->
 </head>
@@ -120,6 +120,8 @@
     </button>
     <div class="search-panel">
       <div class="set-title">Impostazioni</div>
+      <div id="set-net" class="set-net" role="status"></div>
+      <div id="set-net" class="set-net" role="status"></div>
       <div class="set-section">
         <div class="set-head">Le tue statistiche</div>
         <div id="set-stats" class="set-stats"></div>
@@ -225,9 +227,9 @@
     <div class="fp-inner">
       <!-- Zona alta: pillina apribile/tracciabile + pulsante di chiusura -->
       <div id="fp-handle" class="fp-handle">
-        <button id="fp-collapse" class="fp-collapse" title="Riduci il player" aria-label="Riduci il player">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
-            <path d="M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z"/>
+        <button id="fp-eq" class="fp-collapse" title="Equalizzatore" aria-label="Equalizzatore">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+            <path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/>
           </svg>
         </button>
         <button id="fp-video-toggle" class="fp-share fp-video-toggle hidden" title="Mostra/nascondi il video del brano" aria-label="Mostra o nascondi il video del brano">
@@ -267,6 +269,39 @@
       </div>
 
       <div id="fp-cover-wrap"><div id="fp-cover" class="fp-cover"></div></div>
+
+      <!-- Pannello equalizzatore dentro il full player (preset + slider live) -->
+      <div id="fp-eq-sheet" class="fp-eq-sheet hidden" aria-hidden="true">
+        <div class="fp-eq-card">
+          <div class="fp-eq-head">
+            <span>Equalizzatore</span>
+            <button id="fp-eq-close" class="fp-eq-close" aria-label="Chiudi equalizzatore">✕</button>
+          </div>
+          <div id="fp-eq-body"></div>
+        </div>
+      </div>
+
+      <!-- Pannello equalizzatore dentro il full player (preset + slider live) -->
+      <div id="fp-eq-sheet" class="fp-eq-sheet hidden" aria-hidden="true">
+        <div class="fp-eq-card">
+          <div class="fp-eq-head">
+            <span>Equalizzatore</span>
+            <button id="fp-eq-close" class="fp-eq-close" aria-label="Chiudi equalizzatore">✕</button>
+          </div>
+          <div id="fp-eq-chips" class="chip-row"></div>
+          <div id="fp-eq-sliders" class="eq-sliders"></div>
+        </div>
+      </div>
+
+      <!-- Pannello equalizzatore dentro il full player (preset + slider live) -->
+      <div id="fp-eq-sheet" class="fp-eq-sheet hidden" aria-hidden="true">
+        <div class="fp-eq-head">
+          <span>Equalizzatore</span>
+          <button id="fp-eq-close" class="fp-eq-close" aria-label="Chiudi equalizzatore">✕</button>
+        </div>
+        <div id="fp-eq-chips" class="chip-row"></div>
+        <div id="fp-eq-sliders" class="eq-sliders"></div>
+      </div>
 
       <div class="fp-meta">
         <div class="fp-title-row">
@@ -339,6 +374,6 @@
     <img id="cover-view-img" class="cover-view-img" alt="Copertina album">
   </div>
 
-  <script src="player.js?v=103"></script>
+  <script src="player.js?v=104"></script>
 </body>
 </html>

@@ -13,7 +13,7 @@
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
 const APP_VERSION = "23";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v106";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_BUILD = "v107";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -99,7 +99,6 @@ const els = {
   fpTimeDuration: $("fp-time-duration"),
   fpSeek: $("fp-seek"),
   fpSeekFill: $("fp-seek-fill"),
-  fpCollapse: $("fp-collapse"),
   fpHandle: $("fp-handle"),
   fpPlay: $("fp-play"),
   fpPrev: $("fp-prev"),
@@ -116,6 +115,11 @@ const els = {
   fpShareCover: $("fp-share-cover"),
   fpVideoToggle: $("fp-video-toggle"),
   fpVideoFs: $("fp-video-fs"),
+  fpEq: $("fp-eq"),
+  fpEqSheet: $("fp-eq-sheet"),
+  fpEqClose: $("fp-eq-close"),
+  fpEqBody: $("fp-eq-body"),
+  setNet: $("set-net"),
   main: $("main")
 };
 
@@ -742,8 +746,12 @@ const EQ_PRESETS = {
   piatto:    { label: "Piatto",    gains: [0, 0, 0, 0, 0] },
   bassi:     { label: "Bassi",     gains: [6, 3, 0, 0, -1] },
   voci:      { label: "Voci",      gains: [-2, 1, 4, 3, 0] },
-  brillante: { label: "Brillante", gains: [0, 0, 1, 4, 6] }
+  brillante: { label: "Brillante", gains: [0, 0, 1, 4, 6] },
+  rock:      { label: "Rock",      gains: [5, 2, -2, 3, 5] },
+  pop:       { label: "Pop",       gains: [2, 3, 0, 1, 4] },
+  dance:     { label: "Dance",     gains: [6, 4, 0, 1, 3] }
 };
+const EQ_LABELS = ["60", "250", "1k", "4k", "12k"];
 
 function ensureEQ() {
   if (eqReady) {
@@ -773,24 +781,133 @@ function ensureEQ() {
   } catch (e) { return false; }
 }
 
-function applyEQPreset(name, silent) {
+function eqGainsFor(name) {
+  if (name === "custom") {
+    try {
+      const g = JSON.parse(storage.get("ssg-eq-gains") || "[]");
+      if (Array.isArray(g) && g.length === EQ_FREQS.length) return g.map(Number);
+    } catch (e) {}
+    return [0, 0, 0, 0, 0];
+  }
   const p = EQ_PRESETS[name] || EQ_PRESETS.piatto;
-  if (eqReady && eqFilters) {
-    eqFilters.forEach((flt, i) => { flt.gain.value = p.gains[i] || 0; });
-  }
-  storage.set("ssg-eq", name in EQ_PRESETS ? name : "piatto");
-  if (els.setEq) {
-    els.setEq.querySelectorAll(".chip").forEach((c) => {
-      c.classList.toggle("on", c.dataset.eq === (name in EQ_PRESETS ? name : "piatto"));
-    });
-  }
-  if (!silent) toast("Equalizzatore: " + p.label);
+  return p.gains.slice();
 }
+
+function eqLabelFor(name) {
+  if (name === "custom") return "Custom";
+  const p = EQ_PRESETS[name] || EQ_PRESETS.piatto;
+  return p.label;
+}
+
+function applyEQPreset(name, silent) {
+  const key = (name === "custom" || name in EQ_PRESETS) ? name : "piatto";
+  const gains = eqGainsFor(key);
+  if (eqReady && eqFilters) {
+    eqFilters.forEach((flt, i) => { flt.gain.value = gains[i] || 0; });
+  }
+  storage.set("ssg-eq", key);
+  syncEQControls();
+  if (!silent) toast("Equalizzatore: " + eqLabelFor(key));
+}
+
+function applyEQGains(gains) {
+  storage.set("ssg-eq-gains", JSON.stringify(gains));
+  if (eqReady && eqFilters) {
+    eqFilters.forEach((flt, i) => { flt.gain.value = gains[i] || 0; });
+  }
+  storage.set("ssg-eq", "custom");
+  syncEQControls();
+}
+
+function fmtDb(v) { return (v > 0 ? "+" : "") + v + " dB"; }
+
+/* Costruisce preset + slider in un contenitore (usato sia nelle
+   impostazioni che nel pannello del full player) */
+function buildEQControls(container) {
+  if (!container) return;
+  container.innerHTML = "";
+  const chips = document.createElement("div");
+  chips.className = "chip-row";
+  Object.keys(EQ_PRESETS).concat(["custom"]).forEach((name) => {
+    const b = document.createElement("button");
+    b.className = "chip";
+    b.dataset.eq = name;
+    b.textContent = name === "custom" ? "Custom" : EQ_PRESETS[name].label;
+    b.addEventListener("click", () => {
+      if (!ensureEQ()) { toast("Equalizzatore non supportato qui"); return; }
+      applyEQPreset(name);
+      haptic(10);
+    });
+    chips.appendChild(b);
+  });
+  container.appendChild(chips);
+  const sliders = document.createElement("div");
+  sliders.className = "eq-sliders";
+  EQ_FREQS.forEach((f, i) => {
+    const row = document.createElement("div");
+    row.className = "eq-band";
+    const lab = document.createElement("span");
+    lab.textContent = EQ_LABELS[i] || (f >= 1000 ? (f / 1000) + "k" : String(f));
+    const inp = document.createElement("input");
+    inp.type = "range";
+    inp.min = "-12";
+    inp.max = "12";
+    inp.step = "1";
+    inp.dataset.band = String(i);
+    inp.setAttribute("aria-label", "Banda " + lab.textContent + " Hz");
+    const out = document.createElement("output");
+    out.textContent = "0 dB";
+    inp.addEventListener("input", () => {
+      if (!ensureEQ()) { toast("Equalizzatore non supportato qui"); return; }
+      const gains = eqGainsFor(storage.get("ssg-eq") || "piatto");
+      gains[i] = Number(inp.value) || 0;
+      applyEQGains(gains);
+      out.textContent = fmtDb(gains[i]);
+    });
+    row.appendChild(lab);
+    row.appendChild(inp);
+    row.appendChild(out);
+    sliders.appendChild(row);
+  });
+  container.appendChild(sliders);
+  syncEQControls();
+}
+
+function syncEQControls() {
+  const cur = storage.get("ssg-eq") || "piatto";
+  const gains = eqGainsFor(cur);
+  document.querySelectorAll(".chip[data-eq]").forEach((c) => {
+    c.classList.toggle("on", c.dataset.eq === cur);
+  });
+  document.querySelectorAll(".eq-band input[type=range]").forEach((inp) => {
+    const i = Number(inp.dataset.band || 0);
+    const v = gains[i] || 0;
+    if (Number(inp.value) !== v) inp.value = String(v);
+    const out = inp.closest(".eq-band").querySelector("output");
+    if (out) out.textContent = fmtDb(v);
+  });
+}
+
+/* Stato connessione nelle impostazioni (si aggiorna da solo) */
+function updateNetStatus() {
+  if (!els.setNet) return;
+  const on = navigator.onLine !== false;
+  els.setNet.innerHTML = "";
+  const dot = document.createElement("span");
+  dot.className = "net-dot " + (on ? "on" : "off");
+  const t = document.createElement("span");
+  t.textContent = on ? "Online" : "Offline — solo brani scaricati";
+  els.setNet.appendChild(dot);
+  els.setNet.appendChild(t);
+}
+window.addEventListener("online", updateNetStatus);
+window.addEventListener("offline", updateNetStatus);
 
 /* ---------- PANNELLO IMPOSTAZIONI ---------- */
 function openSettingsView() {
   if (!els.settingsView) return;
   renderSettings();
+  updateNetStatus();
   els.settingsView.classList.remove("hidden");
   els.settingsView.setAttribute("aria-hidden", "false");
 }
@@ -843,22 +960,7 @@ function renderSettings() {
     });
   }
   // Equalizzatore
-  if (els.setEq) {
-    els.setEq.innerHTML = "";
-    const cur = storage.get("ssg-eq") || "piatto";
-    Object.keys(EQ_PRESETS).forEach((name) => {
-      const b = document.createElement("button");
-      b.className = "chip" + (cur === name ? " on" : "");
-      b.dataset.eq = name;
-      b.textContent = EQ_PRESETS[name].label;
-      b.addEventListener("click", () => {
-        if (!ensureEQ()) { toast("Equalizzatore non supportato qui"); return; }
-        applyEQPreset(name);
-        haptic(10);
-      });
-      els.setEq.appendChild(b);
-    });
-  }
+  buildEQControls(els.setEq);
   // Brani offline
   renderDlList();
   updateDlInfo();
@@ -877,33 +979,137 @@ async function updateDlInfo() {
   els.setDlInfo.textContent = txt;
 }
 
+const dlExpanded = new Set();   // album con lista brani aperta nelle impostazioni
+
+/* URL assoluti dei file audio effettivamente in cache offline */
+async function dlCachedFiles() {
+  try {
+    if (!("caches" in window)) return [];
+    const cache = await caches.open(AUDIO_CACHE);
+    const keys = await cache.keys();
+    return keys.map((r) => r.url);
+  } catch (e) { return []; }
+}
+
+function dlUrlFor(songIdx) {
+  try {
+    return new URL(resolvePath(state.songs[songIdx].file), location.href).href;
+  } catch (e) { return ""; }
+}
+
+/* Ricalcola il flag album: "1" solo se ci sono TUTTI i brani */
+function refreshDlFlag(album, cachedSet) {
+  const all = album.songs.every((i) => cachedSet.has(dlUrlFor(i)));
+  storage.set("ssg-dl-" + album.title, all ? "1" : "0");
+}
+
+async function removeAlbumDl(album) {
+  try {
+    const cache = await caches.open(AUDIO_CACHE);
+    await Promise.all(album.songs.map((i) => {
+      try { return cache.delete(dlUrlFor(i)).catch(() => {}); }
+      catch (e) { return Promise.resolve(false); }
+    }));
+  } catch (e) {}
+  storage.set("ssg-dl-" + album.title, "0");
+}
+
+async function removeTrackDl(songIdx) {
+  try {
+    const cache = await caches.open(AUDIO_CACHE);
+    await cache.delete(dlUrlFor(songIdx));
+  } catch (e) {}
+  const song = state.songs[songIdx];
+  const album = state.albums.find((a) => a.title === song.album);
+  if (album) refreshDlFlag(album, new Set(await dlCachedFiles()));
+}
+
+async function deleteAllDownloads() {
+  try { await caches.delete(AUDIO_CACHE); } catch (e) {}
+  state.albums.forEach((a) => storage.set("ssg-dl-" + a.title, "0"));
+  dlExpanded.clear();
+  renderDlList();
+  renderHome();
+  updateDlInfo();
+  toast("Download eliminati");
+}
+
 function renderDlList() {
   if (!els.setDlList) return;
-  els.setDlList.innerHTML = "";
-  const done = state.albums.filter(isAlbumDownloaded);
-  if (!done.length) {
-    const d = document.createElement("div");
-    d.className = "set-sub";
-    d.textContent = "Scarica un album dal tasto freccia nella sua pagina.";
-    els.setDlList.appendChild(d);
-    return;
-  }
-  done.forEach((album) => {
-    const row = document.createElement("div");
-    row.className = "dl-row";
-    const name = document.createElement("span");
-    name.textContent = album.title;
-    const btn = document.createElement("button");
-    btn.className = "dl-btn";
-    btn.textContent = "Rimuovi";
-    btn.addEventListener("click", async () => {
-      await downloadAlbum(album, null);
-      renderDlList();
-      renderHome();
+  dlCachedFiles().then((list) => {
+    if (!els.setDlList) return;
+    const cached = new Set(list);
+    const withDl = state.albums.map((album) => {
+      const idxs = album.songs.filter((i) => cached.has(dlUrlFor(i)));
+      return { album, idxs };
+    }).filter((x) => x.idxs.length > 0);
+    els.setDlList.innerHTML = "";
+    if (!withDl.length) {
+      const d = document.createElement("div");
+      d.className = "set-sub";
+      d.textContent = "Scarica un album dal tasto freccia nella sua pagina.";
+      els.setDlList.appendChild(d);
+      return;
+    }
+    const allBtn = document.createElement("button");
+    allBtn.className = "dl-btn danger";
+    allBtn.textContent = "Elimina tutti i download";
+    allBtn.addEventListener("click", deleteAllDownloads);
+    els.setDlList.appendChild(allBtn);
+    withDl.forEach(({ album, idxs }) => {
+      const row = document.createElement("div");
+      row.className = "dl-row";
+      const name = document.createElement("span");
+      name.textContent = album.title + " · " + idxs.length + "/" + album.songs.length;
+      const tog = document.createElement("button");
+      tog.className = "dl-toggle";
+      const open = dlExpanded.has(album.title);
+      tog.textContent = open ? "Brani ▾" : "Brani ▸";
+      tog.addEventListener("click", () => {
+        if (dlExpanded.has(album.title)) dlExpanded.delete(album.title);
+        else dlExpanded.add(album.title);
+        renderDlList();
+      });
+      const btn = document.createElement("button");
+      btn.className = "dl-btn";
+      btn.textContent = "Rimuovi";
+      btn.addEventListener("click", async () => {
+        await removeAlbumDl(album);
+        dlExpanded.delete(album.title);
+        renderDlList();
+        renderHome();
+        updateDlInfo();
+      });
+      row.appendChild(name);
+      row.appendChild(tog);
+      row.appendChild(btn);
+      els.setDlList.appendChild(row);
+      if (open) {
+        const box = document.createElement("div");
+        box.className = "dl-tracks";
+        idxs.forEach((i) => {
+          const t = document.createElement("div");
+          t.className = "dl-track";
+          const tn = document.createElement("span");
+          const s = state.songs[i];
+          tn.textContent = s.titolo || fileTitle(s.file);
+          const x = document.createElement("button");
+          x.className = "dl-x";
+          x.textContent = "✕";
+          x.setAttribute("aria-label", "Elimina brano scaricato");
+          x.addEventListener("click", async () => {
+            await removeTrackDl(i);
+            renderDlList();
+            renderHome();
+            updateDlInfo();
+          });
+          t.appendChild(tn);
+          t.appendChild(x);
+          box.appendChild(t);
+        });
+        els.setDlList.appendChild(box);
+      }
     });
-    row.appendChild(name);
-    row.appendChild(btn);
-    els.setDlList.appendChild(row);
   });
 }
 
@@ -948,14 +1154,7 @@ async function downloadAlbum(album, btn) {
   if (!("caches" in window)) { toast("Ascolto offline non supportato qui"); return; }
   if (isAlbumDownloaded(album)) {
     // Rimuovi dalla cache offline
-    try {
-      const cache = await caches.open(AUDIO_CACHE);
-      await Promise.all(album.songs.map((i) => {
-        const url = new URL(resolvePath(state.songs[i].file), location.href).href;
-        return cache.delete(url).catch(() => {});
-      }));
-    } catch (e) {}
-    storage.set("ssg-dl-" + album.title, "0");
+    await removeAlbumDl(album);
     if (btn) btn.classList.remove("done");
     toast("Album rimosso dall'ascolto offline");
     return;
@@ -1951,6 +2150,12 @@ els.fp.addEventListener("touchend", (e) => {
   if (dy > 70 && Math.abs(dx) < 90) closeFullPlayer();
 }, { passive: true });
 
+function closeFpEq() {
+  if (!els.fpEqSheet) return;
+  els.fpEqSheet.classList.add("hidden");
+  els.fpEqSheet.setAttribute("aria-hidden", "true");
+}
+
 /* ---------- 14. FULL PLAYER a tendina ---------- */
 
 function openFullPlayer() {
@@ -2215,7 +2420,7 @@ function syncFpVideoToAudio() {
        * video fermo/pausa mentre la canzone va -> si fa ripartire;
        * video che non avanza da ~1.2s (stallo) -> si riporta sulla canzone;
        * scarto grande (>1s) -> seek del video (raro, max 1 ogni 3s);
-       * scarto piccolo (0.1-1s) -> micro-velocità (1.08x/0.92x) SENZA seek:
+       * scarto piccolo (0.1-1s) -> micro-velocità (1.05x/0.95x) SENZA seek:
          la decodifica non si interrompe mai, il video non scatta e non
          si blocca, e riallinea la deriva in un paio di secondi. */
 function fpDriftCheck() {
@@ -2317,7 +2522,19 @@ audio.addEventListener("timeupdate", fpDriftCheck);
 if (els.fp) {
   // Clic sulla copertina/brano nella barra in basso -> apre il full player
   els.trackInfo.addEventListener("click", openFullPlayer);
-  els.fpCollapse.addEventListener("click", closeFullPlayer);
+  els.fpEq.addEventListener("click", () => {
+    if (!els.fpEqSheet) return;
+    if (els.fpEqSheet.classList.contains("hidden")) {
+      if (!ensureEQ()) { toast("Equalizzatore non supportato qui"); return; }
+      buildEQControls(els.fpEqBody);
+      els.fpEqSheet.classList.remove("hidden");
+      els.fpEqSheet.setAttribute("aria-hidden", "false");
+    } else {
+      closeFpEq();
+    }
+    haptic(10);
+  });
+  if (els.fpEqClose) els.fpEqClose.addEventListener("click", closeFpEq);
   els.fpPlay.addEventListener("click", togglePlay);
   els.fpNext.addEventListener("click", skipNext);
   els.fpPrev.addEventListener("click", skipPrev);
@@ -2377,7 +2594,7 @@ if (els.fp) {
   // Trascina verso il basso sulla zona alta (pillina) -> chiudi la tendina
   let fpDragStart = null;
   els.fpHandle.addEventListener("pointerdown", (e) => {
-    if (e.target === els.fpCollapse) return;                 // il chevron gestisce il proprio click
+    if (e.target === els.fpEq) return;                 // il tasto EQ gestisce il proprio click
     if (e.target.closest(".fp-share-wrap")) return;          // il menu Condividi gestisce il proprio click
     if (e.target.closest("#fp-video-toggle")) return;        // il tasto Video gestisce il proprio click
     if (e.target.closest("#fp-video-fs")) return;            // il tasto Tutto schermo gestisce il proprio click
@@ -2406,6 +2623,7 @@ document.addEventListener("keydown", (e) => {
   } else if (e.key === "Escape") {
     if (els.settingsView && !els.settingsView.classList.contains("hidden")) closeSettingsView();
     else if (els.searchView && !els.searchView.classList.contains("hidden")) closeSearchView();
+    else if (els.fpEqSheet && !els.fpEqSheet.classList.contains("hidden")) closeFpEq();
     else if (els.fp && els.fp.classList.contains("open")) closeFullPlayer();
     else goHome();
   }
