@@ -13,7 +13,7 @@
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
 const APP_VERSION = "23";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v111";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_BUILD = "v112";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -1182,7 +1182,7 @@ async function downloadAlbum(album, btn) {
   if (isAlbumDownloaded(album)) {
     // Rimuovi dalla cache offline
     await removeAlbumDl(album);
-    if (btn) btn.classList.remove("done");
+    if (btn) { btn.classList.remove("done"); btn.innerHTML = DL_ICON_DOWN; }
     toast("Album rimosso dall'ascolto offline");
     return;
   }
@@ -1202,7 +1202,7 @@ async function downloadAlbum(album, btn) {
   if (btn) { btn.classList.remove("busy"); btn.disabled = false; }
   if (ok === album.songs.length) {
     storage.set("ssg-dl-" + album.title, "1");
-    if (btn) btn.classList.add("done");
+    if (btn) { btn.classList.add("done"); btn.innerHTML = DL_ICON_DONE; }
     toast("Album scaricato: suona anche offline");
   } else if (ok > 0) {
     toast("Scaricati " + ok + " brani su " + album.songs.length);
@@ -1424,15 +1424,21 @@ function buildHeroPlay(album) {
 
 function buildHeroDl(album) {
   const b = document.createElement("button");
-  b.className = "hero-dl" + (isAlbumDownloaded(album) ? " done" : "");
+  const done = isAlbumDownloaded(album);
+  b.className = "hero-dl" + (done ? " done" : "");
   b.setAttribute("aria-label", "Ascolto offline");
-  b.title = isAlbumDownloaded(album)
+  b.title = done
     ? "Scaricato: tocca per rimuovere" : "Scarica per l'ascolto offline";
-  b.innerHTML =
-    '<svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></svg>';
+  b.innerHTML = done ? DL_ICON_DONE : DL_ICON_DOWN;
   b.addEventListener("click", () => downloadAlbum(album, b));
   return b;
 }
+
+/* Icona download (nuvola) e spunta di conferma per album scaricato */
+const DL_ICON_DOWN =
+  '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4c-1.48 0-2.85.43-4.01 1.17l1.46 1.46C10.21 6.23 11.08 6 12 6c3.04 0 5.5 2.46 5.5 5.5v.5H19c1.66 0 3 1.34 3 3 0 1.66-1.34 3-3 3H8.41c-.24 0-.47.1-.64.27-.13.13-.22.3-.25.48-.02.1-.03.2-.03.31 0 .24.07.48.2.68.52.8 1.55 1.26 2.72 1.26h8.07c2.76 0 5-2.24 5-5 0-2.65-2.05-4.81-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>';
+const DL_ICON_DONE =
+  '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
 
 /* Apre la copertina a schermo intero */
 function openCoverView() {

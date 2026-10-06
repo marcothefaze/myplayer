@@ -23,7 +23,7 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-html, body { height: 100%; }
+html, body { height: 100%; overscroll-behavior: none; }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
@@ -33,6 +33,10 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  /* Bloccata in viewport: niente rimbalzo oltre i limiti dell'app,
+     lo scroll resta solo dentro le liste (che lo gestiscono da sole) */
+  position: fixed;
+  inset: 0;
   /* Blocca pinch-zoom e doppio-tap nativamente (compositor, senza JS):
      lo scroll resta fluidissimo anche con listener touch attivi */
   touch-action: pan-x pan-y;
@@ -709,9 +713,10 @@ button:active { transform: scale(.94); }
 .hero-dl:active { transform: scale(.92); }
 .hero-dl svg { width: 17px; height: 17px; }
 .hero-dl.done {
-  color: rgb(var(--album-c1));
-  border-color: rgba(var(--album-c1), .5);
-  background: rgba(var(--album-c1), .12);
+  color: #fff;
+  border-color: transparent;
+  background: linear-gradient(135deg, rgb(var(--album-c1)), rgb(var(--album-c2)));
+  box-shadow: 0 0 14px rgba(var(--album-c1), .45);
 }
 .hero-dl.busy svg { animation: dl-spin 1s linear infinite; }
 @keyframes dl-spin {
@@ -2275,6 +2280,9 @@ body.album-open #btn-refresh { order: 4; }
     user-select: text;
     -webkit-touch-callout: default;
   }
+  /* Solo touch (telefono e iPad): tasti hero leggermente più piccoli */
+  .hero-play { width: 40px; height: 40px; }
+  .hero-dl { width: 37px; height: 37px; }
 }
 
 /* =========================================================
