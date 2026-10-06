@@ -1645,6 +1645,10 @@ input[type="range"] {
 .search-btn:active { transform: scale(.92); }
 .search-btn svg { width: 18px; height: 18px; display: block; }
 .refresh-btn { margin-left: 0; }
+/* Solo la lente assorbe lo spazio libero: così resta a destra subito prima
+   delle impostazioni. Prima anche le impostazioni avevano margin-left:auto
+   e sui PC larghi lo spazio si divideva a metà (lente quasi al centro). */
+#btn-settings { margin-left: 0; }
 
 /* In vista album la lente va a sinistra, subito dopo Indietro */
 body.album-open #btn-back { order: 0; }
@@ -2070,6 +2074,11 @@ body.album-open #btn-refresh { order: 4; }
   flex-shrink: 0;
 }
 .dl-btn:active { transform: scale(.95); }
+.dl-btn:disabled { opacity: .45; cursor: default; }
+.dl-btn:disabled:active { transform: none; }
+/* Cestino elimina-tutto: icona + testo allineati */
+.dl-trash { display: inline-flex; align-items: center; gap: 7px; }
+.dl-trash svg { display: block; flex-shrink: 0; }
 
 /* Modale di conferma elegante (es. elimina download) */
 .confirm-modal {

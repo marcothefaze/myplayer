@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "24";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v114";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "25";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v115";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -1094,18 +1094,25 @@ function renderDlList() {
       return { album, idxs };
     }).filter((x) => x.idxs.length > 0);
     els.setDlList.innerHTML = "";
+    /* Cestino SEMPRE visibile (richiesta di Marco): se non c'è niente
+       da eliminare è disabilitato, così il controllo si trova sempre */
+    const allBtn = document.createElement("button");
+    allBtn.className = "dl-btn danger dl-trash";
+    allBtn.innerHTML = DL_ICON_TRASH + "<span>Elimina tutti i download</span>";
+    if (!withDl.length) {
+      allBtn.disabled = true;
+      allBtn.title = "Niente da eliminare: scarica prima un album";
+    } else {
+      allBtn.addEventListener("click", deleteAllDownloads);
+    }
+    els.setDlList.appendChild(allBtn);
     if (!withDl.length) {
       const d = document.createElement("div");
       d.className = "set-sub";
-      d.textContent = "Scarica un album dal tasto freccia nella sua pagina.";
+      d.textContent = "Scarica un album dal tasto freccia nella sua pagina: qui vedrai gli album con l'elenco dei brani.";
       els.setDlList.appendChild(d);
       return;
     }
-    const allBtn = document.createElement("button");
-    allBtn.className = "dl-btn danger";
-    allBtn.textContent = "Elimina tutti i download";
-    allBtn.addEventListener("click", deleteAllDownloads);
-    els.setDlList.appendChild(allBtn);
     withDl.forEach(({ album, idxs }) => {
       const row = document.createElement("div");
       row.className = "dl-row";
@@ -1469,6 +1476,9 @@ const DL_ICON_DOWN =
   '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4c-1.48 0-2.85.43-4.01 1.17l1.46 1.46C10.21 6.23 11.08 6 12 6c3.04 0 5.5 2.46 5.5 5.5v.5H19c1.66 0 3 1.34 3 3 0 1.66-1.34 3-3 3H8.41c-.24 0-.47.1-.64.27-.13.13-.22.3-.25.48-.02.1-.03.2-.03.31 0 .24.07.48.2.68.52.8 1.55 1.26 2.72 1.26h8.07c2.76 0 5-2.24 5-5 0-2.65-2.05-4.81-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>';
 const DL_ICON_DONE =
   '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
+/* Icona cestino per "Elimina tutti i download" nelle impostazioni */
+const DL_ICON_TRASH =
+  '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>';
 
 /* Apre la copertina a schermo intero */
 function openCoverView() {
