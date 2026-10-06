@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "30";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v120";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "31";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v121";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -1117,7 +1117,7 @@ function renderSettings() {
   updateDlInfo();
 }
 
-async function updateDlInfo() {
+async function updateDlInfo(followUp) {
   if (!els.setDlInfo) return;
   /* Diagnostica visibile: quanti brani offline + quante voci nelle cache
      (audio vs resto dell'app), così si vede subito dove sta la memoria */
@@ -1146,6 +1146,25 @@ async function updateDlInfo() {
     }
   } catch (e) {}
   els.setDlInfo.textContent = txt;
+  /* Il browser aggiorna la quota in differita: subito dopo una cancellazione
+     estimate() può ancora mostrare il valore vecchio. Due riletture (5s e
+     15s) se il pannello è ancora aperto, così il numero scende davvero */
+  if (!followUp) {
+    try {
+      clearTimeout(updateDlInfo._t);
+      updateDlInfo._t = setTimeout(() => {
+        try {
+          if (els.settingsView && !els.settingsView.classList.contains("hidden")) updateDlInfo(true);
+        } catch (e) {}
+      }, 5000);
+      clearTimeout(updateDlInfo._t2);
+      updateDlInfo._t2 = setTimeout(() => {
+        try {
+          if (els.settingsView && !els.settingsView.classList.contains("hidden")) updateDlInfo(true);
+        } catch (e) {}
+      }, 15000);
+    } catch (e) {}
+  }
 }
 
 const dlExpanded = new Set();   // album con lista brani aperta nelle impostazioni
@@ -1198,11 +1217,11 @@ async function dlDeleteUrls(urls) {
         try {
           const cache = await caches.open(name);
           const keys = await cache.keys();
-          for (const r of keys) {
-            if (want.has(dlNorm(r.url))) {
-              try { await cache.delete(r); } catch (e) {}
-            }
-          }
+          await Promise.all(keys.map((r) => {
+            if (!want.has(dlNorm(r.url))) return Promise.resolve(false);
+            try { return cache.delete(r).catch(() => false); }
+            catch (e) { return Promise.resolve(false); }
+          }));
         } catch (e) {}
       }
     };
