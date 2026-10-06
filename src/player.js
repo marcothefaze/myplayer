@@ -13,7 +13,7 @@
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
 const APP_VERSION = "23";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v104";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_BUILD = "v105";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -47,6 +47,17 @@ const els = {
   searchView: $("search-view"),
   searchViewClose: $("search-view-close"),
   btnSearch: $("btn-search"),
+  btnSettings: $("btn-settings"),
+  settingsView: $("settings-view"),
+  settingsViewClose: $("settings-view-close"),
+  setStats: $("set-stats"),
+  setEq: $("set-eq"),
+  setDlInfo: $("set-dl-info"),
+  setDlList: $("set-dl-list"),
+  installBanner: $("install-banner"),
+  installGo: $("install-go"),
+  installHide: $("install-hide"),
+  installText: $("install-text"),
   albumEyebrow: $("album-eyebrow"),
   heroHearts: $("hero-hearts"),
   trackList: $("track-list"),
@@ -269,7 +280,7 @@ async function loadPlaylist() {
     console.error("Errore nel caricamento della playlist:", err);
     const retry = document.getElementById("retry-load");
     if (retry) retry.addEventListener("click", function () {
-      els.albumGrid.innerHTML = "";
+      renderSkeletons();
       loadPlaylist();
     });
   }
@@ -599,6 +610,303 @@ function closeSearchView() {
   clearSearch();
 }
 
+/* ---------- SKELETON mentre carica la playlist ---------- */
+function renderSkeletons() {
+  if (!els.albumGrid) return;
+  els.albumGrid.innerHTML = "";
+  for (let i = 0; i < 8; i++) {
+    const card = document.createElement("div");
+    card.className = "album-card";
+    card.setAttribute("aria-hidden", "true");
+    const cover = document.createElement("div");
+    cover.className = "card-cover skel-cover";
+    const l1 = document.createElement("div");
+    l1.className = "skel-line";
+    l1.style.width = "70%";
+    const l2 = document.createElement("div");
+    l2.className = "skel-line";
+    l2.style.width = "45%";
+    card.appendChild(cover);
+    card.appendChild(l1);
+    card.appendChild(l2);
+    els.albumGrid.appendChild(card);
+  }
+}
+
+/* ---------- TILT 3D copertine home (solo mouse, leggero) ---------- */
+function setupTilt() {
+  try {
+    if (!window.matchMedia) return;
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  } catch (e) { return; }
+  if (!els.albumGrid) return;
+  let ticking = false;
+  els.albumGrid.querySelectorAll(".album-card").forEach((card) => {
+    const cover = card.querySelector(".card-cover");
+    if (!cover) return;
+    card.addEventListener("mousemove", (e) => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        const r = cover.getBoundingClientRect();
+        if (!r.width) return;
+        const px = (e.clientX - r.left) / r.width - 0.5;
+        const py = (e.clientY - r.top) / r.height - 0.5;
+        cover.classList.add("tilt");
+        cover.style.transform =
+          "perspective(700px) rotateX(" + (-py * 8).toFixed(2) + "deg)" +
+          " rotateY(" + (px * 8).toFixed(2) + "deg)";
+      });
+    });
+    card.addEventListener("mouseleave", () => {
+      cover.classList.remove("tilt");
+      cover.style.transform = "";
+    });
+  });
+}
+
+/* ---------- BANNER INSTALLA APP (solo web, mai se installata) ---------- */
+let deferredPrompt = null;
+
+function isStandalone() {
+  try {
+    if (window.navigator.standalone === true) return true;
+    if (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) return true;
+  } catch (e) {}
+  return false;
+}
+
+function maybeShowInstallBanner() {
+  if (!els.installBanner) return;
+  if (isStandalone()) return;                       // già installata: mai
+  if (storage.get("ssg-install-hide") === "1") return;   // già scartato
+  if (els.installGo && deferredPrompt) els.installGo.classList.remove("hidden");
+  els.installBanner.classList.remove("hidden");
+}
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  maybeShowInstallBanner();
+});
+window.addEventListener("appinstalled", () => {
+  storage.set("ssg-install-hide", "1");
+  if (els.installBanner) els.installBanner.classList.add("hidden");
+});
+
+/* ---------- STATISTICHE (contate in locale) ---------- */
+function statsGet() {
+  try {
+    const s = JSON.parse(storage.get("ssg-stats") || "{}");
+    return { plays: s.plays || {}, seconds: s.seconds || 0 };
+  } catch (e) { return { plays: {}, seconds: 0 }; }
+}
+
+let statsCache = null;
+let statsLastSave = 0;
+let statsLastTick = 0;
+
+function statsSave(force) {
+  if (!statsCache) return;
+  const now = Date.now();
+  if (!force && now - statsLastSave < 10000) return;   // salva al massimo ogni 10s
+  statsLastSave = now;
+  storage.set("ssg-stats", JSON.stringify(statsCache));
+}
+
+function bumpPlayStat(songIdx) {
+  if (songIdx < 0 || !state.songs[songIdx]) return;
+  if (!statsCache) statsCache = statsGet();
+  const key = state.songs[songIdx].file;
+  statsCache.plays[key] = (statsCache.plays[key] || 0) + 1;
+  statsSave(true);
+}
+
+function trackPlaySeconds() {
+  if (!audio || audio.paused) { statsLastTick = 0; return; }
+  const now = Date.now();
+  if (statsLastTick) {
+    if (!statsCache) statsCache = statsGet();
+    statsCache.seconds += Math.min(2, (now - statsLastTick) / 1000);
+    statsSave(false);
+  }
+  statsLastTick = now;
+}
+
+/* ---------- EQUALIZZATORE (Web Audio, preset) ---------- */
+let eqCtx = null, eqFilters = null, eqReady = false;
+const EQ_FREQS = [60, 250, 1000, 4000, 12000];
+const EQ_PRESETS = {
+  piatto:    { label: "Piatto",    gains: [0, 0, 0, 0, 0] },
+  bassi:     { label: "Bassi",     gains: [6, 3, 0, 0, -1] },
+  voci:      { label: "Voci",      gains: [-2, 1, 4, 3, 0] },
+  brillante: { label: "Brillante", gains: [0, 0, 1, 4, 6] }
+};
+
+function ensureEQ() {
+  if (eqReady) {
+    if (eqCtx && eqCtx.state === "suspended") eqCtx.resume().catch(() => {});
+    return true;
+  }
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return false;
+    eqCtx = new AC();
+    const src = eqCtx.createMediaElementSource(audio);
+    let node = src;
+    eqFilters = EQ_FREQS.map((f, i) => {
+      const flt = eqCtx.createBiquadFilter();
+      flt.type = i === 0 ? "lowshelf" : (i === EQ_FREQS.length - 1 ? "highshelf" : "peaking");
+      flt.frequency.value = f;
+      flt.Q.value = 1;
+      flt.gain.value = 0;
+      node.connect(flt);
+      node = flt;
+      return flt;
+    });
+    node.connect(eqCtx.destination);
+    eqReady = true;
+    applyEQPreset(storage.get("ssg-eq") || "piatto", true);
+    return true;
+  } catch (e) { return false; }
+}
+
+function applyEQPreset(name, silent) {
+  const p = EQ_PRESETS[name] || EQ_PRESETS.piatto;
+  if (eqReady && eqFilters) {
+    eqFilters.forEach((flt, i) => { flt.gain.value = p.gains[i] || 0; });
+  }
+  storage.set("ssg-eq", name in EQ_PRESETS ? name : "piatto");
+  if (els.setEq) {
+    els.setEq.querySelectorAll(".chip").forEach((c) => {
+      c.classList.toggle("on", c.dataset.eq === (name in EQ_PRESETS ? name : "piatto"));
+    });
+  }
+  if (!silent) toast("Equalizzatore: " + p.label);
+}
+
+/* ---------- PANNELLO IMPOSTAZIONI ---------- */
+function openSettingsView() {
+  if (!els.settingsView) return;
+  renderSettings();
+  els.settingsView.classList.remove("hidden");
+  els.settingsView.setAttribute("aria-hidden", "false");
+}
+
+function closeSettingsView() {
+  if (!els.settingsView) return;
+  els.settingsView.classList.add("hidden");
+  els.settingsView.setAttribute("aria-hidden", "true");
+}
+
+function fmtMin(sec) {
+  const m = Math.floor(sec / 60);
+  if (m < 60) return m + " min";
+  return Math.floor(m / 60) + " h " + (m % 60) + " min";
+}
+
+function renderSettings() {
+  // Statistiche
+  if (els.setStats) {
+    const st = statsGet();
+    const entries = Object.keys(st.plays || {});
+    const totalPlays = entries.reduce((t, k) => t + (st.plays[k] || 0), 0);
+    const top = entries
+      .map((k) => ({ k, n: st.plays[k] || 0 }))
+      .sort((a, b) => b.n - a.n)
+      .slice(0, 3)
+      .map((e) => {
+        const s = state.songs.find((x) => x.file === e.k);
+        return (s ? (s.titolo || fileTitle(s.file)) : "Brano") + " · " + e.n + "×";
+      });
+    const byAlbum = {};
+    entries.forEach((k) => {
+      const s = state.songs.find((x) => x.file === k);
+      const a = s ? (s.album || "Senza album") : null;
+      if (a) byAlbum[a] = (byAlbum[a] || 0) + (st.plays[k] || 0);
+    });
+    const topAlbum = Object.keys(byAlbum).sort((a, b) => byAlbum[b] - byAlbum[a])[0];
+    els.setStats.innerHTML = "";
+    const lines = [
+      "Brani avviati: " + totalPlays,
+      "Ascolto totale: " + fmtMin(st.seconds || 0)
+    ];
+    if (top.length) lines.push("Top brani: " + top.join(" — "));
+    if (topAlbum) lines.push("Album preferito: " + topAlbum);
+    if (!totalPlays) lines.push("Ascolta qualcosa e qui vedrai le tue statistiche.");
+    lines.forEach((t) => {
+      const d = document.createElement("div");
+      d.textContent = t;
+      els.setStats.appendChild(d);
+    });
+  }
+  // Equalizzatore
+  if (els.setEq) {
+    els.setEq.innerHTML = "";
+    const cur = storage.get("ssg-eq") || "piatto";
+    Object.keys(EQ_PRESETS).forEach((name) => {
+      const b = document.createElement("button");
+      b.className = "chip" + (cur === name ? " on" : "");
+      b.dataset.eq = name;
+      b.textContent = EQ_PRESETS[name].label;
+      b.addEventListener("click", () => {
+        if (!ensureEQ()) { toast("Equalizzatore non supportato qui"); return; }
+        applyEQPreset(name);
+        haptic(10);
+      });
+      els.setEq.appendChild(b);
+    });
+  }
+  // Brani offline
+  renderDlList();
+  updateDlInfo();
+}
+
+async function updateDlInfo() {
+  if (!els.setDlInfo) return;
+  let txt = "Nessun album scaricato.";
+  try {
+    if (navigator.storage && navigator.storage.estimate) {
+      const est = await navigator.storage.estimate();
+      const mb = ((est.usage || 0) / 1048576).toFixed(0);
+      txt = "Spazio usato dall'app: circa " + mb + " MB.";
+    }
+  } catch (e) {}
+  els.setDlInfo.textContent = txt;
+}
+
+function renderDlList() {
+  if (!els.setDlList) return;
+  els.setDlList.innerHTML = "";
+  const done = state.albums.filter(isAlbumDownloaded);
+  if (!done.length) {
+    const d = document.createElement("div");
+    d.className = "set-sub";
+    d.textContent = "Scarica un album dal tasto freccia nella sua pagina.";
+    els.setDlList.appendChild(d);
+    return;
+  }
+  done.forEach((album) => {
+    const row = document.createElement("div");
+    row.className = "dl-row";
+    const name = document.createElement("span");
+    name.textContent = album.title;
+    const btn = document.createElement("button");
+    btn.className = "dl-btn";
+    btn.textContent = "Rimuovi";
+    btn.addEventListener("click", async () => {
+      await downloadAlbum(album, null);
+      renderDlList();
+      renderHome();
+    });
+    row.appendChild(name);
+    row.appendChild(btn);
+    els.setDlList.appendChild(row);
+  });
+}
+
 /* ---------- PREFERITI (cuore sui brani + pseudo-album in home) ---------- */
 
 function favSet() {
@@ -829,6 +1137,7 @@ function renderHome() {
     els.albumGrid.appendChild(card);
   });
   fitHomeGrid();
+  setupTilt();
 }
 
 /* Su PC (>=1200px): dimensiona le copertine della home in modo che le due
@@ -1137,6 +1446,8 @@ async function playSong(songIdx, openFull) {
   const song = state.songs[songIdx];
   document.body.classList.add("has-track");   // fa comparire il miniplayer
   audio.src = resolvePath(song.file);
+  bumpPlayStat(songIdx);                      // statistiche: un avvio in più
+  ensureEQ();                                 // equalizzatore pronto al primo gesto utile
   /* NIENTE await: il vecchio codice aspettava che audio.play() si risolvesse
      (cioè finché il brano bufferizzava e partiva DAVVERO) prima di aggiornare
      titolo/copertina e aprire il full player: cliccando una canzone la UI
@@ -1203,6 +1514,7 @@ function togglePlay() {
        primo play viene rifiutato da iOS (corsa di caricamento) */
     const myToken = ++playToken;
     audio.play().catch(() => {});
+    ensureEQ();                               // gesto utente: contesto audio ok
     riprovaPlay(myToken);
   } else {
     audio.pause();
@@ -1399,6 +1711,7 @@ audio.addEventListener("ended", () => {
 });
 
 audio.addEventListener("timeupdate", updateProgress);
+audio.addEventListener("timeupdate", trackPlaySeconds);
 audio.addEventListener("loadedmetadata", updateProgress);
 
 /* ---------- MEDIA SESSION (controlli nativi del telefono) ---------- */
@@ -1496,6 +1809,36 @@ els.btnBack.addEventListener("click", goHome);
 if (els.btnSearch) {
   els.btnSearch.addEventListener("click", () => { openSearchView(); haptic(10); });
 }
+
+/* ---------- IMPOSTAZIONI: pannello + banner installazione ---------- */
+if (els.btnSettings) {
+  els.btnSettings.addEventListener("click", () => { openSettingsView(); haptic(10); });
+}
+if (els.settingsViewClose) {
+  els.settingsViewClose.addEventListener("click", closeSettingsView);
+}
+if (els.settingsView) {
+  els.settingsView.addEventListener("click", (e) => {
+    if (e.target === els.settingsView) closeSettingsView();   // click fuori
+  });
+}
+if (els.installHide) {
+  els.installHide.addEventListener("click", () => {
+    storage.set("ssg-install-hide", "1");
+    if (els.installBanner) els.installBanner.classList.add("hidden");
+  });
+}
+if (els.installGo) {
+  els.installGo.addEventListener("click", async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    try { await deferredPrompt.userChoice; } catch (e) {}
+    deferredPrompt = null;
+    storage.set("ssg-install-hide", "1");
+    if (els.installBanner) els.installBanner.classList.add("hidden");
+  });
+}
+maybeShowInstallBanner();
 if (els.searchViewClose) {
   els.searchViewClose.addEventListener("click", closeSearchView);
 }
@@ -2061,7 +2404,8 @@ document.addEventListener("keydown", (e) => {
   } else if (e.key === "ArrowLeft") {
     audio.currentTime = Math.max(0, audio.currentTime - 5);
   } else if (e.key === "Escape") {
-    if (els.searchView && !els.searchView.classList.contains("hidden")) closeSearchView();
+    if (els.settingsView && !els.settingsView.classList.contains("hidden")) closeSettingsView();
+    else if (els.searchView && !els.searchView.classList.contains("hidden")) closeSearchView();
     else if (els.fp && els.fp.classList.contains("open")) closeFullPlayer();
     else goHome();
   }
@@ -2371,6 +2715,7 @@ if ("serviceWorker" in navigator) {
 }
 
 try {
+  renderSkeletons();
   loadPlaylist();
 } catch (err) {
   fatalError(err);
