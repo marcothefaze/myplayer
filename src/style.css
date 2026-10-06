@@ -83,7 +83,7 @@ body {
   pointer-events: none;
   animation: boot-out .35s ease .18s forwards;
 }
-#boot img { width: 72px; border-radius: 18px; animation: boot-pop .35s ease; }
+#boot img { width: 100px; border-radius: 22px; animation: boot-pop .35s ease; }
 @keyframes boot-out { to { opacity: 0; visibility: hidden; } }
 @keyframes boot-pop { from { transform: scale(.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
@@ -1592,12 +1592,13 @@ body.album-open .brand { order: 2; }
 body.album-open #btn-settings { order: 3; margin-left: auto; }
 body.album-open #btn-refresh { order: 4; }
 
-/* In vista album la lente va a sinistra, subito dopo Indietro */
-body.album-open #btn-back { order: 0; }
-body.album-open #btn-search { order: 1; margin-left: 0; }
-body.album-open .brand { order: 2; }
-body.album-open #btn-settings { order: 3; margin-left: auto; }
-body.album-open #btn-refresh { order: 4; }
+/* Solo PC: in vista album la lente va a destra, prima delle impostazioni */
+@media (min-width: 1200px) {
+  body.album-open .brand { order: 1; }
+  body.album-open #btn-search { order: 2; margin-left: auto; }
+  body.album-open #btn-settings { order: 3; margin-left: 0; }
+  body.album-open #btn-refresh { order: 4; }
+}
 
 /* Pannello ricerca: copre lo schermo, input in cima + risultati sotto */
 .search-view {
@@ -1921,10 +1922,11 @@ body.album-open #btn-refresh { order: 4; }
   font-size: .86rem;
   padding: 6px 2px;
 }
-/* Pannello impostazioni: sfondo pieno e leggibile */
+/* Pannello impostazioni: trasparente come il resto dell'app (ci sono già
+   le card delle sezioni per la leggibilità, lo sfondo stellato resta visibile) */
 #settings-view .search-panel {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: transparent;
+  border: none;
   border-radius: 22px;
   padding: 22px 20px;
   max-height: 100%;

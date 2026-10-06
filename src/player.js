@@ -13,7 +13,7 @@
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
 const APP_VERSION = "23";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v110";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_BUILD = "v111";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -793,12 +793,6 @@ function eqGainsFor(name) {
   return p.gains.slice();
 }
 
-function eqLabelFor(name) {
-  if (name === "custom") return "Custom";
-  const p = EQ_PRESETS[name] || EQ_PRESETS.piatto;
-  return p.label;
-}
-
 function applyEQPreset(name, silent) {
   const key = (name === "custom" || name in EQ_PRESETS) ? name : "piatto";
   const gains = eqGainsFor(key);
@@ -807,7 +801,7 @@ function applyEQPreset(name, silent) {
   }
   storage.set("ssg-eq", key);
   syncEQControls();
-  if (!silent) toast("Equalizzatore: " + eqLabelFor(key));
+  // niente toast: il preset attivo si vede già evidenziato nei chip
 }
 
 function applyEQGains(gains) {
@@ -2719,8 +2713,9 @@ const SKY = (function () {
   function mix3(a, b, t) { return [0, 1, 2].map((i) => Math.round(a[i] + (b[i] - a[i]) * t)); }
   function applySkyBg() {
     try {
-      let c = mix3([10, 10, 16], [38, 50, 74], PH.day);   // notte -> blu soft
-      c = mix3(c, [46, 28, 44], PH.dusk * 0.7);           // caldo ad alba/tramonto
+      let c = mix3([10, 10, 16], [96, 118, 154], PH.day);   // notte -> giorno chiaro soft
+      c = mix3(c, [150, 120, 95], PH.day * 0.25);           // colpetto caldo di sole nel giorno
+      c = mix3(c, [46, 28, 44], PH.dusk * 0.7);             // caldo ad alba/tramonto
       document.documentElement.style.setProperty("--bg",
         "rgb(" + c[0] + "," + c[1] + "," + c[2] + ")");
     } catch (e) {}
