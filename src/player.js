@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "47";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v137";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "48";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v138";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -801,11 +801,27 @@ function popChimeNow(ctx, own) {
     if (own) setTimeout(() => { try { ctx.close(); } catch (e) {} }, 900);
   } catch (e) {}
 }
+/* Campanello OSTINATO: un tentativo solo non basta (contesto che si sveglia
+   in ritardo, gesto arrivato dopo il popup). Riprova a 300ms/1s/2s finché
+   non suona davvero; se è fisicamente impossibile (mai un gesto: i browser
+   lo vietano), su Android vibra. Così suona SEMPRE quando si può. */
+let popChimeToken = 0;
 function popChime() {
+  const tk = ++popChimeToken;
+  let fired = false;
+  const attempt = () => {
+    if (fired || tk !== popChimeToken) return;
+    if (popChimeTry()) fired = true;
+  };
+  attempt();
+  [300, 1000, 2000].forEach((ms) => setTimeout(attempt, ms));
+  setTimeout(() => {
+    if (!fired && tk === popChimeToken) haptic([30, 50, 30]);
+  }, 2200);
+}
+function popChimeTry() {
   try {
     if (sfxCtx && sfxCtx.state === "closed") sfxCtx = null;
-    /* Si svegliano tutti i candidati (condiviso + EQ): il resume è async,
-       quindi si guarda lo stato DOPO averlo chiesto */
     const cand = [];
     if (sfxCtx) cand.push(sfxCtx);
     try {
@@ -817,22 +833,16 @@ function popChime() {
     const run = cand.find((c) => {
       try { return c.state === "running"; } catch (e) { return false; }
     });
-    if (run) { popChimeNow(run, false); return; }
-    /* Nessun contesto pronto: se ne crea uno (sticky activation dopo un
-       gesto) e si riprova tra poco; diventa il condiviso per le prossime */
+    if (run) { popChimeNow(run, false); return true; }
     const AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) return;
+    if (!AC) return false;
     const ctx = new AC();
     if (ctx.state === "suspended" && ctx.resume) ctx.resume().catch(() => {});
-    /* Se non c'era un condiviso diventa lui (mai chiuso); altrimenti è un
-       usa-e-getta che si richiude da solo dopo aver suonato */
     let own = false;
     if (!sfxCtx) { sfxCtx = ctx; } else { own = true; }
-    if (ctx.state === "running") { popChimeNow(ctx, own); return; }
-    setTimeout(() => {
-      try { if (ctx.state === "running") popChimeNow(ctx, own); } catch (e) {}
-    }, 250);
-  } catch (e) {}
+    if (ctx.state === "running") { popChimeNow(ctx, own); return true; }
+    return false;
+  } catch (e) { return false; }
 }
 /* C'è già qualcosa sopra? (modali, pannelli, fullscreen, mini già fuori) */
 function popBlocked() {
