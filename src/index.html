@@ -12,7 +12,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/icons/icon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/icons/icon-180.png">
   <link rel="manifest" href="../manifest.json">
-  <link rel="stylesheet" href="style.css?v=121">
+  <link rel="stylesheet" href="style.css?v=122">
   <!-- Il ?v=N forza il browser a scaricare di nuovo i file a ogni rilascio,
        evitando che resti in cache una versione vecchia dell'app. -->
 </head>
@@ -444,6 +444,26 @@
     </div>
   </div>
 
-  <script src="player.js?v=121"></script>
+  <!-- ============ POPUP INSTAGRAM (una tantum) ============
+       Si mostra una sola volta dopo qualche brano ascoltato. -->
+  <div id="ig-modal" class="confirm-modal hidden" role="dialog" aria-modal="true" aria-labelledby="ig-title">
+    <div class="confirm-card">
+      <div class="ig-logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.8">
+          <rect x="3" y="3" width="18" height="18" rx="5"/>
+          <circle cx="12" cy="12" r="4"/>
+          <circle cx="17.2" cy="6.8" r="1.2" fill="currentColor" stroke="none"/>
+        </svg>
+      </div>
+      <div id="ig-title" class="confirm-title">Seguici su Instagram</div>
+      <div class="confirm-msg">@ssg_ufficiale — backstage, anteprime e date live.</div>
+      <div class="confirm-btns">
+        <button id="ig-later" class="chip">Più tardi</button>
+        <a id="ig-open" class="chip chip-ig" href="https://www.instagram.com/ssg_ufficiale/" target="_blank" rel="noopener">Apri Instagram</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="player.js?v=122"></script>
 </body>
 </html>

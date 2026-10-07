@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "34";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v124";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "35";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v125";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -729,7 +729,45 @@ function bumpPlayStat(songIdx) {
   const key = state.songs[songIdx].file;
   statsCache.plays[key] = (statsCache.plays[key] || 0) + 1;
   statsSave(true);
+  /* Popup Instagram una tantum: dopo 3 brani ascoltati */
+  try {
+    if (!storage.get("ssg-ig-shown")) {
+      const n = (Number(storage.get("ssg-ig-plays") || 0) || 0) + 1;
+      storage.set("ssg-ig-plays", String(n));
+      if (n >= 3) openIgModal();
+    }
+  } catch (e) {}
 }
+
+/* ---------- POPUP INSTAGRAM (una sola volta in assoluto) ---------- */
+function openIgModal() {
+  try {
+    if (document.hidden) return;
+    if (storage.get("ssg-ig-shown")) return;
+    const m = document.getElementById("ig-modal");
+    if (!m || !m.classList.contains("hidden")) return;
+    const cm = document.getElementById("confirm-modal");
+    if (cm && !cm.classList.contains("hidden")) return;   // mai sopra la conferma
+    m.classList.remove("hidden");
+  } catch (e) {}
+}
+function closeIgModal() {
+  try {
+    const m = document.getElementById("ig-modal");
+    if (m) m.classList.add("hidden");
+    storage.set("ssg-ig-shown", "1");   // chiusa in qualsiasi modo: non torna più
+  } catch (e) {}
+}
+(function bindIgModal() {
+  const later = document.getElementById("ig-later");
+  if (later) later.addEventListener("click", () => { closeIgModal(); haptic(10); });
+  const open = document.getElementById("ig-open");
+  if (open) open.addEventListener("click", () => { closeIgModal(); haptic(10); });
+  const m = document.getElementById("ig-modal");
+  if (m) m.addEventListener("click", (e) => {
+    if (e.target === m) closeIgModal();   // click fuori
+  });
+})();
 
 function trackPlaySeconds() {
   if (!audio || audio.paused) { statsLastTick = 0; return; }
@@ -2732,6 +2770,7 @@ function closeFullPlayer() {
   els.fp.setAttribute("aria-hidden", "true");
   closeFpEq();   // il pannello EQ segue sempre il player: niente stati fantasma
   closeQueue();    // idem per la coda
+  try { if (fpYtPlayer && fpYtReady) fpYtPlayer.pauseVideo(); } catch (e) {}   // YT in pausa col player
   if (fpVideoEl) {
     fpVideoEl.pause();
     /* NIENTE rilascio del src: la versione con removeAttribute+load()
@@ -2749,11 +2788,15 @@ function closeFullPlayer() {
    alta permette di tornare alla copertina e viceversa. */
 const TRACK_VIDEOS = {
   "Goleador": "assets/video/goleador.mp4?v=3",
-  "Gta VI": "assets/video/GTA VI 720p.mp4?v=2"
+  "Gta VI": "assets/video/GTA VI 720p.mp4?v=2",
+  "CACAO ACUSTIC LIVE": "yt:U7ZogUlSHMM",
+  "5- Puozzo Car": "yt:4c7BdquPEqE",
+  "6- Torna da me": "yt:0yeqH3oK9BY"
 };
 
 let fpVideoEl = null;     // elemento <video> dentro la copertina del full player
 let fpHasVideo = false;   // il brano corrente ha un videoclip?
+let fpVideoKind = "file";   // "file" (mp4 locale) oppure "yt" (YouTube, yt:ID)
 let fpVideoOn = true;     // preferenza utente: video visibile (true) o copertina (false)
 let fpLastDriftSync = 0;  // istante dell'ultima correzione di deriva in fullscreen
 let fpStartSyncPending = false; // riallineo al frame in attesa del "playing"
@@ -2866,6 +2909,7 @@ function updateFpVideo(song) {
   if (!els.fp) return;
   const src = TRACK_VIDEOS[song.titolo];
   fpHasVideo = !!src;
+  fpVideoKind = (typeof src === "string" && src.indexOf("yt:") === 0) ? "yt" : "file";
   /* Nuovo brano: si ri-armano i flag di sync (con gli skip rapidissimi il
      "playing" del brano prima non scatta e il riallineo resterebbe
      disattivato per il brano dopo, che partirebbe fuori sync) */
@@ -2881,9 +2925,20 @@ function updateFpVideo(song) {
     if (toggle) toggle.classList.add("hidden");
     if (els.fpVideoFs) els.fpVideoFs.classList.add("hidden");
     els.fpCover.classList.remove("playing-video");   // riquadro di nuovo quadrato
+    hideYt();
     return;
   }
 
+  if (fpVideoKind === "yt") {
+    if (fpVideoEl) {
+      try { fpVideoEl.pause(); } catch (e) {}
+      fpVideoEl.classList.add("hidden");
+    }
+    updateYtTrack(src.slice(3));
+    return;
+  }
+
+  hideYt();
   const v = ensureFpVideo();
   if (!v) return;
     if (toggle) toggle.classList.remove("hidden");
@@ -2981,7 +3036,9 @@ function fpAlignVideoOnPlaying() {
    dal player iOS, quindi la canzone segue lui e non si riscrive mai il
    currentTime del video (altrimenti il seek dell'utente verrebbe annullato). */
 function syncFpVideoToAudio() {
-  if (!fpVideoEl || !fpHasVideo) return;
+  if (!fpHasVideo) return;
+  if (fpVideoKind === "yt") { syncYtToAudio(); return; }
+  if (!fpVideoEl) return;
   if (!fpVideoOn) { try { fpVideoEl.pause(); } catch (e) {} return; }   // video nascosto: mai farlo girare
   if (fpVideoFullscreen()) {
     if (audio.paused !== fpVideoEl.paused) {
@@ -3012,7 +3069,9 @@ function syncFpVideoToAudio() {
          la decodifica non si interrompe mai, il video non scatta e non
          si blocca, e riallinea la deriva in un paio di secondi. */
 function fpDriftCheck() {
-  if (!fpHasVideo || !fpVideoEl || !fpVideoOn || audio.paused) return;
+  if (!fpHasVideo || audio.paused) return;
+  if (fpVideoKind === "yt") { fpYtDrift(); return; }
+  if (!fpVideoEl || !fpVideoOn) return;
   if (!isFinite(audio.duration) || !isFinite(fpVideoEl.duration)) return;
   const durMatch = Math.abs(fpVideoEl.duration - audio.duration) < 3;
   const drift = (audio.currentTime || 0) - (fpVideoEl.currentTime || 0);
@@ -3080,6 +3139,186 @@ function fpDriftCheck() {
   }
 }
 
+/* ---------- VIDEO DA YOUTUBE (niente download, solo streaming) ----------
+   TRACK_VIDEOS accetta "yt:<ID>": stesso riquadro, stessa sync dell'mp4.
+   L'API si carica solo al primo brano YT online; il player è unico e si
+   ricrea al cambio brano. Sempre muto: l'audio resta l'mp3 della canzone.
+   Offline, API bloccata o embed disabilitato -> copertina, nessun errore. */
+let fpYtPlayer = null;    // player YT unico (ricreato a ogni brano YT)
+let fpYtId = "";          // videoId caricato nel player
+let fpYtReady = false;    // onReady scattato per il brano corrente
+let fpYtToken = 0;        // anti-corsa: solo l'ultimo brano comanda
+let fpYtAligned = false;  // riallineo iniziale già fatto per il brano
+let ytApiPromise = null;  // promessa di caricamento API (una sola volta)
+
+function ytApiLoaded() {
+  try { return !!(window.YT && window.YT.Player); } catch (e) { return false; }
+}
+function ensureYTApi() {
+  if (ytApiLoaded()) return Promise.resolve(true);
+  if (ytApiPromise) return ytApiPromise;
+  ytApiPromise = new Promise((resolve) => {
+    let done = false;
+    const fin = () => { if (!done) { done = true; resolve(ytApiLoaded()); } };
+    try {
+      const prev = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = function () { try { if (prev) prev(); } catch (e) {} fin(); };
+      const s = document.createElement("script");
+      s.src = "https://www.youtube.com/iframe_api";
+      s.async = true;
+      s.onerror = fin;
+      document.head.appendChild(s);
+      setTimeout(fin, 8000);   // rete di sicurezza: mai appesi
+    } catch (e) { fin(); }
+  });
+  return ytApiPromise;
+}
+function destroyYtPlayer() {
+  fpYtReady = false;
+  try { if (fpYtPlayer && fpYtPlayer.destroy) fpYtPlayer.destroy(); } catch (e) {}
+  fpYtPlayer = null;
+}
+/* Nasconde il box YT e mette in pausa (cambio brano, video nascosto) */
+function hideYt() {
+  try {
+    const box = document.getElementById("fp-yt");
+    if (box) box.classList.add("hidden");
+  } catch (e) {}
+  try { if (fpYtPlayer && fpYtReady) fpYtPlayer.pauseVideo(); } catch (e) {}
+}
+/* Copertina al posto del video YT (offline, API bloccata, embed vietato) */
+function ytFallbackCover() {
+  fpYtReady = false;
+  hideYt();
+  try { els.fpCover.classList.remove("playing-video"); } catch (e) {}
+}
+/* Fa ripartire il video YT in modo robusto (stessi retry dell'mp4).
+   Il player è unico e contiene sempre il brano corrente, quindi i retry
+   non possono mai far partire un video vecchio sopra una canzone nuova. */
+function fpYtResume() {
+  if (!fpYtPlayer || !fpYtReady || audio.paused) return;
+  if (fpVideoKind !== "yt" || !fpHasVideo || !fpVideoOn) return;
+  if (fpYtState() === 1) return;
+  const attempt = () => {
+    try {
+      if (fpVideoKind !== "yt" || !fpHasVideo || audio.paused) return;
+      fpYtPlayer.mute();
+      fpYtPlayer.setPlaybackRate(1);
+      fpYtPlayer.playVideo();
+    } catch (e) {}
+  };
+  attempt();
+  setTimeout(() => { if (fpYtPlayer && fpYtState() !== 1 && !audio.paused) attempt(); }, 400);
+  setTimeout(() => { if (fpYtPlayer && fpYtState() !== 1 && !audio.paused) attempt(); }, 1200);
+}
+function fpYtState() {
+  try { return fpYtPlayer ? fpYtPlayer.getPlayerState() : -99; }
+  catch (e) { return -99; }
+}
+/* Il video YT segue la canzone (chiamato al posto della sync mp4) */
+function syncYtToAudio() {
+  if (!fpYtPlayer || !fpYtReady || !fpHasVideo || fpVideoKind !== "yt") return;
+  if (!fpVideoOn) { try { fpYtPlayer.pauseVideo(); } catch (e) {} return; }
+  if (audio.paused) { try { fpYtPlayer.pauseVideo(); } catch (e) {} return; }
+  fpYtResume();
+}
+/* Deriva YT sul timeupdate dell'audio (specchio semplificato del drift mp4:
+   restart se fermo, seek sui distacchi grandi; niente micro-velocità) */
+function fpYtDrift() {
+  if (!fpYtPlayer || !fpYtReady || audio.paused) return;
+  let dur = NaN, cur = NaN;
+  try { dur = fpYtPlayer.getDuration(); cur = fpYtPlayer.getCurrentTime(); }
+  catch (e) { return; }
+  if (!isFinite(dur) || !isFinite(audio.duration)) return;
+  if (Math.abs(dur - audio.duration) >= 5) return;
+  if (fpYtState() !== 1) { fpYtResume(); return; }
+  const drift = (audio.currentTime || 0) - (cur || 0);
+  if (Math.abs(drift) <= 0.2) return;
+  const now = Date.now();
+  if (Math.abs(drift) > 1.2 && now - fpLastDriftSync >= 3000) {
+    try { fpYtPlayer.seekTo(Math.max(0, audio.currentTime % dur), true); }
+    catch (e) {}
+    fpLastDriftSync = now;
+  }
+}
+function onYtState(st) {
+  if (!fpHasVideo || fpVideoKind !== "yt") return;
+  if (st === 1) {
+    if (!fpYtAligned) {
+      fpYtAligned = true;
+      try {
+        const d = fpYtPlayer.getDuration();
+        if (isFinite(d) && isFinite(audio.duration) && Math.abs(d - audio.duration) < 5 &&
+            Math.abs((audio.currentTime || 0) - fpYtPlayer.getCurrentTime()) > 0.3) {
+          fpYtPlayer.seekTo(audio.currentTime % d, true);
+        }
+      } catch (e) {}
+    }
+  } else if (st === 0) {
+    // Finito prima della canzone: loop come l'mp4
+    if (!audio.paused && fpVideoOn) {
+      try { fpYtPlayer.seekTo(0, true); fpYtPlayer.playVideo(); } catch (e) {}
+    }
+  }
+}
+/* Prepara il brano YT nel riquadro: riusa il player se è già quello giusto,
+   altrimenti lo ricrea (la buildCover precedente ha svuotato il riquadro) */
+function updateYtTrack(videoId) {
+  if (!els.fpCover || !videoId) return;
+  const prevId = fpYtId;
+  fpYtId = videoId;
+  fpYtAligned = false;
+  if (els.fpVideoToggle) els.fpVideoToggle.classList.remove("hidden");
+  if (els.fpVideoFs) els.fpVideoFs.classList.remove("hidden");
+  const boxNow = document.getElementById("fp-yt");
+  const same = prevId === videoId && fpYtPlayer && fpYtReady && boxNow &&
+    boxNow.parentElement === els.fpCover;
+  if (same) {
+    boxNow.classList.toggle("hidden", !fpVideoOn);
+    els.fpCover.classList.toggle("playing-video", fpVideoOn);
+    syncYtToAudio();
+    return;
+  }
+  destroyYtPlayer();
+  const box = document.createElement("div");
+  box.id = "fp-yt";
+  box.className = "fp-video fp-yt" + (fpVideoOn ? "" : " hidden");
+  els.fpCover.appendChild(box);
+  if (els.fpVideoFs && els.fpVideoFs.parentElement !== els.fpCover) els.fpCover.appendChild(els.fpVideoFs);
+  els.fpCover.classList.toggle("playing-video", fpVideoOn);
+  if (!fpVideoOn) return;   // nascosto dall'utente: niente caricamento
+  if (navigator.onLine === false) { ytFallbackCover(); return; }
+  const tk = ++fpYtToken;
+  ensureYTApi().then((ok) => {
+    if (tk !== fpYtToken) return;
+    if (!ok || !ytApiLoaded() || !document.getElementById("fp-yt")) {
+      ytFallbackCover();
+      return;
+    }
+    let origin = null;
+    try { origin = (location.origin || "").indexOf("http") === 0 ? location.origin : null; } catch (e) {}
+    const vars = { rel: 0, modestbranding: 1, playsinline: 1, controls: 0, disablekb: 1, iv_load_policy: 3, mute: 1 };
+    if (origin) vars.origin = origin;
+    try {
+      fpYtPlayer = new window.YT.Player("fp-yt", {
+        videoId: videoId,
+        playerVars: vars,
+        events: {
+          onReady: (ev) => {
+            if (tk !== fpYtToken) return;
+            fpYtReady = true;
+            try { ev.target.mute(); } catch (e) {}
+            fpYtAligned = false;
+            syncYtToAudio();
+          },
+          onStateChange: (ev) => { if (tk === fpYtToken && ev) onYtState(ev.data); },
+          onError: () => { if (tk === fpYtToken) ytFallbackCover(); }
+        }
+      });
+    } catch (e) { if (tk === fpYtToken) ytFallbackCover(); }
+  });
+}
+
 /* Fullscreen: l'utente muove/pausa il video dal player nativo -> la canzone
    segue (valgono solo lì: fuori dal fullscreen comanda l'audio). I listener
    stanno dentro ensureFpVideo perché l'elemento video nasce lì. */
@@ -3090,7 +3329,19 @@ audio.addEventListener("pause", syncFpVideoToAudio);
 /* La canzone viene sfogliata (seek bar, tastiera, player di sistema):
    il video salta subito al nuovo punto e resta sincronizzato */
 audio.addEventListener("seeked", () => {
-  if (!fpHasVideo || !fpVideoEl || fpVideoFullscreen()) return;
+  if (!fpHasVideo || fpVideoFullscreen()) return;
+  if (fpVideoKind === "yt") {
+    try {
+      if (fpYtPlayer && fpYtReady && !audio.paused) {
+        const d = fpYtPlayer.getDuration();
+        if (isFinite(d) && isFinite(audio.duration) && Math.abs(d - audio.duration) < 5) {
+          fpYtPlayer.seekTo(Math.max(0, audio.currentTime % d), true);
+        }
+      }
+    } catch (e) {}
+    return;
+  }
+  if (!fpVideoEl) return;
   if (audio.paused) { syncFpVideoToAudio(); return; }
   fpVideoResume();
   try {
@@ -3145,8 +3396,22 @@ if (els.fp) {
   els.fpShareCover.addEventListener("click", () => { toggleShareMenu(); shareCover(); });
   if (els.fpVideoToggle) {
     els.fpVideoToggle.addEventListener("click", () => {
-      if (!fpHasVideo || !fpVideoEl) return;
+      if (!fpHasVideo) return;
       fpVideoOn = !fpVideoOn;
+      if (fpVideoKind === "yt") {
+        const box = document.getElementById("fp-yt");
+        if (box) box.classList.toggle("hidden", !fpVideoOn);
+        els.fpCover.classList.toggle("playing-video", fpVideoOn);
+        if (fpVideoOn) {
+          const cur = currentIndex();
+          const s = cur >= 0 ? state.songs[cur] : null;
+          const src = s ? TRACK_VIDEOS[s.titolo] : null;
+          if (src && src.indexOf("yt:") === 0) updateYtTrack(src.slice(3));
+        } else hideYt();
+        haptic(12);
+        return;
+      }
+      if (!fpVideoEl) return;
       fpVideoEl.classList.toggle("hidden", !fpVideoOn);
       els.fpCover.classList.toggle("playing-video", fpVideoOn);
       if (fpVideoOn) syncFpVideoToAudio(); else fpVideoEl.pause();
@@ -3158,7 +3423,17 @@ if (els.fp) {
   // in fullscreen; uscendo torna allo stato precedente (copertina o video)
   const fpFsBtn = els.fpVideoFs;
   const goFs = async () => {
-    if (!fpHasVideo || !fpVideoEl) return;
+    if (!fpHasVideo) return;
+    if (fpVideoKind === "yt") {
+      try {
+        const box = document.getElementById("fp-yt");
+        if (document.fullscreenElement) await document.exitFullscreen();
+        else if (box && box.requestFullscreen) await box.requestFullscreen();
+      } catch (e) {}
+      haptic(12);
+      return;
+    }
+    if (!fpVideoEl) return;
     try {
       if (document.fullscreenElement) {
         await document.exitFullscreen();
@@ -3182,6 +3457,10 @@ if (els.fp) {
     if (fpHasVideo && fpVideoOn) goFs();   // solo se il video è visibile
   });
   document.addEventListener("fullscreenchange", () => {
+    if (fpVideoKind === "yt" && fpHasVideo && !document.fullscreenElement) {
+      syncYtToAudio();   // usciti dal fullscreen YT: l'audio ha sempre comandato
+      return;
+    }
     if (fpVideoEl && !document.fullscreenElement) {
       // Usciti dal fullscreen (desktop/Android): la canzone si riallinea al
       // video (che fin lì comandava), poi il video riparte e resta sync
@@ -3198,6 +3477,7 @@ if (els.fp) {
     if (e.target.closest(".fp-share-wrap")) return;          // il menu Condividi gestisce il proprio click
     if (e.target.closest("#fp-video-toggle")) return;        // il tasto Video gestisce il proprio click
     if (e.target.closest("#fp-video-fs")) return;            // il tasto Tutto schermo gestisce il proprio click
+    if (e.target.closest("#fp-queue-btn")) return;            // il tasto Coda gestisce il proprio click
     fpDragStart = e.clientY;
     els.fpHandle.setPointerCapture(e.pointerId);
   });
@@ -3222,7 +3502,9 @@ document.addEventListener("keydown", (e) => {
     audio.currentTime = Math.max(0, audio.currentTime - 5);
   } else if (e.key === "Escape") {
     const cm = document.getElementById("confirm-modal");
+    const im = document.getElementById("ig-modal");
     if (cm && !cm.classList.contains("hidden")) closeConfirm(false);
+    else if (im && !im.classList.contains("hidden")) closeIgModal();
     else if (els.settingsView && !els.settingsView.classList.contains("hidden")) closeSettingsView();
     else if (els.searchView && !els.searchView.classList.contains("hidden")) closeSearchView();
     else if (els.fpEqSheet && !els.fpEqSheet.classList.contains("hidden")) closeFpEq();
