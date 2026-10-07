@@ -786,42 +786,27 @@ document.addEventListener("visibilitychange", () => {
 function popChimeNow(ctx, own) {
   try {
     const t = ctx.currentTime + 0.02;
-    [[880, 0], [1318.5, 0.12]].forEach(([f, dt]) => {
+    /* Arpeggio in levare, onda triangolare: buca il mix anche a musica alta */
+    [[880, 0], [1174.66, 0.1], [1567.98, 0.2]].forEach(([f, dt]) => {
       const o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = "sine";
+      o.type = "triangle";
       o.frequency.value = f;
       g.gain.setValueAtTime(0.0001, t + dt);
-      g.gain.exponentialRampToValueAtTime(0.22, t + dt + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.35, t + dt + 0.02);
       g.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.3);
       o.connect(g);
       g.connect(ctx.destination);
       o.start(t + dt);
       o.stop(t + dt + 0.34);
     });
-    if (own) setTimeout(() => { try { ctx.close(); } catch (e) {} }, 900);
+    if (own) setTimeout(() => { try { ctx.close(); } catch (e) {} }, 1100);
   } catch (e) {}
 }
-/* Campanello OSTINATO: un tentativo solo non basta (contesto che si sveglia
-   in ritardo, gesto arrivato dopo il popup). Riprova a 300ms/1s/2s finché
-   non suona davvero; se è fisicamente impossibile (mai un gesto: i browser
-   lo vietano), su Android vibra. Così suona SEMPRE quando si può. */
-let popChimeToken = 0;
 function popChime() {
-  const tk = ++popChimeToken;
-  let fired = false;
-  const attempt = () => {
-    if (fired || tk !== popChimeToken) return;
-    if (popChimeTry()) fired = true;
-  };
-  attempt();
-  [300, 1000, 2000].forEach((ms) => setTimeout(attempt, ms));
-  setTimeout(() => {
-    if (!fired && tk === popChimeToken) haptic([30, 50, 30]);
-  }, 2200);
-}
-function popChimeTry() {
   try {
     if (sfxCtx && sfxCtx.state === "closed") sfxCtx = null;
+    /* Si svegliano tutti i candidati (condiviso + EQ): il resume è async,
+       quindi si guarda lo stato DOPO averlo chiesto */
     const cand = [];
     if (sfxCtx) cand.push(sfxCtx);
     try {
@@ -833,16 +818,29 @@ function popChimeTry() {
     const run = cand.find((c) => {
       try { return c.state === "running"; } catch (e) { return false; }
     });
-    if (run) { popChimeNow(run, false); return true; }
+    if (run) { popChimeNow(run, false); return; }
+    /* Nessun contesto pronto: se ne crea uno (sticky activation dopo un
+       gesto) e si riprova tra poco; diventa il condiviso per le prossime */
     const AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) return false;
+    if (!AC) return;
     const ctx = new AC();
     if (ctx.state === "suspended" && ctx.resume) ctx.resume().catch(() => {});
+    /* Se non c'era un condiviso diventa lui (mai chiuso); altrimenti è un
+       usa-e-getta che si richiude da solo dopo aver suonato */
     let own = false;
     if (!sfxCtx) { sfxCtx = ctx; } else { own = true; }
-    if (ctx.state === "running") { popChimeNow(ctx, own); return true; }
-    return false;
-  } catch (e) { return false; }
+    if (ctx.state === "running") { popChimeNow(ctx, own); return; }
+    /* Non ancora pronto: due riprove (una sola suona, le altre si autoescludono) */
+    let played = false;
+    const later = () => {
+      try {
+        if (played) return;
+        if (ctx.state === "running") { played = true; popChimeNow(ctx, own); }
+      } catch (e) {}
+    };
+    setTimeout(later, 250);
+    setTimeout(later, 1200);
+  } catch (e) {}
 }
 /* C'è già qualcosa sopra? (modali, pannelli, fullscreen, mini già fuori) */
 function popBlocked() {
