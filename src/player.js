@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "40";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v130";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "41";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v131";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -748,6 +748,7 @@ const IG_HANDLE = "ssg_ufficiale";
 const IG_URL = "https://www.instagram.com/ssg_ufficiale/";
 const POP_EVERY_MS = 2 * 60 * 1000;   // un consiglio ogni 2 minuti
 let popLastKind = "";
+let popTimer = 0;
 let popYtPlayer = null;
 let popYtToken = 0;
 let popMusicWasPlaying = false;
@@ -857,11 +858,24 @@ function showPopMini(kind) {
   /* Niente chiusura automatica (richiesta di Marco): la mini resta finché
      l'utente non la apre o la chiude; il turno dopo salta se è ancora fuori */
 }
+/* Timer a catena (niente sovrapposizioni): scatta, poi riparte da solo;
+   chiudere un popup fa ripartire i 2 minuti da quel momento */
+function popSchedule() {
+  try {
+    clearTimeout(popTimer);
+    if (!popupsEnabled()) return;
+    popTimer = setTimeout(() => {
+      try { popMaybeShow(); } catch (e) {}
+      popSchedule();
+    }, POP_EVERY_MS);
+  } catch (e) {}
+}
 function hidePopMini() {
   try {
     const mini = popMiniEl("pop-mini");
     if (mini) mini.classList.add("hidden");
   } catch (e) {}
+  popSchedule();
 }
 function popPauseMusic() {
   popMusicWasPlaying = false;
@@ -925,7 +939,11 @@ function popPlayYt(videoId) {
   const tk = ++popYtToken;
   ensureYTApi().then((ok) => {
     if (tk !== popYtToken) return;
-    if (!ok || !ytApiLoaded() || !popSheetOpen()) return;
+    if (!ok || !ytApiLoaded() || !popSheetOpen()) {
+      const b = popMiniEl("pop-body");
+      if (popSheetOpen() && b) b.innerHTML = '<div class="confirm-msg">Video non disponibile.</div>';
+      return;
+    }
     try {
       popYtPlayer = new window.YT.Player(video, {
         videoId: videoId,
@@ -967,6 +985,7 @@ function closePop() {
     if (video) video.innerHTML = "";
   } catch (e) {}
   popResumeMusic();
+  popSchedule();
 }
 (function bindPopups() {
   const mini = popMiniEl("pop-mini");
@@ -981,6 +1000,7 @@ function closePop() {
   if (x) x.addEventListener("click", (e) => {
     try { e.stopPropagation(); } catch (err) {}
     hidePopMini();
+    closePop();   // la ✕ chiude tutto (anche la scheda se aperta)
   });
   const close = popMiniEl("pop-close");
   if (close) close.addEventListener("click", () => { closePop(); haptic(10); });
@@ -989,7 +1009,7 @@ function closePop() {
     if (e.target === sheet) closePop();   // click fuori
   });
   try {
-    setInterval(() => { try { popMaybeShow(); } catch (e) {} }, POP_EVERY_MS);
+    popSchedule();   // primo giro tra 2 minuti; poi riparte a ogni chiusura
   } catch (e) {}
 })();
 /* ---------- RIPRODUZIONE: pulsante coda on/off + popup consigli ---------- */
@@ -2641,7 +2661,7 @@ document.querySelectorAll("#set-popups .chip").forEach((b) => {
   b.addEventListener("click", () => {
     storage.set("ssg-popups", b.dataset.popups === "off" ? "off" : "on");
     syncPopupsChips();
-    try { if (!popupsEnabled()) { hidePopMini(); closePop(); } } catch (e) {}
+    try { if (!popupsEnabled()) { hidePopMini(); closePop(); } else { popSchedule(); } } catch (e) {}
     haptic(10);
   });
 });

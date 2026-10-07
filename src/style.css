@@ -1654,6 +1654,10 @@ a.chip { text-decoration: none; display: inline-flex; align-items: center; }
   background: linear-gradient(135deg, rgba(40, 30, 70, .96), rgba(20, 16, 36, .96));
   box-shadow: 0 12px 34px rgba(0, 0, 0, .55), 0 0 18px rgba(124, 108, 255, .25);
   cursor: pointer;
+  /* Tocco = apertura, mai zoom del browser (il div non è un bottone nativo) */
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
   animation: pop-mini-in .28s cubic-bezier(.32, .72, 0, 1) backwards;
 }
 @keyframes pop-mini-in {
