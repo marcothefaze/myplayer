@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "41";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v131";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "42";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v132";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -764,6 +764,7 @@ function popupsEnabled() {
 let sfxCtx = null;
 function sfxWarm() {
   try {
+    if (sfxCtx && sfxCtx.state === "closed") sfxCtx = null;   // buttato dal browser: si ricrea
     if (!sfxCtx) {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return;
@@ -772,11 +773,15 @@ function sfxWarm() {
     if (sfxCtx.state === "suspended" && sfxCtx.resume) sfxCtx.resume().catch(() => {});
   } catch (e) {}
 }
+/* Riscaldamento CONTINUO (non once): ogni gesto e ogni ritorno in primo
+   piano risveglia il contesto. Costa uno stato-letto a tocco, e fa sì che
+   il campanello suoni sempre, non solo la prima volta (i browser
+   sospendono l'audio in background/lock e i listener once non tornano) */
 ["pointerdown", "keydown", "touchend"].forEach((t) => {
-  try { window.addEventListener(t, sfxWarm, { once: true }); }
-  catch (e) {
-    try { window.addEventListener(t, sfxWarm); } catch (e2) {}
-  }
+  try { window.addEventListener(t, sfxWarm); } catch (e) {}
+});
+document.addEventListener("visibilitychange", () => {
+  try { if (!document.hidden) sfxWarm(); } catch (e) {}
 });
 function popChimeNow(ctx, own) {
   try {
@@ -798,14 +803,35 @@ function popChimeNow(ctx, own) {
 }
 function popChime() {
   try {
-    if (sfxCtx && sfxCtx.state === "running") { popChimeNow(sfxCtx, false); return; }
-    if (typeof eqCtx !== "undefined" && eqCtx && eqCtx.state === "running") { popChimeNow(eqCtx, false); return; }
+    if (sfxCtx && sfxCtx.state === "closed") sfxCtx = null;
+    /* Si svegliano tutti i candidati (condiviso + EQ): il resume è async,
+       quindi si guarda lo stato DOPO averlo chiesto */
+    const cand = [];
+    if (sfxCtx) cand.push(sfxCtx);
+    try {
+      if (typeof eqCtx !== "undefined" && eqCtx && eqCtx !== sfxCtx) cand.push(eqCtx);
+    } catch (e) {}
+    cand.forEach((c) => {
+      try { if (c.state === "suspended" && c.resume) c.resume().catch(() => {}); } catch (e) {}
+    });
+    const run = cand.find((c) => {
+      try { return c.state === "running"; } catch (e) { return false; }
+    });
+    if (run) { popChimeNow(run, false); return; }
+    /* Nessun contesto pronto: se ne crea uno (sticky activation dopo un
+       gesto) e si riprova tra poco; diventa il condiviso per le prossime */
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
     const ctx = new AC();
     if (ctx.state === "suspended" && ctx.resume) ctx.resume().catch(() => {});
-    if (ctx.state === "running") { popChimeNow(ctx, true); return; }
-    setTimeout(() => { try { if (ctx.state === "running") popChimeNow(ctx, true); } catch (e) {} }, 300);
+    /* Se non c'era un condiviso diventa lui (mai chiuso); altrimenti è un
+       usa-e-getta che si richiude da solo dopo aver suonato */
+    let own = false;
+    if (!sfxCtx) { sfxCtx = ctx; } else { own = true; }
+    if (ctx.state === "running") { popChimeNow(ctx, own); return; }
+    setTimeout(() => {
+      try { if (ctx.state === "running") popChimeNow(ctx, own); } catch (e) {}
+    }, 250);
   } catch (e) {}
 }
 /* C'è già qualcosa sopra? (modali, pannelli, fullscreen, mini già fuori) */
