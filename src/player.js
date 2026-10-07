@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "43";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v133";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "44";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v134";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -956,8 +956,48 @@ function expandPop(kind) {
 }
 function popDestroyYt() {
   popYtToken++;
+  popWatchStop();
+  popYtStarted = false;
   try { if (popYtPlayer && popYtPlayer.destroy) popYtPlayer.destroy(); } catch (e) {}
   popYtPlayer = null;
+}
+function popYtState() {
+  try { return popYtPlayer ? popYtPlayer.getPlayerState() : -99; }
+  catch (e) { return -99; }
+}
+/* Sorveglianza avvio: finché il video non è partito DAVVERO si riprova
+   (l'autoplay con audio fuori dal gesto viene spesso bloccato al primo
+   colpo: prima si sentiva l'audio o niente e il video restava fermo).
+   Dopo il primo PLAYING comanda l'utente (niente lotte sul pausa). */
+let popWatchTimer = 0;
+let popYtStarted = false;
+function popTick() {
+  try {
+    if (!popSheetOpen() || popYtStarted || !popYtPlayer) return;
+    if (popYtState() === 1) { popYtStarted = true; return; }
+    popYtPlayer.unMute();
+    try { popYtPlayer.setVolume(100); } catch (e) {}
+    popYtPlayer.playVideo();
+  } catch (e) {}
+}
+function popWatchStart() {
+  try {
+    if (popWatchTimer) clearInterval(popWatchTimer);
+    popWatchTimer = setInterval(() => {
+      try {
+        if (!popSheetOpen() || popYtStarted) {
+          if (popWatchTimer) clearInterval(popWatchTimer);
+          popWatchTimer = 0;
+          return;
+        }
+        popTick();
+      } catch (e) {}
+    }, 1500);
+  } catch (e) {}
+}
+function popWatchStop() {
+  try { if (popWatchTimer) clearInterval(popWatchTimer); } catch (e) {}
+  popWatchTimer = 0;
 }
 /* Codici errore YouTube in parole (testabile): 101/150 = incorporamento
    vietato dal proprietario, 100 = non trovato/privato */
@@ -986,11 +1026,16 @@ function popPlayYt(videoId) {
         events: {
           onReady: (ev) => {
             if (tk !== popYtToken) return;
-            try { ev.target.unMute(); ev.target.setVolume(100); } catch (e) {}
+            popYtStarted = false;
             try { ev.target.setPlaybackQualityRange("hd720", "hd720"); } catch (e2) {}
             try { ev.target.setOption("captions", "track", {}); } catch (e3) {}
             try { ev.target.unloadModule("captions"); } catch (e5) {}
-            try { ev.target.playVideo(); } catch (e4) {}
+            popTick();
+            popWatchStart();
+          },
+          onStateChange: (ev) => {
+            if (tk !== popYtToken || !ev) return;
+            if (ev.data === 1) popYtStarted = true;   // partito: da qui comanda l'utente
           },
           onError: (ev) => {
             if (tk !== popYtToken) return;

@@ -1650,9 +1650,10 @@ a.chip { text-decoration: none; display: inline-flex; align-items: center; }
   max-width: 92vw;
   padding: 10px 12px 10px 14px;
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, .12);
-  background: linear-gradient(135deg, rgba(40, 30, 70, .96), rgba(20, 16, 36, .96));
-  box-shadow: 0 12px 34px rgba(0, 0, 0, .55), 0 0 18px rgba(124, 108, 255, .25);
+  /* Rosso ben visibile (richiesta di Marco): si nota subito */
+  border: 1px solid rgba(255, 120, 130, .45);
+  background: linear-gradient(135deg, #d21f33, #7a0e1d 70%, #4d0812);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .55), 0 0 22px rgba(230, 40, 60, .45);
   cursor: pointer;
   /* Tocco = apertura, mai zoom del browser (il div non è un bottone nativo) */
   touch-action: manipulation;
@@ -1669,7 +1670,7 @@ a.chip { text-decoration: none; display: inline-flex; align-items: center; }
   font-size: .62rem;
   font-weight: 800;
   letter-spacing: 1.6px;
-  color: #c9bcff;
+  color: #ffd9de;
   margin-bottom: 1px;
 }
 .pop-mini-title {
@@ -1680,15 +1681,15 @@ a.chip { text-decoration: none; display: inline-flex; align-items: center; }
   text-overflow: ellipsis;
   max-width: 62vw;
 }
-.pop-mini-open { color: var(--dim); font-size: 1rem; flex-shrink: 0; }
+.pop-mini-open { color: #ffe3e6; font-size: 1rem; flex-shrink: 0; }
 .pop-mini-x {
   flex-shrink: 0;
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(255, 255, 255, .35);
   background: none;
-  color: var(--dim);
+  color: #ffe3e6;
   font-size: .65rem;
   line-height: 1;
   cursor: pointer;
