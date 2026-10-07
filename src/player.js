@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "36";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v126";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "37";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v127";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -907,12 +907,14 @@ function popPlayYt(videoId) {
       popYtPlayer = new window.YT.Player(video, {
         videoId: videoId,
         width: "100%",
-        playerVars: { rel: 0, modestbranding: 1, playsinline: 1, controls: 1, iv_load_policy: 3 },
+        playerVars: { rel: 0, modestbranding: 1, playsinline: 1, controls: 1, iv_load_policy: 3, cc_load_policy: 0 },
         events: {
           onReady: (ev) => {
             if (tk !== popYtToken) return;
             try { ev.target.unMute(); ev.target.setVolume(100); } catch (e) {}
-            try { ev.target.playVideo(); } catch (e2) {}
+            try { ev.target.setPlaybackQualityRange("hd720", "hd720"); } catch (e2) {}
+            try { ev.target.setOption("captions", "track", {}); } catch (e3) {}
+            try { ev.target.playVideo(); } catch (e4) {}
           },
           onError: () => {
             if (tk !== popYtToken) return;
@@ -3469,6 +3471,7 @@ function onYtState(st) {
         }
       } catch (e) {}
     }
+    try { fpYtPlayer.setPlaybackQualityRange("hd720", "hd720"); } catch (e) {}   // resta in 720p
   } else if (st === 0) {
     // Finito prima della canzone: loop come l'mp4
     if (!audio.paused && fpVideoOn) {
@@ -3491,6 +3494,15 @@ function updateYtTrack(videoId) {
   if (same) {
     boxNow.classList.toggle("hidden", !fpVideoOn);
     els.fpCover.classList.toggle("playing-video", fpVideoOn);
+    /* Riuso (es. riapertura player): riallinea subito, l'audio potrebbe
+       essere ripartito da zero mentre il video era avanti */
+    try {
+      const d0 = fpYtPlayer.getDuration();
+      if (fpVideoOn && isFinite(d0) && isFinite(audio.duration) && Math.abs(d0 - audio.duration) < 5 &&
+          Math.abs((audio.currentTime || 0) - fpYtPlayer.getCurrentTime()) > 0.3) {
+        fpYtPlayer.seekTo(audio.currentTime % d0, true);
+      }
+    } catch (e) {}
     syncYtToAudio();
     return;
   }
@@ -3512,7 +3524,7 @@ function updateYtTrack(videoId) {
     }
     let origin = null;
     try { origin = (location.origin || "").indexOf("http") === 0 ? location.origin : null; } catch (e) {}
-    const vars = { rel: 0, modestbranding: 1, playsinline: 1, controls: 0, disablekb: 1, iv_load_policy: 3, mute: 1 };
+    const vars = { rel: 0, modestbranding: 1, playsinline: 1, controls: 0, disablekb: 1, iv_load_policy: 3, mute: 1, cc_load_policy: 0 };
     if (origin) vars.origin = origin;
     try {
       fpYtPlayer = new window.YT.Player("fp-yt", {
@@ -3523,6 +3535,8 @@ function updateYtTrack(videoId) {
             if (tk !== fpYtToken) return;
             fpYtReady = true;
             try { ev.target.mute(); } catch (e) {}
+            try { ev.target.setPlaybackQualityRange("hd720", "hd720"); } catch (e) {}   // 720p se la banda regge
+            try { ev.target.setOption("captions", "track", {}); } catch (e) {}          // niente sottotitoli
             fpYtAligned = false;
             syncYtToAudio();
           },
