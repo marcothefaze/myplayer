@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "35";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v125";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "36";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v126";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -729,45 +729,250 @@ function bumpPlayStat(songIdx) {
   const key = state.songs[songIdx].file;
   statsCache.plays[key] = (statsCache.plays[key] || 0) + 1;
   statsSave(true);
-  /* Popup Instagram una tantum: dopo 3 brani ascoltati */
-  try {
-    if (!storage.get("ssg-ig-shown")) {
-      const n = (Number(storage.get("ssg-ig-plays") || 0) || 0) + 1;
-      storage.set("ssg-ig-plays", String(n));
-      if (n >= 3) openIgModal();
-    }
-  } catch (e) {}
 }
 
-/* ---------- POPUP INSTAGRAM (una sola volta in assoluto) ---------- */
-function openIgModal() {
+/* ---------- POPUP CONSIGLIATI (rotazione ogni 5 minuti) ----------
+   Mini card in stile storia -> al tocco si espande col video YouTube
+   (audio ATTIVO, musica in pausa) oppure col profilo Instagram.
+   Master in Impostazioni -> Popup. Mai sopra altre modali/fullscreen. */
+const POPUP_VIDEOS = [
+  { id: "PGhF7FyTE_E", titolo: "GUARDA IL VIDEO MIGLIORE DI SEMPRE" },
+  { id: "MqtqN_o7YUs", titolo: "OCCHIO SEMPRE SULLE SCALE MOBILI!" },
+  { id: "zyL2Tp6vLEI", titolo: "THE PEOPLE VS 2 INTEGRALE" },
+  { id: "8EVTdhU5iFk", titolo: "JOHN CENA ALLA PIETÁ ??" },
+  { id: "hYdKaZajCs8", titolo: "PUMP IT UP 1" },
+  { id: "lEE5eTUbJrU", titolo: "PUMP IT UP 2" },
+  { id: "5wXGH0bg1xI", titolo: "THE PEOPLE VS L'ORIGINALE" }
+];
+const IG_HANDLE = "ssg_ufficiale";
+const IG_URL = "https://www.instagram.com/ssg_ufficiale/";
+const POP_EVERY_MS = 5 * 60 * 1000;   // un consiglio ogni 5 minuti
+const POP_MINI_MS = 12000;            // la mini card rientra da sola dopo 12s
+let popLastKind = "";
+let popMiniTimer = 0;
+let popYtPlayer = null;
+let popYtToken = 0;
+let popMusicWasPlaying = false;
+
+function popupsEnabled() {
+  return storage.get("ssg-popups") !== "off";   // attivi di default
+}
+/* Suono caratteristico all'apertura: campanello sintetizzato, zero file.
+   Se il browser blocca l'audio si apre muto, senza errori. */
+function popChime() {
   try {
-    if (document.hidden) return;
-    if (storage.get("ssg-ig-shown")) return;
-    const m = document.getElementById("ig-modal");
-    if (!m || !m.classList.contains("hidden")) return;
-    const cm = document.getElementById("confirm-modal");
-    if (cm && !cm.classList.contains("hidden")) return;   // mai sopra la conferma
-    m.classList.remove("hidden");
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    const ctx = new AC();
+    if (ctx.state === "suspended" && ctx.resume) ctx.resume().catch(() => {});
+    const t = ctx.currentTime;
+    [[880, 0], [1318.5, 0.12]].forEach(([f, dt]) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = "sine";
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t + dt);
+      g.gain.exponentialRampToValueAtTime(0.22, t + dt + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.3);
+      o.connect(g);
+      g.connect(ctx.destination);
+      o.start(t + dt);
+      o.stop(t + dt + 0.34);
+    });
+    setTimeout(() => { try { ctx.close(); } catch (e) {} }, 900);
   } catch (e) {}
 }
-function closeIgModal() {
+/* C'è già qualcosa sopra? (modali, pannelli, fullscreen) */
+function popBlocked() {
   try {
-    const m = document.getElementById("ig-modal");
-    if (m) m.classList.add("hidden");
-    storage.set("ssg-ig-shown", "1");   // chiusa in qualsiasi modo: non torna più
+    if (document.fullscreenElement) return true;
+    const ids = ["confirm-modal", "settings-view", "search-view",
+      "fp-eq-sheet", "fp-queue-sheet", "fp-share-menu", "pop-sheet"];
+    for (const id of ids) {
+      const el = document.getElementById(id);
+      if (el && !el.classList.contains("hidden")) return true;
+    }
+  } catch (e) {}
+  return false;
+}
+function popPick() {
+  let pool = ["ig"];
+  POPUP_VIDEOS.forEach((v, i) => pool.push("v" + i));
+  try { if (navigator.onLine === false) pool = ["ig"]; } catch (e) {}   // offline: solo Instagram
+  const alt = pool.filter((k) => k !== popLastKind);
+  if (alt.length) pool = alt;   // mai due volte lo stesso di fila
+  const pick = pool[Math.floor(Math.random() * pool.length)];
+  popLastKind = pick;
+  return pick;
+}
+function popMaybeShow() {
+  if (!popupsEnabled() || document.hidden) return;
+  if (popBlocked()) return;
+  showPopMini(popPick());
+}
+function popMiniEl(id) {
+  try { return document.getElementById(id); } catch (e) { return null; }
+}
+function showPopMini(kind) {
+  const mini = popMiniEl("pop-mini"), k = popMiniEl("pop-mini-kind"), t = popMiniEl("pop-mini-title");
+  if (!mini || !k || !t) return;
+  popLastKind = kind;
+  if (kind === "ig") {
+    k.textContent = "INSTAGRAM";
+    t.textContent = "@" + IG_HANDLE;
+  } else {
+    const v = POPUP_VIDEOS[Number(kind.slice(1))];
+    if (!v) return;
+    k.textContent = "VIDEO";
+    t.textContent = v.titolo;
+  }
+  mini.dataset.kind = kind;
+  mini.classList.remove("hidden");
+  popChime();
+  try {
+    clearTimeout(popMiniTimer);
+    popMiniTimer = setTimeout(hidePopMini, POP_MINI_MS);
   } catch (e) {}
 }
-(function bindIgModal() {
-  const later = document.getElementById("ig-later");
-  if (later) later.addEventListener("click", () => { closeIgModal(); haptic(10); });
-  const open = document.getElementById("ig-open");
-  if (open) open.addEventListener("click", () => { closeIgModal(); haptic(10); });
-  const m = document.getElementById("ig-modal");
-  if (m) m.addEventListener("click", (e) => {
-    if (e.target === m) closeIgModal();   // click fuori
+function hidePopMini() {
+  try {
+    clearTimeout(popMiniTimer);
+    const mini = popMiniEl("pop-mini");
+    if (mini) mini.classList.add("hidden");
+  } catch (e) {}
+}
+function popPauseMusic() {
+  popMusicWasPlaying = false;
+  try { if (!audio.paused) { popMusicWasPlaying = true; audio.pause(); } } catch (e) {}
+}
+function popResumeMusic() {
+  if (!popMusicWasPlaying) return;
+  popMusicWasPlaying = false;
+  try { const p = audio.play(); if (p && p.catch) p.catch(() => {}); } catch (e) {}
+}
+function popSheetOpen() {
+  try {
+    const s = popMiniEl("pop-sheet");
+    return !!(s && !s.classList.contains("hidden"));
+  } catch (e) { return false; }
+}
+/* Espande il consiglio: video con AUDIO (musica in pausa) oppure Instagram */
+function expandPop(kind) {
+  hidePopMini();
+  if (!kind) return;
+  const sheet = popMiniEl("pop-sheet"), title = popMiniEl("pop-title"),
+    body = popMiniEl("pop-body"), video = popMiniEl("pop-video"), ig = popMiniEl("pop-ig");
+  if (!sheet || !title || !body || !video || !ig) return;
+  video.innerHTML = "";
+  body.innerHTML = "";
+  ig.classList.add("hidden");
+  popDestroyYt();
+  if (kind === "ig") {
+    title.textContent = "Instagram";
+    body.innerHTML =
+      '<div class="ig-logo" aria-hidden="true">' +
+      '<svg viewBox="0 0 24 24" width="44" height="44" fill="one" stroke="currentColor" stroke-width="1.8">' +
+      '<rect x="3" y="3" width="18" height="18" rx="5"/>' +
+      '<circle cx="12" cy="12" r="4"/>' +
+      '<circle cx="17.2" cy="6.8" r="1.2" fill="currentColor" stroke="none"/></svg></div>' +
+      '<div class="pop-ig-name">@' + IG_HANDLE + "</div>" +
+      '<div class="confirm-msg">Backstage, anteprime e date live.</div>';
+    ig.classList.remove("hidden");
+  } else {
+    const v = POPUP_VIDEOS[Number(kind.slice(1))];
+    if (!v) return;
+    title.textContent = v.titolo;
+    if (navigator.onLine === false) {
+      body.innerHTML = '<div class="confirm-msg">Serve connessione per vedere il video.</div>';
+    } else {
+      popPauseMusic();
+      popPlayYt(v.id);
+    }
+  }
+  sheet.classList.remove("hidden");
+  sheet.setAttribute("aria-hidden", "false");
+}
+function popDestroyYt() {
+  popYtToken++;
+  try { if (popYtPlayer && popYtPlayer.destroy) popYtPlayer.destroy(); } catch (e) {}
+  popYtPlayer = null;
+}
+function popPlayYt(videoId) {
+  const video = popMiniEl("pop-video");
+  if (!video) return;
+  const tk = ++popYtToken;
+  ensureYTApi().then((ok) => {
+    if (tk !== popYtToken) return;
+    if (!ok || !ytApiLoaded() || !popSheetOpen()) return;
+    try {
+      popYtPlayer = new window.YT.Player(video, {
+        videoId: videoId,
+        width: "100%",
+        playerVars: { rel: 0, modestbranding: 1, playsinline: 1, controls: 1, iv_load_policy: 3 },
+        events: {
+          onReady: (ev) => {
+            if (tk !== popYtToken) return;
+            try { ev.target.unMute(); ev.target.setVolume(100); } catch (e) {}
+            try { ev.target.playVideo(); } catch (e2) {}
+          },
+          onError: () => {
+            if (tk !== popYtToken) return;
+            const b = popMiniEl("pop-body");
+            if (b) b.innerHTML = '<div class="confirm-msg">Video non disponibile.</div>';
+          }
+        }
+      });
+    } catch (e) {
+      if (tk === popYtToken) {
+        const b = popMiniEl("pop-body");
+        if (b) b.innerHTML = '<div class="confirm-msg">Video non disponibile.</div>';
+      }
+    }
   });
+}
+function closePop() {
+  popDestroyYt();
+  try {
+    const sheet = popMiniEl("pop-sheet");
+    if (sheet) {
+      sheet.classList.add("hidden");
+      sheet.setAttribute("aria-hidden", "true");
+    }
+    const video = popMiniEl("pop-video");
+    if (video) video.innerHTML = "";
+  } catch (e) {}
+  popResumeMusic();
+}
+(function bindPopups() {
+  const mini = popMiniEl("pop-mini");
+  if (mini) {
+    mini.addEventListener("click", (e) => {
+      if (e.target.closest && e.target.closest("#pop-mini-x")) return;   // la ✕ chiude e basta
+      expandPop(mini.dataset.kind);
+      haptic(10);
+    });
+  }
+  const x = popMiniEl("pop-mini-x");
+  if (x) x.addEventListener("click", (e) => {
+    try { e.stopPropagation(); } catch (err) {}
+    hidePopMini();
+  });
+  const close = popMiniEl("pop-close");
+  if (close) close.addEventListener("click", () => { closePop(); haptic(10); });
+  const sheet = popMiniEl("pop-sheet");
+  if (sheet) sheet.addEventListener("click", (e) => {
+    if (e.target === sheet) closePop();   // click fuori
+  });
+  try {
+    setInterval(() => { try { popMaybeShow(); } catch (e) {} }, POP_EVERY_MS);
+  } catch (e) {}
 })();
+/* ---------- RIPRODUZIONE: pulsante coda on/off + popup consigli ---------- */
+function syncPopupsChips() {
+  const cur = storage.get("ssg-popups") || "on";
+  document.querySelectorAll("#set-popups .chip").forEach((c) => {
+    c.classList.toggle("on", c.dataset.popups === cur);
+  });
+}
 
 function trackPlaySeconds() {
   if (!audio || audio.paused) { statsLastTick = 0; return; }
@@ -1085,6 +1290,7 @@ function renderSettings() {
   syncSkyChips();
   syncVizChips();
   syncQueueChips();
+  syncPopupsChips();
   // Statistiche
   if (els.setStats) {
     const st = statsGet();
@@ -2399,6 +2605,15 @@ document.querySelectorAll("#set-queue .chip").forEach((b) => {
     haptic(10);
   });
 });
+/* ---------- POPUP consigliati on/off (master) ---------- */
+document.querySelectorAll("#set-popups .chip").forEach((b) => {
+  b.addEventListener("click", () => {
+    storage.set("ssg-popups", b.dataset.popups === "off" ? "off" : "on");
+    syncPopupsChips();
+    try { if (!popupsEnabled()) { hidePopMini(); closePop(); } } catch (e) {}
+    haptic(10);
+  });
+});
 if (els.settingsViewClose) {
   els.settingsViewClose.addEventListener("click", closeSettingsView);
 }
@@ -3502,9 +3717,8 @@ document.addEventListener("keydown", (e) => {
     audio.currentTime = Math.max(0, audio.currentTime - 5);
   } else if (e.key === "Escape") {
     const cm = document.getElementById("confirm-modal");
-    const im = document.getElementById("ig-modal");
     if (cm && !cm.classList.contains("hidden")) closeConfirm(false);
-    else if (im && !im.classList.contains("hidden")) closeIgModal();
+    else if (popSheetOpen()) closePop();
     else if (els.settingsView && !els.settingsView.classList.contains("hidden")) closeSettingsView();
     else if (els.searchView && !els.searchView.classList.contains("hidden")) closeSearchView();
     else if (els.fpEqSheet && !els.fpEqSheet.classList.contains("hidden")) closeFpEq();

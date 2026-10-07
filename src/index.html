@@ -12,7 +12,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/icons/icon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/icons/icon-180.png">
   <link rel="manifest" href="../manifest.json">
-  <link rel="stylesheet" href="style.css?v=122">
+  <link rel="stylesheet" href="style.css?v=123">
   <!-- Il ?v=N forza il browser a scaricare di nuovo i file a ogni rilascio,
        evitando che resti in cache una versione vecchia dell'app. -->
 </head>
@@ -146,6 +146,14 @@
         <div id="set-queue" class="chip-row">
           <button class="chip" data-queue="on">Attiva</button>
           <button class="chip" data-queue="off">Spenta</button>
+        </div>
+      </div>
+      <div class="set-section">
+        <div class="set-head">Popup</div>
+        <div class="set-sub">Consigli e video ogni 5 minuti</div>
+        <div id="set-popups" class="chip-row">
+          <button class="chip" data-popups="on">Attivi</button>
+          <button class="chip" data-popups="off">Spenti</button>
         </div>
       </div>
       <div class="set-section">
@@ -444,26 +452,29 @@
     </div>
   </div>
 
-  <!-- ============ POPUP INSTAGRAM (una tantum) ============
-       Si mostra una sola volta dopo qualche brano ascoltato. -->
-  <div id="ig-modal" class="confirm-modal hidden" role="dialog" aria-modal="true" aria-labelledby="ig-title">
-    <div class="confirm-card">
-      <div class="ig-logo" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.8">
-          <rect x="3" y="3" width="18" height="18" rx="5"/>
-          <circle cx="12" cy="12" r="4"/>
-          <circle cx="17.2" cy="6.8" r="1.2" fill="currentColor" stroke="none"/>
-        </svg>
+  <!-- ============ MINI CONSIGLIO (storia) + SCHEDA ESPANSA ============
+       Rotazione ogni 5 minuti tra Instagram e video YouTube.
+       La mini si apre al tocco nella scheda con video/Instagram. -->
+  <div id="pop-mini" class="pop-mini hidden" role="button" tabindex="0" aria-label="Apri consiglio">
+    <div class="pop-mini-text">
+      <div id="pop-mini-kind" class="pop-mini-kind">VIDEO</div>
+      <div id="pop-mini-title" class="pop-mini-title"></div>
+    </div>
+    <div class="pop-mini-open" aria-hidden="true">▸</div>
+    <button id="pop-mini-x" class="pop-mini-x" aria-label="Chiudi consiglio">✕</button>
+  </div>
+  <div id="pop-sheet" class="pop-sheet hidden" role="dialog" aria-modal="true" aria-labelledby="pop-title">
+    <div class="pop-card">
+      <div class="pop-head">
+        <span id="pop-title" class="pop-title">Consiglio</span>
+        <button id="pop-close" class="fp-eq-close" aria-label="Chiudi">✕</button>
       </div>
-      <div id="ig-title" class="confirm-title">Seguici su Instagram</div>
-      <div class="confirm-msg">@ssg_ufficiale — backstage, anteprime e date live.</div>
-      <div class="confirm-btns">
-        <button id="ig-later" class="chip">Più tardi</button>
-        <a id="ig-open" class="chip chip-ig" href="https://www.instagram.com/ssg_ufficiale/" target="_blank" rel="noopener">Apri Instagram</a>
-      </div>
+      <div id="pop-body" class="pop-body"></div>
+      <div id="pop-video" class="pop-video"></div>
+      <a id="pop-ig" class="chip chip-ig hidden" href="https://www.instagram.com/ssg_ufficiale/" target="_blank" rel="noopener">Apri Instagram</a>
     </div>
   </div>
 
-  <script src="player.js?v=122"></script>
+  <script src="player.js?v=123"></script>
 </body>
 </html>
