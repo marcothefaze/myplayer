@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "38";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v128";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "39";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v129";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -914,6 +914,7 @@ function popPlayYt(videoId) {
             try { ev.target.unMute(); ev.target.setVolume(100); } catch (e) {}
             try { ev.target.setPlaybackQualityRange("hd720", "hd720"); } catch (e2) {}
             try { ev.target.setOption("captions", "track", {}); } catch (e3) {}
+            try { ev.target.unloadModule("captions"); } catch (e5) {}
             try { ev.target.playVideo(); } catch (e4) {}
           },
           onError: () => {
@@ -3447,7 +3448,6 @@ function fpYtDrift() {
   try { dur = fpYtPlayer.getDuration(); cur = fpYtPlayer.getCurrentTime(); }
   catch (e) { return; }
   if (!isFinite(dur) || !isFinite(audio.duration)) return;
-  if (Math.abs(dur - audio.duration) >= 5) return;
   if (fpYtState() !== 1) { fpYtResume(); return; }
   const drift = (audio.currentTime || 0) - (cur || 0);
   if (Math.abs(drift) <= 0.2) return;
@@ -3463,15 +3463,18 @@ function onYtState(st) {
   if (st === 1) {
     if (!fpYtAligned) {
       fpYtAligned = true;
+      /* Timeline parallele: il video segue il punto della canzone anche se
+         dura di più o di meno (i videoclip non sono il master audio) */
       try {
         const d = fpYtPlayer.getDuration();
-        if (isFinite(d) && isFinite(audio.duration) && Math.abs(d - audio.duration) < 5 &&
+        if (isFinite(d) && isFinite(audio.duration) &&
             Math.abs((audio.currentTime || 0) - fpYtPlayer.getCurrentTime()) > 0.3) {
           fpYtPlayer.seekTo(audio.currentTime % d, true);
         }
       } catch (e) {}
     }
     try { fpYtPlayer.setPlaybackQualityRange("hd720", "hd720"); } catch (e) {}   // resta in 720p
+    try { fpYtPlayer.unloadModule("captions"); } catch (e2) {}   // niente sottotitoli
   } else if (st === 0) {
     // Finito prima della canzone: loop come l'mp4
     if (!audio.paused && fpVideoOn) {
@@ -3498,7 +3501,7 @@ function updateYtTrack(videoId) {
        essere ripartito da zero mentre il video era avanti */
     try {
       const d0 = fpYtPlayer.getDuration();
-      if (fpVideoOn && isFinite(d0) && isFinite(audio.duration) && Math.abs(d0 - audio.duration) < 5 &&
+      if (fpVideoOn && isFinite(d0) && isFinite(audio.duration) &&
           Math.abs((audio.currentTime || 0) - fpYtPlayer.getCurrentTime()) > 0.3) {
         fpYtPlayer.seekTo(audio.currentTime % d0, true);
       }
@@ -3537,6 +3540,7 @@ function updateYtTrack(videoId) {
             try { ev.target.mute(); } catch (e) {}
             try { ev.target.setPlaybackQualityRange("hd720", "hd720"); } catch (e) {}   // 720p se la banda regge
             try { ev.target.setOption("captions", "track", {}); } catch (e) {}          // niente sottotitoli
+            try { ev.target.unloadModule("captions"); } catch (e2) {}                   // cintura di sicurezza
             fpYtAligned = false;
             syncYtToAudio();
           },
@@ -3563,7 +3567,7 @@ audio.addEventListener("seeked", () => {
     try {
       if (fpYtPlayer && fpYtReady && !audio.paused) {
         const d = fpYtPlayer.getDuration();
-        if (isFinite(d) && isFinite(audio.duration) && Math.abs(d - audio.duration) < 5) {
+        if (isFinite(d) && isFinite(audio.duration)) {
           fpYtPlayer.seekTo(Math.max(0, audio.currentTime % d), true);
         }
       }
