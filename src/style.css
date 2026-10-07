@@ -22,6 +22,12 @@
   /* Valore base dell'angolo dell'anello: senza @property (Android vecchi)
      l'anello resta visibile ma statico, come promesso dal commento */
   --ring-a: 0deg;
+  /* Titolo SSG Universe: la tinta segue la fase del cielo (impostata dal
+     JS con applyBrandPhase; qui i valori della notte, identici a prima) */
+  --brand-g1: #8f86ff;
+  --brand-g2: #5ea2ff;
+  --brand-g3: #c9bcff;
+  --brand-glow: rgba(124, 108, 255, .35);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -202,16 +208,20 @@ button:active { transform: scale(.94); }
   font-size: 1.22rem;
   font-weight: 800;
   letter-spacing: .2px;
-  /* Testo statico e nitido col suo bagliore neon fisso (niente riflessi
-     che si muovono sopra: davano lettere fantasma) */
-  background: linear-gradient(90deg, #8f86ff, #5ea2ff 45%, #c9bcff 70%, #8f86ff);
+  /* Testo nitido col bagliore neon (niente riflessi che si muovono sopra:
+     davano lettere fantasma). Il gradiente segue il cielo dell'app
+     (variabili --brand-* dal JS): neon vivo di notte, più profondo di
+     giorno, caldo ad alba/tramonto */
+  /* Il gradiente segue il cielo dell'app (variabili --brand-* dal JS):
+     neon vivo di notte, più profondo di giorno, caldo ad alba/tramonto */
+  background: linear-gradient(90deg, var(--brand-g1), var(--brand-g2) 45%, var(--brand-g3) 70%, var(--brand-g1));
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  text-shadow: 0 0 14px rgba(124, 108, 255, .35);
+  text-shadow: 0 0 14px var(--brand-glow);
 }
 
 .brand-sub {

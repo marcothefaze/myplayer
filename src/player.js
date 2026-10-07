@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "37";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v127";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "38";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v128";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -3810,6 +3810,28 @@ const SKY = (function () {
       c = mix3(c, [46, 28, 44], PH.dusk * 0.7);           // caldo ad alba/tramonto
       document.documentElement.style.setProperty("--bg",
         "rgb(" + c[0] + "," + c[1] + "," + c[2] + ")");
+      applyBrandPhase();   // il titolo segue il cielo
+    } catch (e) {}
+  }
+  /* Il titolo SSG Universe cambia tinta col cielo (stessa logica dello
+     sfondo): neon vivo di notte, più profondo di giorno per il contrasto,
+     caldo ad alba/tramonto. Di notte i valori sono identici a prima. */
+  function applyBrandPhase() {
+    try {
+      let g1 = mix3([143, 134, 255], [90, 79, 224], PH.day);
+      let g2 = mix3([94, 162, 255], [47, 111, 228], PH.day);
+      let g3 = mix3([201, 188, 255], [122, 111, 240], PH.day);
+      let gl = mix3([124, 108, 255], [90, 79, 224], PH.day);
+      const w = PH.dusk * 0.6;
+      g1 = mix3(g1, [255, 150, 110], w);
+      g2 = mix3(g2, [240, 120, 180], w);
+      g3 = mix3(g3, [255, 214, 165], w);
+      gl = mix3(gl, [255, 150, 110], w);
+      const st = document.documentElement.style;
+      st.setProperty("--brand-g1", "rgb(" + g1[0] + "," + g1[1] + "," + g1[2] + ")");
+      st.setProperty("--brand-g2", "rgb(" + g2[0] + "," + g2[1] + "," + g2[2] + ")");
+      st.setProperty("--brand-g3", "rgb(" + g3[0] + "," + g3[1] + "," + g3[2] + ")");
+      st.setProperty("--brand-glow", "rgba(" + gl[0] + "," + gl[1] + "," + gl[2] + ",.35)");
     } catch (e) {}
   }
 
