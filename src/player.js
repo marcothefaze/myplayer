@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "44";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v134";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "45";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v135";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -1010,6 +1010,9 @@ function ytErrorText(code) {
 function popPlayYt(videoId) {
   const video = popMiniEl("pop-video");
   if (!video) return;
+  /* Come nel full player: l'iframe rimpiazza il bersaglio, quindi gli si dà
+     un contenitore interno sacrificale e il box con le dimensioni resta */
+  video.innerHTML = '<div id="pop-yt-frame"></div>';
   const tk = ++popYtToken;
   ensureYTApi().then((ok) => {
     if (tk !== popYtToken) return;
@@ -1019,7 +1022,7 @@ function popPlayYt(videoId) {
       return;
     }
     try {
-      popYtPlayer = new window.YT.Player(video, {
+      popYtPlayer = new window.YT.Player("pop-yt-frame", {
         videoId: videoId,
         width: "100%",
         playerVars: { rel: 0, modestbranding: 1, playsinline: 1, controls: 1, iv_load_policy: 3, cc_load_policy: 0 },
@@ -3657,10 +3660,18 @@ function updateYtTrack(videoId) {
     return;
   }
   destroyYtPlayer();
-  const box = document.createElement("div");
-  box.id = "fp-yt";
-  box.className = "fp-video fp-yt" + (fpVideoOn ? "" : " hidden");
-  els.fpCover.appendChild(box);
+  /* L'API YouTube SOSTITUISCE l'elemento bersaglio con l'iframe: se gli dessimo
+     il box, sparirebbero dimensioni e stili (si sentiva l'audio senza video).
+     Dentro c'è un contenitore sacrificale che viene rimpiazzato al suo posto */
+  let box = document.getElementById("fp-yt");
+  if (!box || box.parentElement !== els.fpCover) {
+    try { if (box && box.parentElement) box.parentElement.removeChild(box); } catch (e) {}
+    box = document.createElement("div");
+    box.id = "fp-yt";
+    box.className = "fp-video fp-yt" + (fpVideoOn ? "" : " hidden");
+    els.fpCover.appendChild(box);
+  }
+  box.innerHTML = '<div id="fp-yt-inner"></div>';
   if (els.fpVideoFs && els.fpVideoFs.parentElement !== els.fpCover) els.fpCover.appendChild(els.fpVideoFs);
   els.fpCover.classList.toggle("playing-video", fpVideoOn);
   if (!fpVideoOn) return;   // nascosto dall'utente: niente caricamento
@@ -3677,7 +3688,7 @@ function updateYtTrack(videoId) {
     const vars = { rel: 0, modestbranding: 1, playsinline: 1, controls: 0, disablekb: 1, iv_load_policy: 3, mute: 1, cc_load_policy: 0 };
     if (origin) vars.origin = origin;
     try {
-      fpYtPlayer = new window.YT.Player("fp-yt", {
+      fpYtPlayer = new window.YT.Player("fp-yt-inner", {
         videoId: videoId,
         playerVars: vars,
         events: {
