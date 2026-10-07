@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "46";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v136";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "47";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v137";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -881,8 +881,11 @@ function showPopMini(kind) {
   mini.dataset.kind = kind;
   mini.classList.remove("hidden");
   popChime();
-  /* Niente chiusura automatica (richiesta di Marco): la mini resta finché
-     l'utente non la apre o la chiude; il turno dopo salta se è ancora fuori */
+  /* Preriscalda l'API YouTube se il consiglio è un video: al tocco il player
+     nasce subito e l'autoplay (col gesto ancora vicino) parte con l'audio */
+  try {
+    if (kind !== "ig" && navigator.onLine !== false) ensureYTApi();
+  } catch (e) {}
 }
 /* Timer a catena (niente sovrapposizioni): scatta, poi riparte da solo;
    chiudere un popup fa ripartire i 2 minuti da quel momento */
@@ -1030,7 +1033,7 @@ function popPlayYt(videoId) {
           onReady: (ev) => {
             if (tk !== popYtToken) return;
             popYtStarted = false;
-            try { ev.target.setPlaybackQualityRange("hd720", "hd720"); } catch (e2) {}
+            try { ev.target.setPlaybackQualityRange("hd1080", "hd1080"); } catch (e2) {}
             try { ev.target.setOption("captions", "track", {}); } catch (e3) {}
             try { ev.target.unloadModule("captions"); } catch (e5) {}
             popTick();
@@ -1038,7 +1041,10 @@ function popPlayYt(videoId) {
           },
           onStateChange: (ev) => {
             if (tk !== popYtToken || !ev) return;
-            if (ev.data === 1) popYtStarted = true;   // partito: da qui comanda l'utente
+            if (ev.data === 1) {
+              popYtStarted = true;   // partito: da qui comanda l'utente
+              try { popYtPlayer.unloadModule("captions"); } catch (e6) {}
+            }
           },
           onError: (ev) => {
             if (tk !== popYtToken) return;
@@ -3623,7 +3629,7 @@ function onYtState(st) {
         }
       } catch (e) {}
     }
-    try { fpYtPlayer.setPlaybackQualityRange("hd720", "hd720"); } catch (e) {}   // resta in 720p
+    try { fpYtPlayer.setPlaybackQualityRange("hd1080", "hd1080"); } catch (e) {}   // resta in 1080p
     try { fpYtPlayer.unloadModule("captions"); } catch (e2) {}   // niente sottotitoli
   } else if (st === 0) {
     // Finito prima della canzone: loop come l'mp4
@@ -3696,7 +3702,7 @@ function updateYtTrack(videoId) {
             if (tk !== fpYtToken) return;
             fpYtReady = true;
             try { ev.target.mute(); } catch (e) {}
-            try { ev.target.setPlaybackQualityRange("hd720", "hd720"); } catch (e) {}   // 720p se la banda regge
+            try { ev.target.setPlaybackQualityRange("hd1080", "hd1080"); } catch (e) {}   // 1080p se la banda regge
             try { ev.target.setOption("captions", "track", {}); } catch (e) {}          // niente sottotitoli
             try { ev.target.unloadModule("captions"); } catch (e2) {}                   // cintura di sicurezza
             fpYtAligned = false;
