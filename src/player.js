@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "39";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v129";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "40";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v130";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -746,10 +746,8 @@ const POPUP_VIDEOS = [
 ];
 const IG_HANDLE = "ssg_ufficiale";
 const IG_URL = "https://www.instagram.com/ssg_ufficiale/";
-const POP_EVERY_MS = 5 * 60 * 1000;   // un consiglio ogni 5 minuti
-const POP_MINI_MS = 12000;            // la mini card rientra da sola dopo 12s
+const POP_EVERY_MS = 2 * 60 * 1000;   // un consiglio ogni 2 minuti
 let popLastKind = "";
-let popMiniTimer = 0;
 let popYtPlayer = null;
 let popYtToken = 0;
 let popMusicWasPlaying = false;
@@ -758,14 +756,30 @@ function popupsEnabled() {
   return storage.get("ssg-popups") !== "off";   // attivi di default
 }
 /* Suono caratteristico all'apertura: campanello sintetizzato, zero file.
-   Se il browser blocca l'audio si apre muto, senza errori. */
-function popChime() {
+   Il trucco è il contesto "scaldato" al primo gesto dell'utente (i browser
+   partono muti fuori dai gesti): se non c'è si prova con quello dell'EQ,
+   altrimenti un contesto nuovo (sticky activation) con riprova a 300ms.
+   Se tutto è bloccato si apre muto, senza errori. */
+let sfxCtx = null;
+function sfxWarm() {
   try {
-    const AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) return;
-    const ctx = new AC();
-    if (ctx.state === "suspended" && ctx.resume) ctx.resume().catch(() => {});
-    const t = ctx.currentTime;
+    if (!sfxCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      sfxCtx = new AC();
+    }
+    if (sfxCtx.state === "suspended" && sfxCtx.resume) sfxCtx.resume().catch(() => {});
+  } catch (e) {}
+}
+["pointerdown", "keydown", "touchend"].forEach((t) => {
+  try { window.addEventListener(t, sfxWarm, { once: true }); }
+  catch (e) {
+    try { window.addEventListener(t, sfxWarm); } catch (e2) {}
+  }
+});
+function popChimeNow(ctx, own) {
+  try {
+    const t = ctx.currentTime + 0.02;
     [[880, 0], [1318.5, 0.12]].forEach(([f, dt]) => {
       const o = ctx.createOscillator(), g = ctx.createGain();
       o.type = "sine";
@@ -778,15 +792,27 @@ function popChime() {
       o.start(t + dt);
       o.stop(t + dt + 0.34);
     });
-    setTimeout(() => { try { ctx.close(); } catch (e) {} }, 900);
+    if (own) setTimeout(() => { try { ctx.close(); } catch (e) {} }, 900);
   } catch (e) {}
 }
-/* C'è già qualcosa sopra? (modali, pannelli, fullscreen) */
+function popChime() {
+  try {
+    if (sfxCtx && sfxCtx.state === "running") { popChimeNow(sfxCtx, false); return; }
+    if (typeof eqCtx !== "undefined" && eqCtx && eqCtx.state === "running") { popChimeNow(eqCtx, false); return; }
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    const ctx = new AC();
+    if (ctx.state === "suspended" && ctx.resume) ctx.resume().catch(() => {});
+    if (ctx.state === "running") { popChimeNow(ctx, true); return; }
+    setTimeout(() => { try { if (ctx.state === "running") popChimeNow(ctx, true); } catch (e) {} }, 300);
+  } catch (e) {}
+}
+/* C'è già qualcosa sopra? (modali, pannelli, fullscreen, mini già fuori) */
 function popBlocked() {
   try {
     if (document.fullscreenElement) return true;
     const ids = ["confirm-modal", "settings-view", "search-view",
-      "fp-eq-sheet", "fp-queue-sheet", "fp-share-menu", "pop-sheet"];
+      "fp-eq-sheet", "fp-queue-sheet", "fp-share-menu", "pop-sheet", "pop-mini"];
     for (const id of ids) {
       const el = document.getElementById(id);
       if (el && !el.classList.contains("hidden")) return true;
@@ -828,14 +854,11 @@ function showPopMini(kind) {
   mini.dataset.kind = kind;
   mini.classList.remove("hidden");
   popChime();
-  try {
-    clearTimeout(popMiniTimer);
-    popMiniTimer = setTimeout(hidePopMini, POP_MINI_MS);
-  } catch (e) {}
+  /* Niente chiusura automatica (richiesta di Marco): la mini resta finché
+     l'utente non la apre o la chiude; il turno dopo salta se è ancora fuori */
 }
 function hidePopMini() {
   try {
-    clearTimeout(popMiniTimer);
     const mini = popMiniEl("pop-mini");
     if (mini) mini.classList.add("hidden");
   } catch (e) {}
@@ -2337,9 +2360,14 @@ function updateProgress() {
   const pct = duration ? (current / duration * 100) + "%" : "0%";
   els.seekFill.style.width = pct;
   const cur = formatTime(current);
-  els.timeCurrent.textContent = cur;
+  /* Le scritte cambiano 1 volta al secondo ma il tick arriva ~4 volte:
+     si riscrive solo quando cambia davvero (niente layout inutili) */
+  if (cur !== updateProgress._c) {
+    updateProgress._c = cur;
+    els.timeCurrent.textContent = cur;
+    if (els.fpTimeCurrent) els.fpTimeCurrent.textContent = cur;
+  }
   if (els.fpSeekFill) els.fpSeekFill.style.width = pct;
-  if (els.fpTimeCurrent) els.fpTimeCurrent.textContent = cur;
   if (isFinite(duration)) {
     const dur = formatTime(duration);
     els.timeDuration.textContent = dur;
