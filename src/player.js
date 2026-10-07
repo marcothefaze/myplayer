@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "42";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v132";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "43";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v133";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -959,6 +959,14 @@ function popDestroyYt() {
   try { if (popYtPlayer && popYtPlayer.destroy) popYtPlayer.destroy(); } catch (e) {}
   popYtPlayer = null;
 }
+/* Codici errore YouTube in parole (testabile): 101/150 = incorporamento
+   vietato dal proprietario, 100 = non trovato/privato */
+function ytErrorText(code) {
+  if (code === 101 || code === 150) return "Questo video non si può incorporare (bloccato dal proprietario).";
+  if (code === 100) return "Video non trovato o privato.";
+  if (typeof code !== "undefined" && code !== -1) return "Video non disponibile (errore " + code + ").";
+  return "Video non disponibile.";
+}
 function popPlayYt(videoId) {
   const video = popMiniEl("pop-video");
   if (!video) return;
@@ -984,10 +992,11 @@ function popPlayYt(videoId) {
             try { ev.target.unloadModule("captions"); } catch (e5) {}
             try { ev.target.playVideo(); } catch (e4) {}
           },
-          onError: () => {
+          onError: (ev) => {
             if (tk !== popYtToken) return;
+            const code = ev && typeof ev.data !== "undefined" ? ev.data : -1;
             const b = popMiniEl("pop-body");
-            if (b) b.innerHTML = '<div class="confirm-msg">Video non disponibile.</div>';
+            if (b) b.innerHTML = '<div class="confirm-msg">' + ytErrorText(code) + "</div>";
           }
         }
       });
@@ -1014,13 +1023,32 @@ function closePop() {
   popSchedule();
 }
 (function bindPopups() {
+  /* Apertura anti-proiettile: touchend (con preventDefault anti-zoom) + click
+     di riserva, con rete anti-doppio. Su alcuni browser il tap sulla card
+     veniva "mangiato" (zoom/selezione) e il video non si apriva mai. */
+  let popMiniBusy = false;
+  const miniActivate = (e) => {
+    try {
+      if (e && e.target && e.target.closest && e.target.closest("#pop-mini-x")) return;
+    } catch (err) {}
+    if (popMiniBusy) return;
+    popMiniBusy = true;
+    setTimeout(() => { popMiniBusy = false; }, 600);
+    const mini = popMiniEl("pop-mini");
+    expandPop(mini ? mini.dataset.kind : "");
+    haptic(10);
+  };
   const mini = popMiniEl("pop-mini");
   if (mini) {
-    mini.addEventListener("click", (e) => {
-      if (e.target.closest && e.target.closest("#pop-mini-x")) return;   // la ✕ chiude e basta
-      expandPop(mini.dataset.kind);
-      haptic(10);
-    });
+    try {
+      mini.addEventListener("touchend", (e) => {
+        try { e.preventDefault(); } catch (err) {}
+        miniActivate(e);
+      }, { passive: false });
+    } catch (e) {
+      try { mini.addEventListener("touchend", (e2) => { miniActivate(e2); }); } catch (e2) {}
+    }
+    mini.addEventListener("click", (e) => { miniActivate(e); });
   }
   const x = popMiniEl("pop-mini-x");
   if (x) x.addEventListener("click", (e) => {
