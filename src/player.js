@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "49";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v139";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "50";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v140";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -746,7 +746,7 @@ const POPUP_VIDEOS = [
 ];
 const IG_HANDLE = "ssg_ufficiale";
 const IG_URL = "https://www.instagram.com/ssg_ufficiale/";
-const POP_EVERY_MS = 2 * 60 * 1000;   // un consiglio ogni 2 minuti
+const POP_EVERY_MS = 5 * 60 * 1000;   // un consiglio ogni 5 minuti
 let popLastKind = "";
 let popTimer = 0;
 let popYtPlayer = null;
@@ -781,7 +781,24 @@ function sfxWarm() {
   try { window.addEventListener(t, sfxWarm); } catch (e) {}
 });
 document.addEventListener("visibilitychange", () => {
-  try { if (!document.hidden) sfxWarm(); } catch (e) {}
+  try {
+    if (document.hidden) return;
+    sfxWarm();
+    /* Rientro in app: se l'elemento suona ma il grafo EQ è sospeso (iOS lo
+       sospende in background) si sente silenzio con la canzone che avanza:
+       si risveglia il grafo, MAI l'elemento (niente autoplay indesiderati) */
+    if (typeof eqCtx !== "undefined" && eqCtx && eqCtx.state === "suspended" && eqCtx.resume) {
+      eqCtx.resume().catch(() => {});
+    }
+  } catch (e) {}
+});
+/* Stesso risveglio al ritorno dal background su iOS (back-forward cache) */
+window.addEventListener("pageshow", () => {
+  try {
+    if (typeof eqCtx !== "undefined" && eqCtx && eqCtx.state === "suspended" && eqCtx.resume) {
+      eqCtx.resume().catch(() => {});
+    }
+  } catch (e) {}
 });
 function popChimeNow(ctx, own) {
   try {
@@ -1112,10 +1129,13 @@ function closePop() {
   const mini = popMiniEl("pop-mini");
   if (mini) {
     try {
-      mini.addEventListener("touchend", (e) => {
-        try { e.preventDefault(); } catch (err) {}
-        miniActivate(e);
-      }, { passive: false });
+    mini.addEventListener("touchend", (e) => {
+      try {
+        if (e.target.closest && e.target.closest("#pop-mini-x")) return;  // la X usa il suo click: niente preventDefault
+      } catch (err) {}
+      try { e.preventDefault(); } catch (err) {}
+      miniActivate(e);
+    }, { passive: false });
     } catch (e) {
       try { mini.addEventListener("touchend", (e2) => { miniActivate(e2); }); } catch (e2) {}
     }
@@ -1158,6 +1178,15 @@ function trackPlaySeconds() {
 
 /* ---------- EQUALIZZATORE (Web Audio, preset) ---------- */
 let eqCtx = null, eqFilters = null, eqReady = false;
+/* Il grafo WebAudio serve solo se l'EQ colora davvero il suono: con preset
+   piatto l'elemento audio suona NATIVO (background e lock-screen solidi su
+   iPhone, zero batteria). Si crea al primo gesto utile che lo richiede. */
+function eqNeedsGraph() {
+  try {
+    const g = eqGainsFor(storage.get("ssg-eq") || "piatto");
+    return g.some((v) => Number(v) !== 0);
+  } catch (e) { return false; }
+}
 const EQ_FREQS = [60, 250, 1000, 4000, 12000];
 const EQ_PRESETS = {
   piatto:    { label: "Piatto",    gains: [0, 0, 0, 0, 0] },
@@ -1371,6 +1400,11 @@ function vizStart() {
      il primo tap vero; i cambi brano automatici usano il grafo esistente */
   try {
     if (!eqReady && navigator.userActivation && navigator.userActivation.isActive === false) return;
+  } catch (e) {}
+  /* Niente grafo solo per un visualizzatore invisibile: se il full player è
+     chiuso e l'EQ è piatto, l'audio resta nativo (background solido) */
+  try {
+    if (!eqReady && !eqNeedsGraph() && els.fp && !els.fp.classList.contains("open")) return;
   } catch (e) {}
   try { if (!ensureEQ()) return; } catch (e) { return; }   // crea il grafo (con analyser) se manca
   if (!eqAnalyser) return;
@@ -2351,7 +2385,7 @@ async function playSong(songIdx, openFull) {
   document.body.classList.add("has-track");   // fa comparire il miniplayer
   audio.src = resolvePath(song.file);
   bumpPlayStat(songIdx);                      // statistiche: un avvio in più
-  ensureEQ();                                 // equalizzatore pronto al primo gesto utile
+  try { if (eqNeedsGraph()) ensureEQ(); } catch (e) {}   // grafo solo se l'EQ colora: sennò audio nativo
   /* NIENTE await: il vecchio codice aspettava che audio.play() si risolvesse
      (cioè finché il brano bufferizzava e partiva DAVVERO) prima di aggiornare
      titolo/copertina e aprire il full player: cliccando una canzone la UI
@@ -2419,7 +2453,7 @@ function togglePlay() {
        primo play viene rifiutato da iOS (corsa di caricamento) */
     const myToken = ++playToken;
     audio.play().catch(() => {});
-    ensureEQ();                               // gesto utente: contesto audio ok
+    try { if (eqNeedsGraph()) ensureEQ(); } catch (e) {}   // gesto utente: contesto audio ok (solo se serve)
     riprovaPlay(myToken);
   } else {
     audio.pause();
@@ -3539,6 +3573,15 @@ let fpYtPlayer = null;    // player YT unico (ricreato a ogni brano YT)
 let fpYtId = "";          // videoId caricato nel player
 let fpYtReady = false;    // onReady scattato per il brano corrente
 let fpYtToken = 0;        // anti-corsa: solo l'ultimo brano comanda
+let fpYtSeekAt = 0;       // ultimo seek chiesto da noi (anti-liti col buffering)
+/* Seek YT centralizzato: registra l'istante così la deriva non corregge
+   mentre il player sta ancora caricando il salto (evita raffiche di seek) */
+function ytSeek(t) {
+  try {
+    fpYtSeekAt = Date.now();
+    fpYtPlayer.seekTo(t, true);
+  } catch (e) {}
+}
 let fpYtAligned = false;  // riallineo iniziale già fatto per il brano
 let ytApiPromise = null;  // promessa di caricamento API (una sola volta)
 
@@ -3622,12 +3665,12 @@ function fpYtDrift() {
   catch (e) { return; }
   if (!isFinite(dur) || !isFinite(audio.duration)) return;
   if (fpYtState() !== 1) { fpYtResume(); return; }
+  if (Date.now() - fpYtSeekAt < 1500) return;   // salta in atterraggio: non correggere
   const drift = (audio.currentTime || 0) - (cur || 0);
   if (Math.abs(drift) <= 0.2) return;
   const now = Date.now();
   if (Math.abs(drift) > 1.2 && now - fpLastDriftSync >= 3000) {
-    try { fpYtPlayer.seekTo(Math.max(0, audio.currentTime % dur), true); }
-    catch (e) {}
+    ytSeek(Math.max(0, audio.currentTime % dur));
     fpLastDriftSync = now;
   }
 }
@@ -3642,7 +3685,7 @@ function onYtState(st) {
         const d = fpYtPlayer.getDuration();
         if (isFinite(d) && isFinite(audio.duration) &&
             Math.abs((audio.currentTime || 0) - fpYtPlayer.getCurrentTime()) > 0.3) {
-          fpYtPlayer.seekTo(audio.currentTime % d, true);
+          ytSeek(audio.currentTime % d);
         }
       } catch (e) {}
     }
@@ -3651,7 +3694,7 @@ function onYtState(st) {
   } else if (st === 0) {
     // Finito prima della canzone: loop come l'mp4
     if (!audio.paused && fpVideoOn) {
-      try { fpYtPlayer.seekTo(0, true); fpYtPlayer.playVideo(); } catch (e) {}
+      try { ytSeek(0); fpYtPlayer.playVideo(); } catch (e) {}
     }
   }
 }
@@ -3676,7 +3719,7 @@ function updateYtTrack(videoId) {
       const d0 = fpYtPlayer.getDuration();
       if (fpVideoOn && isFinite(d0) && isFinite(audio.duration) &&
           Math.abs((audio.currentTime || 0) - fpYtPlayer.getCurrentTime()) > 0.3) {
-        fpYtPlayer.seekTo(audio.currentTime % d0, true);
+        ytSeek(audio.currentTime % d0);
       }
     } catch (e) {}
     syncYtToAudio();
@@ -3749,7 +3792,7 @@ audio.addEventListener("seeked", () => {
       if (fpYtPlayer && fpYtReady && !audio.paused) {
         const d = fpYtPlayer.getDuration();
         if (isFinite(d) && isFinite(audio.duration)) {
-          fpYtPlayer.seekTo(Math.max(0, audio.currentTime % d), true);
+          ytSeek(Math.max(0, audio.currentTime % d));
         }
       }
     } catch (e) {}

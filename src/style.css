@@ -1684,13 +1684,13 @@ a.chip { text-decoration: none; display: inline-flex; align-items: center; }
 .pop-mini-open { color: #ffe3e6; font-size: 1.1rem; flex-shrink: 0; }
 .pop-mini-x {
   flex-shrink: 0;
-  width: 26px;
-  height: 26px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, .35);
   background: none;
   color: #ffe3e6;
-  font-size: .65rem;
+  font-size: .8rem;
   line-height: 1;
   cursor: pointer;
 }
