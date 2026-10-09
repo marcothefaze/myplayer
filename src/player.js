@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "53";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v143";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "54";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v144";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -2376,6 +2376,7 @@ function currentIndex() {
 let playToken = 0;
 let audioStarted = false;
 let audioErrorRetried = false;
+let stallRetried = false;   // un solo recupero a brano anche per gli stalli di rete
 
 /* Rete di sicurezza per il play: skip rapidissimi / rete lenta -> iOS può
    rifiutare il play mentre il cambio traccia è in corsa. Si riprova a
@@ -2414,6 +2415,7 @@ async function playSong(songIdx, openFull) {
      mentre l'audio bufferizza in background. */
   const myToken = ++playToken;      // anti-corsa: solo l'ULTIMO skip comanda
   audioErrorRetried = false;        // nuovo brano: di nuovo un tentativo su errore
+  stallRetried = false;             // idem per gli stalli
   audioStarted = false;             // nuovo brano: non è ancora partito
   audio.play().catch((err) => console.warn("Riproduzione bloccata dal browser:", err));
   /* Skip rapidissimi / rete lenta: iOS può rifiutare il play mentre il
@@ -2474,6 +2476,7 @@ function togglePlay() {
        primo play viene rifiutato da iOS (corsa di caricamento) */
     const myToken = ++playToken;
     audio.play().catch(() => {});
+    if (audio.volume === 0) toast("Volume a zero: alzalo dal cursore");
     try { if (eqNeedsGraph()) ensureEQ(); } catch (e) {}   // gesto utente: contesto audio ok (solo se serve)
     riprovaPlay(myToken);
   } else {
@@ -2673,6 +2676,8 @@ function audioLogAdd(ev, extra) {
     } catch (e) {}
     audioLog.push(new Date().toLocaleTimeString() + " " + ev +
       " t=" + Math.floor(audio.currentTime || 0) + "s " + ctxSt +
+      " vol=" + audio.volume + (audio.muted ? " MUTED" : "") +
+      " eq=" + (storage.get("ssg-eq") || "piatto") +
       (extra ? " " + extra : ""));
     if (audioLog.length > 15) audioLog.shift();
     const el = document.getElementById("set-audio-log");
@@ -2681,6 +2686,25 @@ function audioLogAdd(ev, extra) {
 }
 ["play", "pause", "playing", "waiting", "stalled", "error", "ended", "suspend"].forEach((t) => {
   try { audio.addEventListener(t, () => audioLogAdd(t)); } catch (e) {}
+});
+/* Stallo di rete (parte ma non prosegue): un solo recupero a brano —
+   ricarica e riparte da dove era; se la rete è davvero morta ci si ferma */
+audio.addEventListener("stalled", () => {
+  if (stallRetried || audio.paused) return;
+  stallRetried = true;
+  setTimeout(() => {
+    try {
+      if (audio.paused) return;
+      const t = audio.currentTime || 0;
+      const onMeta = () => {
+        try { audio.removeEventListener("loadedmetadata", onMeta); } catch (e) {}
+        try { audio.currentTime = t; } catch (e2) {}
+        audio.play().catch(() => {});
+      };
+      audio.addEventListener("loadedmetadata", onMeta);
+      audio.load();
+    } catch (e) {}
+  }, 2000);
 });
 
 // A fine brano: ripeti singolo, altrimenti passa al successivo
