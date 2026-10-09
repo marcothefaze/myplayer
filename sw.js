@@ -10,7 +10,7 @@
    cache -> la pagina punta SEMPRE ai ?v giusti, gli aggiornamenti si vedono
    alla prima apertura. Copertine: stale-while-revalidate. */
 
-const CACHE = "ssg-cache-v56";
+const CACHE = "ssg-cache-v57";
 /* Cache degli audio SCARICATI per l'ascolto offline (tasto "Scarica"
    sull'album): online va sempre in rete (streaming nativo intatto),
    offline i brani scaricati escono dalla cache locale. */
@@ -70,10 +70,17 @@ self.addEventListener("fetch", (e) => {
           if (rg) hdrs.Range = rg;
         } catch (err) {}
         return await fetch(e.request.url, { cache: "no-store", headers: hdrs });
-      } catch (err) {
-        const cached = await cache.match(e.request);
-        if (cached) return cached;
-        throw err;
+      } catch (err1) {
+        /* Rete morta o worker riavviato a metà streaming (iOS lo ammazza in
+           background): si riprova passando per la cache HTTP e poi per i
+           brani scaricati, invece di piantare la canzone */
+        try {
+          return await fetch(e.request);
+        } catch (err2) {
+          const cached = await cache.match(e.request);
+          if (cached) return cached;
+          throw err2;
+        }
       }
     })());
     return;

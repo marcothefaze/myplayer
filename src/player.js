@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "52";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v142";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "53";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v143";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -54,6 +54,7 @@ const els = {
   setEq: $("set-eq"),
   setDlInfo: $("set-dl-info"),
   setDlList: $("set-dl-list"),
+  setAudioLog: $("set-audio-log"),
   installBanner: $("install-banner"),
   installGo: $("install-go"),
   installHide: $("install-hide"),
@@ -790,6 +791,14 @@ document.addEventListener("visibilitychange", () => {
     if (typeof eqCtx !== "undefined" && eqCtx && eqCtx.state === "suspended" && eqCtx.resume) {
       eqCtx.resume().catch(() => {});
     }
+    /* Desync reale: la UI dice che suona ma l'elemento è fermo (sospensione
+       OS senza evento pausa): un tentativo di play; se il browser lo vieta
+       non succede niente, resta il tasto play nativo */
+    try {
+      if (audio.paused && document.body.classList.contains("is-playing")) {
+        audio.play().catch(() => {});
+      }
+    } catch (e) {}
   } catch (e) {}
 });
 /* Stesso risveglio al ritorno dal background su iOS (back-forward cache) */
@@ -1507,6 +1516,7 @@ function renderSettings() {
   syncVizChips();
   syncQueueChips();
   syncPopupsChips();
+  if (els.setAudioLog) els.setAudioLog.textContent = audioLog.join("\n") || "—";
   // Statistiche
   if (els.setStats) {
     const st = statsGet();
@@ -2649,6 +2659,28 @@ audio.addEventListener("error", () => {
   if (audioErrorRetried) return;
   audioErrorRetried = true;
   setTimeout(() => { if (audio.paused) audio.play().catch(() => {}); }, 500);
+});
+
+/* Diario audio (diagnostica nelle impostazioni): ogni play/pausa/stallo/
+   errore con orario e stato del grafo. Così se la musica si ferma da sola
+   si legge il perché esatto invece di tirare a indovinare. */
+const audioLog = [];
+function audioLogAdd(ev, extra) {
+  try {
+    let ctxSt = "nativo";
+    try {
+      if (typeof eqCtx !== "undefined" && eqCtx) ctxSt = eqCtx.state;
+    } catch (e) {}
+    audioLog.push(new Date().toLocaleTimeString() + " " + ev +
+      " t=" + Math.floor(audio.currentTime || 0) + "s " + ctxSt +
+      (extra ? " " + extra : ""));
+    if (audioLog.length > 15) audioLog.shift();
+    const el = document.getElementById("set-audio-log");
+    if (el) el.textContent = audioLog.join("\n") || "—";
+  } catch (e) {}
+}
+["play", "pause", "playing", "waiting", "stalled", "error", "ended", "suspend"].forEach((t) => {
+  try { audio.addEventListener(t, () => audioLogAdd(t)); } catch (e) {}
 });
 
 // A fine brano: ripeti singolo, altrimenti passa al successivo

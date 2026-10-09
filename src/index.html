@@ -12,7 +12,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/icons/icon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/icons/icon-180.png">
   <link rel="manifest" href="../manifest.json">
-  <link rel="stylesheet" href="style.css?v=139">
+  <link rel="stylesheet" href="style.css?v=140">
   <!-- Il ?v=N forza il browser a scaricare di nuovo i file a ogni rilascio,
        evitando che resti in cache una versione vecchia dell'app. -->
 </head>
@@ -147,6 +147,8 @@
           <button class="chip" data-queue="on">Attiva</button>
           <button class="chip" data-queue="off">Spenta</button>
         </div>
+        <div class="set-sub">Eventi audio recenti (diagnostica fermi)</div>
+        <div id="set-audio-log" class="set-log">—</div>
       </div>
       <div class="set-section">
         <div class="set-head">Popup</div>
@@ -475,6 +477,6 @@
     </div>
   </div>
 
-  <script src="player.js?v=139"></script>
+  <script src="player.js?v=140"></script>
 </body>
 </html>
