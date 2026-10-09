@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "51";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v141";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "52";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v142";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -800,6 +800,17 @@ window.addEventListener("pageshow", () => {
     }
   } catch (e) {}
 });
+/* Rete per iPhone: finché suona, ogni 5s si controlla che il grafo non sia
+   sospeso (l'OS lo sospende in background/lock senza avvisare: canzone che
+   avanza muta). Costa una lettura di stato. */
+setInterval(() => {
+  try {
+    if (document.hidden || !audio || audio.paused) return;
+    if (typeof eqCtx !== "undefined" && eqCtx && eqCtx.state === "suspended" && eqCtx.resume) {
+      eqCtx.resume().catch(() => {});
+    }
+  } catch (e) {}
+}, 5000);
 function popChimeNow(ctx, own) {
   try {
     const t = ctx.currentTime + 0.02;
@@ -3423,10 +3434,13 @@ function fpVideoResume() {
 }
 
 /* Allinea la CANZONE al video (si usa quando il video comandava:
-   in fullscreen e appena usciti, così non salta indietro) */
+   in fullscreen e appena usciti, così non salta indietro).
+   MAI se il video non è mai partito davvero (fermo a 0): altrimenti
+   aprendo il fullscreen la canzone ripartirebbe dall'inizio. */
 function fpAlignAudioToVideo() {
   if (!fpVideoEl || !fpHasVideo) return;
   try {
+    if ((fpVideoEl.currentTime || 0) < 1 && fpVideoEl.paused) return;
     if (isFinite(audio.duration) && isFinite(fpVideoEl.duration) &&
         Math.abs(fpVideoEl.duration - audio.duration) < 3 &&
         Math.abs((audio.currentTime || 0) - fpVideoEl.currentTime) > 0.25) {
@@ -3904,9 +3918,20 @@ if (els.fp) {
       if (document.fullscreenElement) {
         await document.exitFullscreen();
       } else {
-        // Allinea la canzone al video PRIMA di consegnare il controllo
-        // all'utente: si entra in fullscreen già sincronizzati
-        fpAlignAudioToVideo();
+        /* Entrata: se il video è fermo all'inizio è LUI a mettersi sulla
+           canzone (allineare la canzone al video qui la farebbe ripartire
+           da zero: era il bug del fullscreen su PC) */
+        const vt = fpVideoEl.currentTime || 0;
+        if (fpVideoEl.paused || vt < 1 || !isFinite(vt)) {
+          try {
+            fpVideoEl.playbackRate = 1;
+            if (isFinite(fpVideoEl.duration)) {
+              fpVideoEl.currentTime = (audio.currentTime || 0) % fpVideoEl.duration;
+            }
+          } catch (e2) {}
+        } else {
+          fpAlignAudioToVideo();
+        }
         if (fpVideoEl.requestFullscreen) {
           await fpVideoEl.requestFullscreen();
         } else if (fpVideoEl.webkitEnterFullscreen) {
