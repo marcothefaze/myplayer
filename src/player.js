@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "50";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v140";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "51";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v141";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -3290,13 +3290,13 @@ function ensureFpVideo() {
   fpVideoEl.addEventListener("pause", () => {
     // Debounce 300ms: iOS in fullscreen emette pause spurie durante lo scrub,
     // fermare subito l'audio su un evento fittizio blocca tutto
-    if (!fpHasVideo || !fpVideoFullscreen()) return;
+    if (!fpHasVideo || !fpVideoFullscreen() || !fpSameContent()) return;
     setTimeout(() => {
       if (fpVideoEl.paused && !audio.paused) audio.pause();
     }, 300);
   });
   fpVideoEl.addEventListener("play", () => {
-    if (!fpHasVideo || !fpVideoFullscreen()) return;
+    if (!fpHasVideo || !fpVideoFullscreen() || !fpSameContent()) return;
     setTimeout(() => {
       if (!fpVideoEl.paused && audio.paused) audio.play().catch(() => {});
     }, 300);
@@ -3387,7 +3387,8 @@ function updateFpVideo(song) {
                           // play istantaneo (niente lag iniziale) e seek fluidi
                           // in fullscreen. All'apertura dell'app non scarica
                           // nulla: parte solo quando apri un brano con video.
-    try { v.currentTime = 0; } catch (e) {}
+    /* Niente currentTime = 0 forzato: il src nuovo parte da zero da solo,
+       e il seek a metà caricamento rischiava di impallare la decodifica */
   }
 
   // Riquadro rettangolare quando il video è visibile (classi annidate no-dip)
@@ -3460,12 +3461,20 @@ function fpAlignVideoOnPlaying() {
    In fullscreen nativo invece il video COMANDA: l'utente lo sfoglia/pausa
    dal player iOS, quindi la canzone segue lui e non si riscrive mai il
    currentTime del video (altrimenti il seek dell'utente verrebbe annullato). */
+/* Stesso contenuto audio/video? Solo allora il video può comandare (in
+   fullscreen la canzone lo segue); sennò comanda sempre la canzone */
+function fpSameContent() {
+  try {
+    return fpVideoEl && isFinite(fpVideoEl.duration) && isFinite(audio.duration) &&
+      Math.abs(fpVideoEl.duration - audio.duration) < 3;
+  } catch (e) { return false; }
+}
 function syncFpVideoToAudio() {
   if (!fpHasVideo) return;
   if (fpVideoKind === "yt") { syncYtToAudio(); return; }
   if (!fpVideoEl) return;
   if (!fpVideoOn) { try { fpVideoEl.pause(); } catch (e) {} return; }   // video nascosto: mai farlo girare
-  if (fpVideoFullscreen()) {
+  if (fpVideoFullscreen() && fpSameContent()) {
     if (audio.paused !== fpVideoEl.paused) {
       if (fpVideoEl.paused) audio.pause(); else audio.play().catch(() => {});
     }
@@ -3502,7 +3511,7 @@ function fpDriftCheck() {
   const drift = (audio.currentTime || 0) - (fpVideoEl.currentTime || 0);
   const now = Date.now();
 
-  if (fpVideoFullscreen()) {
+  if (fpVideoFullscreen() && fpSameContent()) {
     // Il video comanda: correzione RARA della canzone, come prima
     if (durMatch && now - fpLastDriftSync >= 10000 && Math.abs(drift) > 1.5) {
       try { audio.currentTime = fpVideoEl.currentTime; } catch (e) {}
@@ -3513,8 +3522,8 @@ function fpDriftCheck() {
     return;
   }
 
-  // Fuori dal fullscreen: comanda la canzone
-  if (!durMatch) return;
+  // Fuori dal fullscreen (o contenuti diversi): comanda la canzone, anche
+  // con durate diverse (timeline parallele come per YouTube)
 
   if (fpVideoEl.paused) {          // video fermo mentre la canzone va: riparte
     fpStallChecks = 0;
@@ -3531,7 +3540,7 @@ function fpDriftCheck() {
     if (fpStallChecks >= 8) {
       try {
         fpVideoEl.playbackRate = 1;
-        fpVideoEl.currentTime = Math.max(0, Math.min(fpVideoEl.duration - 0.05, audio.currentTime));
+        fpVideoEl.currentTime = audio.currentTime % fpVideoEl.duration;
       } catch (e) {}
       fpStallChecks = 0;
       fpLastVideoTime = -1;
@@ -3551,7 +3560,7 @@ function fpDriftCheck() {
     if (now - fpLastDriftSync >= 3000) {
       try {
         fpVideoEl.playbackRate = 1;
-        fpVideoEl.currentTime = Math.max(0, Math.min(fpVideoEl.duration - 0.05, audio.currentTime));
+        fpVideoEl.currentTime = audio.currentTime % fpVideoEl.duration;
       } catch (e) {}
       fpLastDriftSync = now;
     }
@@ -3958,17 +3967,39 @@ document.addEventListener("keydown", (e) => {
   } else if (e.key === "ArrowLeft") {
     audio.currentTime = Math.max(0, audio.currentTime - 5);
   } else if (e.key === "Escape") {
-    const cm = document.getElementById("confirm-modal");
-    if (cm && !cm.classList.contains("hidden")) closeConfirm(false);
-    else if (popSheetOpen()) closePop();
-    else if (els.settingsView && !els.settingsView.classList.contains("hidden")) closeSettingsView();
-    else if (els.searchView && !els.searchView.classList.contains("hidden")) closeSearchView();
-    else if (els.fpEqSheet && !els.fpEqSheet.classList.contains("hidden")) closeFpEq();
-    else if (els.fpQueueSheet && !els.fpQueueSheet.classList.contains("hidden")) closeQueue();
-    else if (els.fp && els.fp.classList.contains("open")) closeFullPlayer();
-    else goHome();
+    if (!closeTopLayer()) goHome();
   }
 });
+
+/* Chiude UN solo livello (il più alto): la stessa catena la usano Esc e il
+   tasto Indietro di sistema. Ritorna true se ha chiuso qualcosa. */
+function closeTopLayer() {
+  try {
+    const cm = document.getElementById("confirm-modal");
+    if (cm && !cm.classList.contains("hidden")) { closeConfirm(false); return true; }
+    if (popSheetOpen()) { closePop(); return true; }
+    const pm = document.getElementById("pop-mini");
+    if (pm && !pm.classList.contains("hidden")) { hidePopMini(); return true; }
+    if (els.settingsView && !els.settingsView.classList.contains("hidden")) { closeSettingsView(); return true; }
+    if (els.searchView && !els.searchView.classList.contains("hidden")) { closeSearchView(); return true; }
+    if (els.fpEqSheet && !els.fpEqSheet.classList.contains("hidden")) { closeFpEq(); return true; }
+    if (els.fpQueueSheet && !els.fpQueueSheet.classList.contains("hidden")) { closeQueue(); return true; }
+    if (els.fp && els.fp.classList.contains("open")) { closeFullPlayer(); return true; }
+  } catch (e) {}
+  return false;
+}
+
+/* Tasto Indietro di sistema (Android: swipe da entrambi i bordi): chiude un
+   livello alla volta invece di uscire dall'app. Una sola voce di guardia:
+   se non c'era niente da chiudere non si ri-arma e il Back dopo esce. */
+try {
+  if (!history.state || !history.state.trap) history.pushState({ trap: true }, "");
+  window.addEventListener("popstate", () => {
+    try {
+      if (closeTopLayer()) history.pushState({ trap: true }, "");
+    } catch (e) {}
+  });
+} catch (e) {}
 
 /* ---------- CIELO STELLATO IN CANVAS ----------
    Sostituisce i vecchi tasselli CSS (si ripetevano e il brillio era per
