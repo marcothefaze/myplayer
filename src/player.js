@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "54";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v144";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "55";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v145";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -791,6 +791,9 @@ document.addEventListener("visibilitychange", () => {
     if (typeof eqCtx !== "undefined" && eqCtx && eqCtx.state === "suspended" && eqCtx.resume) {
       eqCtx.resume().catch(() => {});
     }
+    /* Rientro: nuova chance di recupero (in background iOS sospende i
+       download: suspend -> stallo; i flag una-volta-a-brano si riabilitano) */
+    try { stallRetried = false; audioErrorRetried = false; } catch (e) {}
     /* Desync reale: la UI dice che suona ma l'elemento è fermo (sospensione
        OS senza evento pausa): un tentativo di play; se il browser lo vieta
        non succede niente, resta il tasto play nativo */
