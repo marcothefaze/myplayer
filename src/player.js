@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "57";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v147";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "58";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v148";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -2658,6 +2658,7 @@ els.volumeIcon.addEventListener("click", toggleMute);
 /* ---------- 12. EVENTI <audio> ---------- */
 
 audio.addEventListener("play", () => {
+  try { audio.muted = false; } catch (e) {}   // mai partire muti: nessun controllo imposta il mute
   setPlayIcons(true);
   document.body.classList.add("is-playing");
   syncPlaybackState();
@@ -2988,6 +2989,45 @@ async function resetLocalMemory() {
   else toast("Pulizia fatta: ricarico");
   setTimeout(() => { try { location.reload(); } catch (e) {} }, 900);
 }
+/* Prova audio (diagnostica): un bip generato al momento, senza file.
+   Se il bip SI sente ma le canzoni no -> problema dei brani/stream.
+   Se non si sente NEMMENO il bip -> è il telefono (silenzioso, volume,
+   uscita) e non l'app. Va premuto col dito (gesto = permesso audio). */
+function testBeep() {
+  try {
+    const rate = 8000, dur = 0.6, n = Math.floor(rate * dur);
+    const buf = new Uint8Array(44 + n * 2);
+    const view = new DataView(buf.buffer);
+    const wstr = (o, s) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); };
+    wstr(0, "RIFF");
+    view.setUint32(4, 36 + n * 2, true);
+    wstr(8, "WAVE");
+    wstr(12, "fmt ");
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, rate, true);
+    view.setUint32(28, rate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    wstr(36, "data");
+    view.setUint32(40, n * 2, true);
+    for (let i = 0; i < n; i++) {
+      const t = i / rate;
+      const env = Math.min(1, t / 0.02) * Math.min(1, (dur - t) / 0.1);
+      view.setInt16(44 + i * 2, Math.round(Math.sin(2 * Math.PI * 880 * t) * 32767 * 0.5 * env), true);
+    }
+    let bin = "";
+    const CH = 8192;
+    for (let i = 0; i < buf.length; i += CH) bin += String.fromCharCode.apply(null, buf.subarray(i, i + CH));
+    const beep = new Audio("data:audio/wav;base64," + btoa(bin));
+    beep.play().catch(() => toast("Audio bloccato dal telefono"));
+  } catch (e) { toast("Prova non riuscita"); }
+}
+(function bindAudioTest() {
+  const b = document.getElementById("btn-audio-test");
+  if (b) b.addEventListener("click", () => { testBeep(); haptic(10); });
+})();
 (function bindMemoryReset() {
   const b = document.getElementById("btn-memory-reset");
   if (!b) return;
