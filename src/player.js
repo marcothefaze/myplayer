@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "59";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v149";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "60";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v150";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -2431,7 +2431,18 @@ async function playSong(songIdx, openFull) {
 
   const song = state.songs[songIdx];
   document.body.classList.add("has-track");   // fa comparire il miniplayer
-  audio.src = resolvePath(song.file);
+  /* Se il brano era già precaricato in memoria lo si usa (parte anche in
+     background senza rete), altrimenti streaming normale */
+  try { if (playingBlob) URL.revokeObjectURL(playingBlob); } catch (e) {}
+  playingBlob = "";
+  if (warmNextIdx === songIdx && warmNextUrl) {
+    audio.src = warmNextUrl;
+    playingBlob = warmNextUrl;
+    warmNextUrl = "";
+    warmNextIdx = -1;
+  } else {
+    audio.src = resolvePath(song.file);
+  }
   bumpPlayStat(songIdx);                      // statistiche: un avvio in più
   try { if (eqNeedsGraph()) ensureEQ(); } catch (e) {}   // grafo solo se l'EQ colora: sennò audio nativo
   /* NIENTE await: il vecchio codice aspettava che audio.play() si risolvesse
@@ -2452,6 +2463,7 @@ async function playSong(songIdx, openFull) {
   updatePlayerInfo(song);
   highlightActive();
   refreshQueueIfOpen();
+  try { warmNext(); } catch (e) {}   // prepara il prossimo in memoria (solo in primo piano)
   if (openFull) openFullPlayer();   // selezione esplicita -> full player automatico
 }
 
@@ -2508,6 +2520,44 @@ function togglePlay() {
   } else {
     audio.pause();
   }
+}
+
+/* Precarica il brano DOPO in memoria (blob): quando avanza in background
+   non serve nessuna fetch (iOS le sospende e la canzone morirebbe).
+   Solo in primo piano, mai in risparmio dati/2g, un solo brano alla volta,
+   no-store (niente accumulo nella cache HTTP). */
+let warmNextUrl = "", warmNextIdx = -1, playingBlob = "";
+function warmNextClear() {
+  try { if (warmNextUrl) URL.revokeObjectURL(warmNextUrl); } catch (e) {}
+  warmNextUrl = "";
+  warmNextIdx = -1;
+}
+function warmNext() {
+  try {
+    warmNextClear();
+    if (document.hidden) return;
+    if (typeof URL === "undefined" || !URL.createObjectURL || typeof Blob === "undefined") return;
+    try {
+      const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+      if (conn && (conn.saveData === true ||
+          (typeof conn.effectiveType === "string" && conn.effectiveType.indexOf("2g") >= 0))) return;
+    } catch (e) {}
+    if (typeof fetch === "undefined") return;
+    const nxt = state.queue[state.queuePos + 1];
+    if (nxt === undefined || !state.songs[nxt]) return;
+    warmNextIdx = nxt;
+    const file = state.songs[nxt].file;
+    fetch(resolvePath(file), { cache: "no-store" }).then((r) => {
+      if (!r || !r.ok) throw 0;
+      return r.arrayBuffer();
+    }).then((ab) => {
+      if (warmNextIdx !== nxt) return;   // nel frattempo ha cambiato giro
+      try {
+        const ext = String(file).split("?")[0].split(".").pop().toLowerCase();
+        warmNextUrl = URL.createObjectURL(new Blob([ab], { type: ext === "m4a" ? "audio/mp4" : "audio/mpeg" }));
+      } catch (e) { warmNextIdx = -1; }
+    }).catch(() => { if (warmNextIdx === nxt) warmNextIdx = -1; });
+  } catch (e) {}
 }
 
 function skipNext() {
