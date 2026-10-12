@@ -12,7 +12,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/icons/icon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/icons/icon-180.png">
   <link rel="manifest" href="../manifest.json">
-  <link rel="stylesheet" href="style.css?v=142">
+  <link rel="stylesheet" href="style.css?v=143">
   <!-- Il ?v=N forza il browser a scaricare di nuovo i file a ogni rilascio,
        evitando che resti in cache una versione vecchia dell'app. -->
 </head>
@@ -165,6 +165,7 @@
       </div>
       <div class="set-section">
         <div class="set-head">Reset totale</div>
+
         <div class="set-sub">Azzera TUTTA la memoria dell'app su questo dispositivo: brani offline, copertine in cache e dati locali (statistiche, preferiti, equalizzatore). Poi l'app si ricarica da zero: serve connessione.</div>
         <div class="set-list">
           <button id="btn-memory-reset" class="dl-btn danger dl-trash">
@@ -183,6 +184,7 @@
           <button class="chip" data-sky="notte">Notte</button>
         </div>
       </div>
+      <div id="set-version" class="set-version">—</div>
     </div>
   </div>
 
@@ -477,6 +479,6 @@
     </div>
   </div>
 
-  <script src="player.js?v=142"></script>
+  <script src="player.js?v=143"></script>
 </body>
 </html>

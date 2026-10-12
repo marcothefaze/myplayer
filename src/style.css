@@ -2312,6 +2312,15 @@ body.album-open #btn-refresh { order: 4; }
   color: var(--dim);
   line-height: 1.45;
 }
+/* Versione app in fondo alle impostazioni (diagnostica installazioni) */
+.set-version {
+  text-align: center;
+  font-size: .72rem;
+  color: var(--dim);
+  padding: 6px 0 2px;
+  letter-spacing: .4px;
+}
+
 /* Diario audio: testo piccolo a riga fissa, scorre se lungo */
 .set-log {
   font-family: ui-monospace, Menlo, Consolas, monospace;

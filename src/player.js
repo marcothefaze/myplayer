@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "55";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v145";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "56";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v146";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -55,6 +55,7 @@ const els = {
   setDlInfo: $("set-dl-info"),
   setDlList: $("set-dl-list"),
   setAudioLog: $("set-audio-log"),
+  setVersion: $("set-version"),
   installBanner: $("install-banner"),
   installGo: $("install-go"),
   installHide: $("install-hide"),
@@ -1493,6 +1494,11 @@ function closeConfirm(v) {
   if (confirmResolve) { const r = confirmResolve; confirmResolve = null; r(v); }
 }
 
+/* Versione visibile in fondo alle impostazioni (si sa cosa gira davvero) */
+function paintVersion() {
+  try { if (els.setVersion) els.setVersion.textContent = "SSG Universe " + APP_BUILD; } catch (e) {}
+}
+
 /* ---------- PANNELLO IMPOSTAZIONI ---------- */
 function openSettingsView() {
   if (!els.settingsView) return;
@@ -1520,6 +1526,7 @@ function renderSettings() {
   syncQueueChips();
   syncPopupsChips();
   if (els.setAudioLog) els.setAudioLog.textContent = audioLog.join("\n") || "—";
+  paintVersion();
   // Statistiche
   if (els.setStats) {
     const st = statsGet();
