@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "56";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v146";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "57";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v147";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -773,6 +773,14 @@ function sfxWarm() {
       sfxCtx = new AC();
     }
     if (sfxCtx.state === "suspended" && sfxCtx.resume) sfxCtx.resume().catch(() => {});
+    /* Stesso risveglio per il grafo MUSICA (iOS lo sospende in background e
+       resta muto finché un gesto non lo riprende: ora basta un tocco
+       qualsiasi, non serve più mettere pausa/play) */
+    try {
+      if (typeof eqCtx !== "undefined" && eqCtx && eqCtx.state === "suspended" && eqCtx.resume) {
+        eqCtx.resume().catch(() => {});
+      }
+    } catch (e) {}
   } catch (e) {}
 }
 /* Riscaldamento CONTINUO (non once): ogni gesto e ogni ritorno in primo
