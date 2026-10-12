@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "58";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v148";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "59";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v149";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -809,6 +809,14 @@ document.addEventListener("visibilitychange", () => {
     try {
       if (audio.paused && document.body.classList.contains("is-playing")) {
         audio.play().catch(() => {});
+      }
+    } catch (e) {}
+    /* Rientro con musica che doveva andare: se tra 3s è inchiodata sullo
+       stesso punto (buffer finito in background) si recupera da soli */
+    try {
+      if (!audio.paused && document.body.classList.contains("is-playing")) {
+        const t0 = audio.currentTime || 0, s0 = audio.src;
+        setTimeout(() => bgFrozenCheck(t0, s0), 3000);
       }
     } catch (e) {}
   } catch (e) {}
@@ -2708,23 +2716,38 @@ function audioLogAdd(ev, extra) {
 });
 /* Stallo di rete (parte ma non prosegue): un solo recupero a brano —
    ricarica e riparte da dove era; se la rete è davvero morta ci si ferma */
+function stallRecover() {
+  try {
+    if (audio.paused) return;
+    const t = audio.currentTime || 0;
+    const onMeta = () => {
+      try { audio.removeEventListener("loadedmetadata", onMeta); } catch (e) {}
+      try { audio.currentTime = t; } catch (e2) {}
+      audio.play().catch(() => {});
+    };
+    audio.addEventListener("loadedmetadata", onMeta);
+    audio.load();
+  } catch (e) {}
+}
 audio.addEventListener("stalled", () => {
   if (stallRetried || audio.paused) return;
   stallRetried = true;
   setTimeout(() => {
-    try {
-      if (audio.paused) return;
-      const t = audio.currentTime || 0;
-      const onMeta = () => {
-        try { audio.removeEventListener("loadedmetadata", onMeta); } catch (e) {}
-        try { audio.currentTime = t; } catch (e2) {}
-        audio.play().catch(() => {});
-      };
-      audio.addEventListener("loadedmetadata", onMeta);
-      audio.load();
-    } catch (e) {}
+    try { if (!audio.paused) stallRecover(); } catch (e) {}
   }, 2000);
 });
+/* Rientro dal background: se doveva suonare ma è inchiodata (iOS sospende
+   i download e il buffer finisce lì), dopo 3s si recupera da soli */
+function bgFrozenCheck(t0, src0) {
+  try {
+    if (audio.paused) return;
+    if (audio.src !== src0) return;   // nel frattempo ha cambiato brano
+    if ((audio.currentTime || 0) !== t0) return;   // avanza: tutto ok
+    stallRetried = false;
+    audioErrorRetried = false;
+    stallRecover();
+  } catch (e) {}
+}
 
 // A fine brano: ripeti singolo, altrimenti passa al successivo
 audio.addEventListener("ended", () => {
