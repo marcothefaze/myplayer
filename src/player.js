@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "86";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v176";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "87";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v177";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -305,7 +305,8 @@ async function loadPlaylist() {
     if (!response.ok) throw new Error("HTTP " + response.status);
     state.songs = await response.json();
     buildAlbums();
-    state.queue = state.flat.slice();        // ordine normale all'avvio
+    state.queue = state.flat.slice(0, 5);        // ordine normale all'avvio: solo i primi 5 brani
+    state.queuePos = 0;
     applySavedState();
     renderHome();
     updateBrandCount();
