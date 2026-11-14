@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "90";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v180";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "91";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v181";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -4437,11 +4437,22 @@ const SKY = (function () {
       g2 = mix3(g2, [240, 120, 180], w);
       g3 = mix3(g3, [255, 214, 165], w);
       gl = mix3(gl, [255, 150, 110], w);
+      /* Colori pulsante play album home per momento della giornata:
+         notte = viola scuro, giorno = blu cielo, alba/tramonto = arancione caldo */
+      let pc1 = mix3([74, 60, 138], [79, 157, 255], PH.day);
+      let pc2 = mix3([45, 27, 110], [31, 95, 200], PH.day);
+      if (PH.dusk > 0.02) {
+        const d = Math.min(1, PH.dusk * 1.2);
+        pc1 = mix3(pc1, [255, 107, 53], d);
+        pc2 = mix3(pc2, [216, 67, 21], d);
+      }
       const st = document.documentElement.style;
       st.setProperty("--brand-g1", "rgb(" + g1[0] + "," + g1[1] + "," + g1[2] + ")");
       st.setProperty("--brand-g2", "rgb(" + g2[0] + "," + g2[1] + "," + g2[2] + ")");
       st.setProperty("--brand-g3", "rgb(" + g3[0] + "," + g3[1] + "," + g3[2] + ")");
       st.setProperty("--brand-glow", "rgba(" + gl[0] + "," + gl[1] + "," + gl[2] + ",.35)");
+      st.setProperty("--play-c1", pc1[0] + ", " + pc1[1] + ", " + pc1[2]);
+      st.setProperty("--play-c2", pc2[0] + ", " + pc2[1] + ", " + pc2[2]);
     } catch (e) {}
   }
 

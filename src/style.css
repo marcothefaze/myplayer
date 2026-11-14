@@ -28,6 +28,9 @@
   --brand-g2: #5ea2ff;
   --brand-g3: #c9bcff;
   --brand-glow: rgba(124, 108, 255, .35);
+  /* Colori pulsante play album home per momento della giornata (aggiornati da JS in applyBrandPhase) */
+  --play-c1: 74, 60, 138;   // notte: viola scuro
+  --play-c2: 45, 27, 110;   // notte: indaco
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -441,23 +444,23 @@ body.scrolling .player-bar {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #ff8a50, transparent 40%), linear-gradient(135deg, #d84315, #ff6b35);
+  background: radial-gradient(circle at 30% 30%, rgba(255, 138, 80, .5), transparent 40%), linear-gradient(135deg, rgb(var(--play-c1)), rgb(var(--play-c2)));
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 20px rgba(216, 67, 21, .6);
+  box-shadow: 0 6px 20px rgba(var(--play-c1), .6);
   opacity: 1;
   transform: none;
   transition: transform .12s ease, box-shadow .15s ease;
   animation: card-play-pulse 2.5s ease-in-out infinite;
 }
-.card-play:hover { transform: scale(1.07); animation-play-state: paused; box-shadow: 0 8px 28px rgba(216, 67, 21, .8); }
+.card-play:hover { transform: scale(1.07); animation-play-state: paused; box-shadow: 0 8px 28px rgba(var(--play-c1), .8); }
 .card-play:active { transform: scale(.9); color: #fff; }
 .card-play svg { width: 22px; height: 22px; filter: drop-shadow(0 2px 4px rgba(0,0,0,.3)); }
 @keyframes card-play-pulse {
-  0%, 100% { box-shadow: 0 6px 20px rgba(216, 67, 21, .6); transform: scale(1); }
-  50% { box-shadow: 0 8px 32px rgba(216, 67, 21, .9); transform: scale(1.05); }
+  0%, 100% { box-shadow: 0 6px 20px rgba(var(--play-c1), .6); transform: scale(1); }
+  50% { box-shadow: 0 8px 32px rgba(var(--play-c1), .9); transform: scale(1.05); }
 }
 .card-play::before {
   content: "";
