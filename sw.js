@@ -10,7 +10,7 @@
    cache -> la pagina punta SEMPRE ai ?v giusti, gli aggiornamenti si vedono
    alla prima apertura. Copertine: stale-while-revalidate. */
 
-const CACHE = "ssg-cache-v81";
+const CACHE = "ssg-cache-v82";
 /* Cache degli audio SCARICATI per l'ascolto offline (tasto "Scarica"
    sull'album): online va sempre in rete (streaming nativo intatto),
    offline i brani scaricati escono dalla cache locale. */
@@ -86,17 +86,24 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  /* Asset VERSIONATI (?v=): immutabili per costruzione, quindi
-     cache-first senza rischi: se l'URL è lo stesso, i byte sono gli stessi.
-     Vale per style.css, player.js, playlist.json e tutto ciò che ha ?v=. */
-  if (url.searchParams.has("v")) {
+  /* Asset VERSIONATI (?v=): NETWORK-FIRST per CSS/JS/playlist.json così
+     ogni aggiornamento si vede subito alla riapertura. Le immagini restano
+     cache-first perché sono grandi e cambiano raramente. */
+  if (url.searchParams.has("v") && /\.(css|js|json)$/i.test(url.pathname)) {
     e.respondWith((async () => {
-      const cache = await caches.open(CACHE);
-      const cached = await cache.match(e.request);
-      if (cached) return cached;
-      const net = await fetch(e.request);
-      if (net && net.ok) cache.put(e.request, net.clone());
-      return net;
+      try {
+        const net = await fetch(e.request);
+        if (net && net.ok) {
+          const cache = await caches.open(CACHE);
+          cache.put(e.request, net.clone());
+        }
+        return net;
+      } catch (err) {
+        const cache = await caches.open(CACHE);
+        const cached = await cache.match(e.request);
+        if (cached) return cached;
+        throw err;
+      }
     })());
     return;
   }
