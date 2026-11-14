@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "82";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v172";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "83";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v173";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -3253,9 +3253,9 @@ function queueEnabled() {
 function queueUpcoming() {
   const q = state.queue, pos = state.queuePos, out = [];
   if (!q.length || pos < 0) return out;
-  for (let k = pos + 1; k < q.length && out.length < 20; k++) out.push({ idx: q[k], qp: k });
-  if ((state.repeat !== "off" || state.shuffle) && out.length < 20) {
-    for (let k = 0; k < pos && out.length < 20; k++) out.push({ idx: q[k], qp: k, wrapped: true });
+  for (let k = pos + 1; k < q.length && out.length < 5; k++) out.push({ idx: q[k], qp: k });
+  if ((state.repeat !== "off" || state.shuffle) && out.length < 5) {
+    for (let k = 0; k < pos && out.length < 5; k++) out.push({ idx: q[k], qp: k, wrapped: true });
   }
   return out;
 }
