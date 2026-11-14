@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "68";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v158";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "69";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v159";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -4106,9 +4106,18 @@ if (els.fp) {
       if (document.fullscreenElement) {
         await document.exitFullscreen();
       } else {
-        /* Entrata: se il video è fermo all'inizio è LUI a mettersi sulla
-           canzone (allineare la canzone al video qui la farebbe ripartire
-           da zero: era il bug del fullscreen su PC) */
+        /* Assicura che il video abbia un src valido e sia caricato prima
+           di entrare in fullscreen (senza src il player nativo resta nero) */
+        const fullSrc = resolvePath(src);
+        if (!fpVideoEl.getAttribute("src") || fpVideoEl.getAttribute("src") !== fullSrc) {
+          fpVideoEl.setAttribute("src", fullSrc);
+          fpVideoEl.preload = "auto";
+          await new Promise((resolve) => {
+            const t = setTimeout(resolve, 800);
+            fpVideoEl.addEventListener("loadedmetadata", () => { clearTimeout(t); resolve(); }, { once: true });
+          });
+        }
+        /* Entrata: allinea video alla canzone se il video è fermo/all'inizio */
         const vt = fpVideoEl.currentTime || 0;
         if (fpVideoEl.paused || vt < 1 || !isFinite(vt)) {
           try {
@@ -4120,15 +4129,17 @@ if (els.fp) {
         } else {
           fpAlignAudioToVideo();
         }
+        /* Su iOS il player nativo presenta il video solo se è in riproduzione */
+        if (fpVideoEl.paused) { try { await fpVideoEl.play(); } catch (e3) {} }
         if (fpVideoEl.requestFullscreen) {
           await fpVideoEl.requestFullscreen();
         } else if (fpVideoEl.webkitEnterFullscreen) {
-          // iOS: il player nativo presenta il video solo se è in riproduzione
-          if (fpVideoEl.paused) { try { await fpVideoEl.play(); } catch (e3) {} }
           fpVideoEl.webkitEnterFullscreen();
         }
       }
-    } catch (e) {}
+    } catch (e) {
+      toast("Video non disponibile");
+    }
     haptic(12);
   };
   if (fpFsBtn) fpFsBtn.addEventListener("click", goFs);
