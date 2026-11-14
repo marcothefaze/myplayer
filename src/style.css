@@ -2778,6 +2778,27 @@ body.album-open #btn-refresh { order: 4; }
   -webkit-backdrop-filter: blur(10px);
 }
 
+/* Ottimizzazioni prestazioni: contain isola il ridisegno dei pannelli fissi
+   così lo scroll del body non ridisegna l'intera app su telefono/iPad/PC. */
+.full-player,
+#settings-view .search-panel,
+.search-view,
+.cover-view {
+  contain: layout style paint;
+}
+
+/* Liste lunghe: il browser renderizza solo ciò che entra nel viewport,
+   risparmiando memoria e GPU sui telefoni meno potenti. */
+#fp-queue-available,
+#fp-queue-list,
+.search-results,
+.track-list {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 60px;
+}
+
+/* Fine ottimizzazioni */
+
 .cover-view-img {
   max-width: 94vw;
   max-height: 92vh;
