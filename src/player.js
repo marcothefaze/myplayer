@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "83";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v173";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "84";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v174";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -3400,7 +3400,6 @@ function renderQueueAvailable(filterText) {
   const ft = (filterText || "").toLowerCase().trim();
   const shown = [];
   state.songs.forEach((s, i) => {
-    if (queueContains(i)) return;
     const titolo = (s.titolo || fileTitle(s.file)).toLowerCase();
     const album = (s.album || "").toLowerCase();
     if (ft && !titolo.includes(ft) && !album.includes(ft)) return;
