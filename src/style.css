@@ -752,15 +752,10 @@ body.scrolling .player-bar {
   overflow: hidden;
   box-shadow: 0 5px 18px rgba(255, 107, 53, .55);
   transition: transform .12s ease, box-shadow .15s ease;
-  animation: hero-play-pulse 2.5s ease-in-out infinite;
 }
-.hero-play:hover { transform: scale(1.07); animation-play-state: paused; }
+.hero-play:hover { transform: scale(1.07); }
 .hero-play:active { transform: scale(.9); color: #fff; }
 .hero-play svg { width: 21px; height: 21px; }
-@keyframes hero-play-pulse {
-  0%, 100% { box-shadow: 0 5px 18px rgba(255, 107, 53, .55); transform: scale(1); }
-  50% { box-shadow: 0 5px 30px rgba(255, 107, 53, .85); transform: scale(1.06); }
-}
 
 .hero-dl {
   width: 42px;
@@ -2854,6 +2849,8 @@ html { touch-action: manipulation; }
   display: flex;
   align-items: center;
   gap: 6px;
+  position: relative;
+  z-index: 2;
 }
 .fp-q-avail-label::before {
   content: "";
@@ -2862,4 +2859,13 @@ html { touch-action: manipulation; }
   border-radius: 50%;
   background: var(--grad);
   flex-shrink: 0;
+}
+
+/* Lista disponibili sopra la coda: niente sovrapposizioni */
+#fp-queue-available {
+  position: relative;
+  z-index: 2;
+  margin-bottom: 10px;
+  overflow-y: auto;
+  max-height: 200px;
 }
