@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "79";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v169";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "80";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v170";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -503,7 +503,7 @@ function toast(msg) {
    (richiesta di Marco). I colori sono triplette "r, g, b" usate con
    rgb()/rgba() nelle variabili CSS --album-c1 / --album-c2. */
 const ALBUM_COLORS = {
-  "Non è SSG":               { c1: "180, 90, 255",  c2: "255, 120, 80" },
+  "Non è SSG":               { c1: "120, 70, 40",   c2: "160, 100, 55" },
   "Preferiti":               { c1: "255, 107, 157", c2: "247, 168, 196" },
   "Testamento":        { c1: "90, 145, 220",  c2: "230, 190, 90" },
   "Giorni Migliori":   { c1: "40, 190, 255",  c2: "185, 240, 255" },

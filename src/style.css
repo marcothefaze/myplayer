@@ -741,7 +741,7 @@ body.scrolling .player-bar {
   height: 46px;
   border: none;
   border-radius: 50%;
-  background: linear-gradient(135deg, #ff6b35, #f7931e);
+  background: radial-gradient(circle at 30% 30%, #ff8a50, transparent 40%), linear-gradient(135deg, #d84315, #ff6b35);
   color: #fff;
   cursor: pointer;
   display: flex;
@@ -750,12 +750,28 @@ body.scrolling .player-bar {
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 5px 18px rgba(255, 107, 53, .55);
+  box-shadow: 0 6px 20px rgba(216, 67, 21, .6);
   transition: transform .12s ease, box-shadow .15s ease;
+  animation: hero-play-breathe 3s ease-in-out infinite;
 }
-.hero-play:hover { transform: scale(1.07); }
+.hero-play:hover { transform: scale(1.1); animation-play-state: paused; box-shadow: 0 8px 28px rgba(216, 67, 21, .8); }
 .hero-play:active { transform: scale(.9); color: #fff; }
-.hero-play svg { width: 21px; height: 21px; }
+.hero-play svg { width: 22px; height: 22px; filter: drop-shadow(0 2px 4px rgba(0,0,0,.3)); }
+@keyframes hero-play-breathe {
+  0%, 100% { box-shadow: 0 6px 20px rgba(216, 67, 21, .6); transform: scale(1); }
+  50% { box-shadow: 0 8px 32px rgba(216, 67, 21, .9); transform: scale(1.05); }
+}
+/* Triangolo play più grande e centrato */
+.hero-play::before {
+  content: "";
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 14px solid #fff;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  margin-left: 2px;
+}
 
 .hero-dl {
   width: 42px;
