@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "85";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v175";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "86";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v176";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -3253,14 +3253,15 @@ function queueEnabled() {
 function queueUpcoming() {
   const q = state.queue, pos = state.queuePos, out = [];
   if (!q.length || pos < 0) return out;
-  for (let k = pos + 1; k < q.length && out.length < 5; k++) out.push({ idx: q[k], qp: k });
-  if ((state.repeat !== "off" || state.shuffle) && out.length < 5) {
-    for (let k = 0; k < pos && out.length < 5; k++) out.push({ idx: q[k], qp: k, wrapped: true });
+  for (let k = pos + 1; k < q.length && out.length < 20; k++) out.push({ idx: q[k], qp: k });
+  if ((state.repeat !== "off" || state.shuffle) && out.length < 20) {
+    for (let k = 0; k < pos && out.length < 20; k++) out.push({ idx: q[k], qp: k, wrapped: true });
   }
   return out;
 }
 function removeQueueAt(qp) {
   if (qp < 0 || qp >= state.queue.length || qp === state.queuePos) return;
+  if (state.queue.length <= 5) { toast("Coda minima: 5 brani"); return; }
   state.queue.splice(qp, 1);
   if (qp < state.queuePos) state.queuePos--;
   renderQueue();
@@ -3381,6 +3382,7 @@ function queueContains(songIdx) {
 /* Aggiunge un brano in fondo alla coda e aggiorna la lista */
 function addSongToQueue(songIdx) {
   if (songIdx < 0) return;
+  if (state.queue.length >= 20) { toast("Coda piena: max 20 brani"); return; }
   const pos = state.queue.indexOf(songIdx);
   if (pos >= 0) state.queue.splice(pos, 1);
   /* Inserisci subito dopo il brano corrente (prossimo da suonare), non in fondo */
