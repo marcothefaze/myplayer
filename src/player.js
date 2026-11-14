@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "78";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v168";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "79";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v169";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -4168,7 +4168,7 @@ if (els.fp) {
   els.fpRepeat.addEventListener("click", cycleRepeat);
   els.fpShare.addEventListener("click", toggleShareMenu);
   els.fpShareLink.addEventListener("click", () => { toggleShareMenu(); shareLink(); });
-  els.fpShareCover.addEventListener("click", () => { toggleShareMenu(); shareCover(); });
+  if (els.fpShareCover) els.fpShareCover.addEventListener("click", () => { toggleShareMenu(); shareCover(); });
   if (els.fpVideoToggle) {
     els.fpVideoToggle.addEventListener("click", () => {
       if (!fpHasVideo) return;
