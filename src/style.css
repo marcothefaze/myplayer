@@ -2816,6 +2816,28 @@ body.album-open #btn-refresh { order: 4; }
 /* Niente doppio-tap per zoomare su telefono */
 html { touch-action: manipulation; }
 
+/* Badge "ultimo uscito" sulla card album "Non è SSG": rosso acceso, animato, poco invasivo */
+.card-new {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 10;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #ff3b30;
+  color: #fff;
+  font-size: .62rem;
+  font-weight: 800;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  box-shadow: 0 2px 8px rgba(255, 59, 48, .6);
+  animation: card-new-pulse 2s ease-in-out infinite;
+}
+@keyframes card-new-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 2px 8px rgba(255, 59, 48, .6); }
+  50% { opacity: .9; transform: scale(1.06); box-shadow: 0 4px 14px rgba(255, 59, 48, .9); }
+}
+
 /* =========================================================
    CODA: scroll solo verticale su telefono + tasto rimuovi chiaro
    ========================================================= */
