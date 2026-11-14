@@ -2799,3 +2799,62 @@ body.album-open #btn-refresh { order: 4; }
 
 /* Niente doppio-tap per zoomare su telefono */
 html { touch-action: manipulation; }
+
+/* =========================================================
+   CODA: scroll solo verticale su telefono + tasto rimuovi chiaro
+   ========================================================= */
+/* I pannelli che scorrono (impostazioni, coda, EQ) su telefono non
+   devono mai trascinare a destra/sinistra: solo sopra/sotto. */
+#settings-view .search-panel,
+.fp-queue-sheet .fp-eq-card,
+.fp-eq-sheet .fp-eq-card {
+  overflow-x: hidden;
+  touch-action: pan-y;
+}
+
+/* Pulsante rimuovi brano dalla coda: più visibile, rosso, bersaglio tattile */
+.fp-q-x {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 91, 91, .55);
+  background: rgba(255, 91, 91, .14);
+  color: #ff8a8a;
+  font-size: 1.05rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background .15s ease, transform .1s ease, border-color .15s ease;
+}
+.fp-q-x:active { transform: scale(.88); background: rgba(255, 91, 91, .28); border-color: #ff8a8a; }
+
+/* Lista brani disponibili da aggiungere (risultati ricerca interna coda) */
+.fp-queue-available { margin-bottom: 10px; }
+.fp-queue-available .fp-q-row { background: rgba(255, 255, 255, .025); border-color: rgba(255, 255, 255, .04); }
+.fp-queue-available .fp-q-x { border-color: rgba(124, 108, 255, .4); background: rgba(124, 108, 255, .12); color: #8a84ff; }
+.fp-queue-available .fp-q-x:active { background: rgba(124, 108, 255, .25); border-color: #8a84ff; }
+.fp-queue-available .fp-q-title { color: var(--text); }
+.fp-queue-available .fp-q-sub { color: var(--dim); }
+
+/* Etichetta sezione disponibili */
+.fp-q-avail-label {
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin: 8px 4px 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.fp-q-avail-label::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--grad);
+  flex-shrink: 0;
+}

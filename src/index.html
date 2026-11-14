@@ -12,7 +12,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/icons/icon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/icons/icon-180.png">
   <link rel="manifest" href="../manifest.json">
-  <link rel="stylesheet" href="style.css?v=161">
+  <link rel="stylesheet" href="style.css?v=162">
   <!-- Il ?v=N forza il browser a scaricare di nuovo i file a ogni rilascio,
        evitando che resti in cache una versione vecchia dell'app. -->
 </head>
@@ -423,6 +423,16 @@
             <button id="fp-queue-close" class="fp-eq-close" aria-label="Chiudi coda">✕</button>
           </div>
           <div id="fp-queue-now" class="fp-queue-now"></div>
+          <!-- Mini ricerca interna: aggiungi in coda brani di qualsiasi album -->
+          <div class="set-sub" style="margin:10px 0 6px">Aggiungi alla coda</div>
+          <div class="search-wrap" style="margin-bottom:8px">
+            <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+              <path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/>
+            </svg>
+            <input id="fp-queue-search" class="search-input" type="search" placeholder="Cerca brano da mettere in coda…" autocomplete="off" enterkeyhint="search" aria-label="Cerca brano da mettere in coda">
+            <button id="fp-queue-search-clear" class="search-clear hidden" aria-label="Cancella">✕</button>
+          </div>
+          <div id="fp-queue-available" class="fp-queue-list"></div>
           <div id="fp-queue-list" class="fp-queue-list"></div>
         </div>
       </div>
@@ -477,6 +487,6 @@
     </div>
   </div>
 
-  <script src="player.js?v=161"></script>
+  <script src="player.js?v=162"></script>
 </body>
 </html>

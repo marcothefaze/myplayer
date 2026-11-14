@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "74";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v164";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "75";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v165";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -151,6 +151,9 @@ const els = {
   fpQueueBtn: $("fp-queue-btn"),
   fpQueueSheet: $("fp-queue-sheet"),
   fpQueueClose: $("fp-queue-close"),
+  fpQueueSearch: $("fp-queue-search"),
+  fpQueueSearchClear: $("fp-queue-search-clear"),
+  fpQueueAvailable: $("fp-queue-available"),
   setNet: $("set-net"),
   main: $("main")
 };
@@ -3254,6 +3257,7 @@ function removeQueueAt(qp) {
   state.queue.splice(qp, 1);
   if (qp < state.queuePos) state.queuePos--;
   renderQueue();
+  refreshQueueAvailableIfOpen();
 }
 function renderQueue() {
   const list = document.getElementById("fp-queue-list");
@@ -3337,6 +3341,7 @@ function renderQueue() {
     });
     list.appendChild(row);
   });
+  refreshQueueAvailableIfOpen();
 }
 /* Ridisegna la coda solo se il pannello è aperto (playSong la chiama sempre) */
 function refreshQueueIfOpen() {
@@ -3348,6 +3353,9 @@ function refreshQueueIfOpen() {
 function openQueue() {
   if (!els.fpQueueSheet || !queueEnabled()) return;
   renderQueue();
+  renderQueueAvailable("");
+  if (els.fpQueueSearch) els.fpQueueSearch.value = "";
+  if (els.fpQueueSearchClear) els.fpQueueSearchClear.classList.add("hidden");
   els.fpQueueSheet.classList.remove("hidden");
   els.fpQueueSheet.setAttribute("aria-hidden", "false");
 }
@@ -3356,6 +3364,117 @@ function closeQueue() {
   els.fpQueueSheet.classList.add("hidden");
   els.fpQueueSheet.setAttribute("aria-hidden", "true");
 }
+
+/* ---------- CODA: ricerca interna e aggiunta brani ---------- */
+/* Restituisce true se il brano è già in coda (evita duplicati) */
+function queueContains(songIdx) {
+  return state.queue.indexOf(songIdx) >= 0;
+}
+
+/* Aggiunge un brano in fondo alla coda e aggiorna la lista */
+function addSongToQueue(songIdx) {
+  if (songIdx < 0 || queueContains(songIdx)) return;
+  state.queue.push(songIdx);
+  renderQueue();
+  if (els.fpQueueSheet && !els.fpQueueSheet.classList.contains("hidden")) {
+    renderQueueAvailable(els.fpQueueSearch ? els.fpQueueSearch.value : "");
+  }
+  toast("Aggiunto alla coda");
+  haptic(10);
+}
+
+/* Renderizza i brani disponibili da aggiungere (non già in coda),
+   filtrati dal testo di ricerca se presente */
+function renderQueueAvailable(filterText) {
+  const list = els.fpQueueAvailable;
+  if (!list) return;
+  list.innerHTML = "";
+  const ft = (filterText || "").toLowerCase().trim();
+  const shown = [];
+  state.songs.forEach((s, i) => {
+    if (queueContains(i)) return;
+    const titolo = (s.titolo || fileTitle(s.file)).toLowerCase();
+    const album = (s.album || "").toLowerCase();
+    if (ft && !titolo.includes(ft) && !album.includes(ft)) return;
+    shown.push({ idx: i, song: s });
+  });
+  if (!shown.length) {
+    if (ft) {
+      const d = document.createElement("div");
+      d.className = "fp-q-empty";
+      d.textContent = "Nessun brano trovato";
+      list.appendChild(d);
+    }
+    return;
+  }
+  const lab = document.createElement("div");
+  lab.className = "fp-q-avail-label";
+  lab.textContent = "DISPONIBILI";
+  list.appendChild(lab);
+  shown.forEach((e) => {
+    const s = e.song;
+    const row = document.createElement("button");
+    row.className = "fp-q-row";
+    const num = document.createElement("span");
+    num.className = "fp-q-num";
+    num.textContent = "";
+    const meta = document.createElement("div");
+    meta.className = "fp-q-meta";
+    const tt = document.createElement("div");
+    tt.className = "fp-q-title";
+    tt.textContent = s.titolo || fileTitle(s.file);
+    const ss = document.createElement("div");
+    ss.className = "fp-q-sub";
+    ss.textContent = s.album || "";
+    meta.appendChild(tt);
+    meta.appendChild(ss);
+    const plus = document.createElement("span");
+    plus.className = "fp-q-x";
+    plus.textContent = "+";
+    plus.setAttribute("role", "button");
+    plus.setAttribute("aria-label", "Aggiungi alla coda");
+    plus.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      addSongToQueue(e.idx);
+    });
+    row.appendChild(num);
+    row.appendChild(meta);
+    row.appendChild(plus);
+    row.addEventListener("click", () => {
+      addSongToQueue(e.idx);
+    });
+    list.appendChild(row);
+  });
+}
+
+/* Aggiorna i risultati disponibili quando la coda cambia */
+function refreshQueueAvailableIfOpen() {
+  try {
+    if (els.fpQueueSheet && !els.fpQueueSheet.classList.contains("hidden")) {
+      renderQueueAvailable(els.fpQueueSearch ? els.fpQueueSearch.value : "");
+    }
+  } catch (e) {}
+}
+
+/* Binding ricerca interna coda */
+(function bindQueueSearch() {
+  const input = els.fpQueueSearch;
+  const clear = els.fpQueueSearchClear;
+  if (!input) return;
+  input.addEventListener("input", () => {
+    const v = input.value;
+    if (clear) clear.classList.toggle("hidden", !v);
+    renderQueueAvailable(v);
+  });
+  if (clear) {
+    clear.addEventListener("click", () => {
+      input.value = "";
+      clear.classList.add("hidden");
+      renderQueueAvailable("");
+      try { input.focus(); } catch (e) {}
+    });
+  }
+})();
 
 /* ---------- 14. FULL PLAYER a tendina ---------- */
 
