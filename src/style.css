@@ -741,7 +741,7 @@ body.scrolling .player-bar {
   height: 46px;
   border: none;
   border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #ff8a50, transparent 40%), linear-gradient(135deg, #d84315, #ff6b35);
+  background: linear-gradient(135deg, rgb(var(--album-c1)), rgb(var(--album-c2)));
   color: #fff;
   cursor: pointer;
   display: flex;
@@ -750,17 +750,12 @@ body.scrolling .player-bar {
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 6px 20px rgba(216, 67, 21, .6);
+  box-shadow: 0 5px 18px rgba(var(--album-c1), .45);
   transition: transform .12s ease, box-shadow .15s ease;
-  animation: hero-play-breathe 3s ease-in-out infinite;
 }
-.hero-play:hover { transform: scale(1.1); animation-play-state: paused; box-shadow: 0 8px 28px rgba(216, 67, 21, .8); }
+.hero-play:hover { transform: scale(1.07); }
 .hero-play:active { transform: scale(.9); color: #fff; }
-.hero-play svg { width: 22px; height: 22px; filter: drop-shadow(0 2px 4px rgba(0,0,0,.3)); }
-@keyframes hero-play-breathe {
-  0%, 100% { box-shadow: 0 6px 20px rgba(216, 67, 21, .6); transform: scale(1); }
-  50% { box-shadow: 0 8px 32px rgba(216, 67, 21, .9); transform: scale(1.05); }
-}
+.hero-play svg { width: 21px; height: 21px; }
 /* Triangolo play più grande e centrato */
 .hero-play::before {
   content: "";
@@ -2836,6 +2831,48 @@ html { touch-action: manipulation; }
 @keyframes card-new-pulse {
   0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 2px 8px rgba(255, 59, 48, .6); }
   50% { opacity: .9; transform: scale(1.06); box-shadow: 0 4px 14px rgba(255, 59, 48, .9); }
+}
+
+/* ---------- Pulsante play sulle card album (HOME): arancio acceso e animato ---------- */
+.card-play {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #ff8a50, transparent 40%), linear-gradient(135deg, #d84315, #ff6b35);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 20px rgba(216, 67, 21, .6);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity .18s ease, transform .18s ease, box-shadow .15s ease;
+  animation: card-play-breathe 2.5s ease-in-out infinite;
+}
+.album-card:hover .card-play,
+.card-play:hover {
+  opacity: 1;
+  transform: translateY(0) scale(1.07);
+  box-shadow: 0 8px 28px rgba(216, 67, 21, .8);
+}
+.card-play:active { transform: scale(.9); color: #fff; }
+.card-play svg { width: 22px; height: 22px; filter: drop-shadow(0 2px 4px rgba(0,0,0,.3)); }
+@keyframes card-play-breathe {
+  0%, 100% { box-shadow: 0 6px 20px rgba(216, 67, 21, .6); transform: scale(1); }
+  50% { box-shadow: 0 8px 32px rgba(216, 67, 21, .9); transform: scale(1.05); }
+}
+.card-play::before {
+  content: "";
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 14px solid #fff;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  margin-left: 2px;
 }
 
 /* =========================================================
