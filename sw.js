@@ -10,7 +10,7 @@
    cache -> la pagina punta SEMPRE ai ?v giusti, gli aggiornamenti si vedono
    alla prima apertura. Copertine: stale-while-revalidate. */
 
-const CACHE = "ssg-cache-v76";
+const CACHE = "ssg-cache-v77";
 /* Cache degli audio SCARICATI per l'ascolto offline (tasto "Scarica"
    sull'album): online va sempre in rete (streaming nativo intatto),
    offline i brani scaricati escono dalla cache locale. */
@@ -25,6 +25,7 @@ const COVERS = [
   "src/assets/covers/Giorni_Migliori_-_SSG.webp",
   "src/assets/covers/LUCCIOLE_-_SSG.jpg",
   "src/assets/covers/NUOVI_PEZZI_MASTER_E_MIX.jpeg?v=158",
+  "src/assets/audio/NUOVI%20PEZZI%20MASTER%20E%20MIX/copertina%20Non%20%C3%A8%20SSG.png?v=163",
   "src/assets/covers/NUOVI_PEZZI_MASTER_E_MIX.webp",
   "src/assets/covers/SINGOLI___EXTRA_-_SSG.png",
   "src/assets/covers/SINGOLI___EXTRA_-_SSG.webp",

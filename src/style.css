@@ -2307,6 +2307,21 @@ body.album-open #btn-refresh { order: 4; }
   max-height: 100%;
   overflow-y: auto;
 }
+/* Su telefoni piccoli il pannello impostazioni non deve uscire dai limiti:
+   meno padding, card più compatte, scroll sicuro */
+@media (max-width: 720px) {
+  #settings-view .search-panel {
+    padding: 12px 10px;
+    border-radius: 14px;
+    max-height: calc(100% - 20px);
+  }
+  .set-section {
+    padding: 10px;
+    margin-top: 8px;
+  }
+  .set-head { font-size: .7rem; margin: 1px 1px 8px; }
+  .set-sub { font-size: .75rem; line-height: 1.4; }
+}
 .set-sub {
   font-size: .8rem;
   color: var(--dim);
