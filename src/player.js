@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "70";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v160";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "71";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v161";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -3469,6 +3469,7 @@ function ensureFpVideo() {
     fpHasVideo = false;
     fpVideoEl.classList.add("hidden");
     if (els.fpVideoToggle) els.fpVideoToggle.classList.add("hidden");
+    toast("Video non disponibile");
   });
   fpVideoEl.addEventListener("webkitendfullscreen", () => {
     // iOS: usciti dal player nativo il video resta fermo con la decodifica
