@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "69";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v159";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "70";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v160";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -4103,12 +4103,16 @@ if (els.fp) {
     }
     if (!fpVideoEl) return;
     try {
+      const cur = currentIndex();
+      const s = cur >= 0 ? state.songs[cur] : null;
+      const vsrc = s ? TRACK_VIDEOS[s.titolo] : null;
+      if (!vsrc) return;
       if (document.fullscreenElement) {
         await document.exitFullscreen();
       } else {
         /* Assicura che il video abbia un src valido e sia caricato prima
            di entrare in fullscreen (senza src il player nativo resta nero) */
-        const fullSrc = resolvePath(src);
+        const fullSrc = resolvePath(vsrc);
         if (!fpVideoEl.getAttribute("src") || fpVideoEl.getAttribute("src") !== fullSrc) {
           fpVideoEl.setAttribute("src", fullSrc);
           fpVideoEl.preload = "auto";
