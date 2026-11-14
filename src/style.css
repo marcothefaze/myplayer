@@ -2941,10 +2941,12 @@ html { touch-action: manipulation; }
   position: relative;
   z-index: 10;
   margin-bottom: 10px;
+  overflow-x: hidden;
   overflow-y: auto;
   max-height: 200px;
   background: rgba(20, 20, 30, .85);
   border: 1px solid rgba(255, 255, 255, .08);
   border-radius: 12px;
   padding: 6px;
+  touch-action: pan-y;
 }

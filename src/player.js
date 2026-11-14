@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "84";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v174";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "85";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v175";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -3380,7 +3380,9 @@ function queueContains(songIdx) {
 
 /* Aggiunge un brano in fondo alla coda e aggiorna la lista */
 function addSongToQueue(songIdx) {
-  if (songIdx < 0 || queueContains(songIdx)) return;
+  if (songIdx < 0) return;
+  const pos = state.queue.indexOf(songIdx);
+  if (pos >= 0) state.queue.splice(pos, 1);
   /* Inserisci subito dopo il brano corrente (prossimo da suonare), non in fondo */
   state.queue.splice(state.queuePos + 1, 0, songIdx);
   renderQueue();
