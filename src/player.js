@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "71";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v161";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "72";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v162";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -25,6 +25,34 @@ const storage = {
   get(key) { try { return window.localStorage.getItem(key); } catch (e) { return null; } },
   set(key, value) { try { window.localStorage.setItem(key, String(value)); } catch (e) {} }
 };
+
+/* Forza aggiornamento cache: se la build è cambiata, svuota le cache del
+   service worker e ricarica per prendere i nuovi asset (copertine, CSS, JS). */
+(function forceCacheRefresh() {
+  try {
+    const saved = storage.get("ssg_build");
+    if (saved && saved !== APP_BUILD) {
+      if ("caches" in window) {
+        caches.keys().then((keys) => {
+          keys.forEach((k) => {
+            if (k.startsWith("ssg-cache-") || k.startsWith("ssg-audio-")) {
+              caches.delete(k);
+            }
+          });
+        });
+      }
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.getRegistration().then((r) => {
+          if (r) r.update();
+        });
+      }
+      storage.set("ssg_build", APP_BUILD);
+      setTimeout(() => { location.reload(); }, 400);
+    } else if (!saved) {
+      storage.set("ssg_build", APP_BUILD);
+    }
+  } catch (e) {}
+})();
 
 /* Su telefono: blocca lo zoom con due dita e il doppio tap (iOS/Android).
    Il pinch-zoom è già bloccato nativamente via CSS (touch-action sul body),
