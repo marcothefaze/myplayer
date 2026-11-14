@@ -396,21 +396,21 @@
     "copertina": "assets/covers/LUCCIOLE_-_SSG.jpg"
   },
   {
-    "id": "paura.ancora.afghanistan-",
-    "titolo": "Paura.Ancora.Afghanistan",
+    "id": "RetoricaMIX",
+    "titolo": "Retorica",
     "artista": "Artista sconosciuto",
     "album": "Non è SSG",
-    "durata": 300,
-    "file": "assets/audio/NUOVI PEZZI MASTER E MIX/paura.ancora.afghanistan-.mp3",
+    "durata": 280,
+    "file": "assets/audio/NUOVI PEZZI MASTER E MIX/RetoricaMIX.mp3",
     "copertina": "assets/covers/NUOVI_PEZZI_MASTER_E_MIX.jpeg"
   },
   {
-    "id": "chi_lha_vista",
-    "titolo": "Chi l'ha Vista?",
+    "id": "Sguardi",
+    "titolo": "Sguardi",
     "artista": "Artista sconosciuto",
     "album": "Non è SSG",
-    "durata": 193,
-    "file": "assets/audio/NUOVI PEZZI MASTER E MIX/chi lha vista.mp3",
+    "durata": 134,
+    "file": "assets/audio/NUOVI PEZZI MASTER E MIX/Sguardi.m4a",
     "copertina": "assets/covers/NUOVI_PEZZI_MASTER_E_MIX.jpeg"
   },
   {
@@ -429,6 +429,15 @@
     "album": "Non è SSG",
     "durata": 130,
     "file": "assets/audio/NUOVI PEZZI MASTER E MIX/Goleador.mp3",
+    "copertina": "assets/covers/NUOVI_PEZZI_MASTER_E_MIX.jpeg"
+  },
+  {
+    "id": "chi_lha_vista",
+    "titolo": "Chi l'ha Vista?",
+    "artista": "Artista sconosciuto",
+    "album": "Non è SSG",
+    "durata": 193,
+    "file": "assets/audio/NUOVI PEZZI MASTER E MIX/chi lha vista.mp3",
     "copertina": "assets/covers/NUOVI_PEZZI_MASTER_E_MIX.jpeg"
   },
   {
@@ -459,12 +468,12 @@
     "copertina": "assets/covers/NUOVI_PEZZI_MASTER_E_MIX.jpeg"
   },
   {
-    "id": "RetoricaMIX",
-    "titolo": "Retorica",
+    "id": "paura.ancora.afghanistan-",
+    "titolo": "Paura.Ancora.Afghanistan",
     "artista": "Artista sconosciuto",
     "album": "Non è SSG",
-    "durata": 280,
-    "file": "assets/audio/NUOVI PEZZI MASTER E MIX/RetoricaMIX.mp3",
+    "durata": 300,
+    "file": "assets/audio/NUOVI PEZZI MASTER E MIX/paura.ancora.afghanistan-.mp3",
     "copertina": "assets/covers/NUOVI_PEZZI_MASTER_E_MIX.jpeg"
   },
   {
@@ -483,15 +492,6 @@
     "album": "Non è SSG",
     "durata": 222,
     "file": "assets/audio/NUOVI PEZZI MASTER E MIX/Muovilo.m4a",
-    "copertina": "assets/covers/NUOVI_PEZZI_MASTER_E_MIX.jpeg"
-  },
-  {
-    "id": "Sguardi",
-    "titolo": "Sguardi",
-    "artista": "Artista sconosciuto",
-    "album": "Non è SSG",
-    "durata": 134,
-    "file": "assets/audio/NUOVI PEZZI MASTER E MIX/Sguardi.m4a",
     "copertina": "assets/covers/NUOVI_PEZZI_MASTER_E_MIX.jpeg"
   },
   {
