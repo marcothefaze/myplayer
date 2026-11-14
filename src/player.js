@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "87";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v177";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "88";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v178";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -2655,7 +2655,7 @@ function toggleShuffle() {
     state.queue = cur >= 0 ? [cur, ...shuffledRest(cur)] : shuffledRest(-1);
     state.queuePos = 0;
   } else {
-    state.queue = state.flat.slice();
+    state.queue = state.flat.slice(0, 20);
     state.queuePos = cur >= 0 ? state.queue.indexOf(cur) : 0;
   }
   refreshQueueIfOpen();
@@ -4215,7 +4215,11 @@ if (els.fp) {
       try {
         const box = document.getElementById("fp-yt");
         if (document.fullscreenElement) await document.exitFullscreen();
-        else if (box && box.requestFullscreen) await box.requestFullscreen();
+        else if (box) {
+          const iframe = box.querySelector("iframe");
+          if (iframe && iframe.requestFullscreen) await iframe.requestFullscreen();
+          else if (box.requestFullscreen) await box.requestFullscreen();
+        }
       } catch (e) {}
       haptic(12);
       return;
