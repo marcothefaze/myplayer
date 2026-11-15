@@ -1635,35 +1635,27 @@ input[type="range"] {
 
 /* Cornice di barre di effetti attorno alla copertina (posizionate a contorno,
    visibili solo quando c'è un brano in riproduzione) */
-#fp-viz-border {
+/* Visualizzatore audio a cornice radiale attorno alla copertina (posizionato sopra fp-cover) */
+#fp-viz {
   position: absolute;
-  inset: 0;
+  inset: -26px;
+  z-index: 0;
   pointer-events: none;
-  z-index: 5;
-  overflow: hidden;
-  border-radius: 18px;
 }
-.fp-viz-border-bar {
+#fp-viz i {
   position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 6px;
+  height: 50%;
+  margin-left: -3px;
+  border-radius: 3px;
   background: linear-gradient(to top, rgb(var(--album-c1)), rgb(var(--album-c2)));
   box-shadow: 0 0 8px rgba(var(--album-c1), .5);
+  transform: scaleY(.06);
+  transform-origin: top center;
+  will-change: transform;
 }
-/* Top e bottom: barre orizzontali */
-#fp-viz-border-bar.top, #fp-viz-border-bar.bottom {
-  height: 4px;
-  left: 0;
-  right: 0;
-}
-#fp-viz-border-bar.top { top: 0; }
-#fp-viz-border-bar.bottom { bottom: 0; }
-/* Left e right: barre verticali */
-#fp-viz-border-bar.left, #fp-viz-border-bar.right {
-  width: 4px;
-  top: 0;
-  bottom: 0;
-}
-#fp-viz-border-bar.left { left: 0; }
-#fp-viz-border-bar.right { right: 0; }
 
 /* Videoclip dentro il riquadro copertina del full player: stesse dimensioni
    del riquadro, l'audio resta quello della canzone (video muto) */
@@ -1945,28 +1937,7 @@ a.chip { text-decoration: none; display: inline-flex; align-items: center; }
 
 /* Visualizzatore audio nel full player: 28 barre neon col colore
    dell'album, solo transform (GPU). Spento in Impostazioni → Effetti. */
-.fp-viz {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  height: 34px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  gap: 3px;
-  overflow: hidden;
-  pointer-events: none;
-}
-.fp-viz i {
-  flex: 1;
-  max-width: 8px;
-  height: 100%;
-  border-radius: 3px;
-  background: linear-gradient(to top, rgb(var(--album-c1)), rgb(var(--album-c2)));
-  box-shadow: 0 0 8px rgba(var(--album-c1), .5);
-  transform: scaleY(.06);
-  transform-origin: bottom;
-}
+/* fp-viz ora definito sopra (barre radiali attorno alla copertina) */
 
 .fp-controls {
   position: relative;

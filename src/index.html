@@ -12,7 +12,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/icons/icon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/icons/icon-180.png">
   <link rel="manifest" href="../manifest.json">
-  <link rel="stylesheet" href="style.css?v=182">
+  <link rel="stylesheet" href="style.css?v=183">
   <!-- Il ?v=N forza il browser a scaricare di nuovo i file a ogni rilascio,
        evitando che resti in cache una versione vecchia dell'app. -->
 </head>
@@ -315,9 +315,10 @@
         </div>
       </div>
 
-      <div id="fp-cover-wrap"><div id="fp-cover" class="fp-cover"></div></div>
-      <!-- Cornice di barre di effetti attorno alla copertina (posizionate a contorno) -->
-      <div id="fp-viz-border" class="fp-viz-border"></div>
+      <div id="fp-cover-wrap">
+        <div class="fp-viz hidden" id="fp-viz" aria-hidden="true"></div>
+        <div id="fp-cover" class="fp-cover"></div>
+      </div>
 
       <!-- Pannello equalizzatore dentro il full player (preset + slider live) -->
       <div id="fp-eq-sheet" class="fp-eq-sheet hidden" aria-hidden="true">
@@ -363,8 +364,6 @@
         </div>
         <div id="fp-album" class="fp-album">Scegli un brano per iniziare</div>
       </div>
-
-      <div class="fp-viz hidden" id="fp-viz" aria-hidden="true"></div>
 
       <div class="fp-progress">
         <span id="fp-time-current" class="time">0:00</span>
@@ -483,6 +482,6 @@
     </div>
   </div>
 
-  <script src="player.js?v=182"></script>
+  <script src="player.js?v=183"></script>
 </body>
 </html>

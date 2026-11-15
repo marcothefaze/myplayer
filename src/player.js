@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "95";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v185";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "96";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v186";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -1415,7 +1415,7 @@ let eqAnalyser = null;
 let vizRaf = 0;
 let vizFreq = null;
 const vizLvl = new Float32Array(VIZ_BARS);
-let vizBorderLvl = 0;
+const vizAngle = new Float32Array(VIZ_BARS);
 
 function vizEnabled() {
   try {
@@ -1431,20 +1431,11 @@ function vizBuild() {
   const box = vizBox();
   if (!box || !box.children || box.children.length) return;
   for (let i = 0; i < VIZ_BARS; i++) {
-    try { box.appendChild(document.createElement("i")); }
-    catch (e) { return; }
-  }
-  /* Cornice di barre attorno alla copertina (top, bottom, left, right) */
-  const vb = document.getElementById("fp-viz-border");
-  if (vb && !vb.children.length) {
-    for (const side of ["top","bottom","left","right"]) {
-      try {
-        const b = document.createElement("div");
-        b.className = "fp-viz-border-bar";
-        b.id = "fp-viz-border-bar-" + side;
-        vb.appendChild(b);
-      } catch (e) { return; }
-    }
+    try {
+      const b = document.createElement("i");
+      vizAngle[i] = (i * 360 / VIZ_BARS);
+      box.appendChild(b);
+    } catch (e) { return; }
   }
 }
 function vizFlat() {
@@ -1452,15 +1443,8 @@ function vizFlat() {
   if (!box || !box.children) return;
   const kids = box.children;
   for (let i = 0; i < kids.length; i++) {
-    try { kids[i].style.transform = "scaleY(.06)"; } catch (e) {}
+    try { kids[i].style.transform = "rotate(" + vizAngle[i] + "deg) scaleY(.06)"; } catch (e) {}
     vizLvl[i] = 0;
-  }
-  /* Resetta anche le barre della cornice */
-  const vb = document.getElementById("fp-viz-border");
-  if (vb) {
-    for (const b of vb.children) {
-      try { b.style.transform = "scaleY(.06)"; } catch (e) {}
-    }
   }
 }
 function vizTick() {
@@ -1478,22 +1462,7 @@ function vizTick() {
       const v = (vizFreq[i + 1] || 0) / 255;   // salta la bin 0 (componente continua)
       const lv = Math.max(v, (vizLvl[i] || 0) - 0.06);   // attacco rapido, caduta morbida
       vizLvl[i] = lv;
-      kids[i].style.transform = "scaleY(" + Math.max(.06, lv).toFixed(3) + ")";
-    }
-  } catch (e) {}
-  /* Animazione cornice di barre attorno alla copertina */
-  try {
-    const vb = document.getElementById("fp-viz-border");
-    if (vb && vb.children.length) {
-      let sum = 0, cnt = 0;
-      for (let i = 1; i < vizFreq.length && cnt < 8; i++) { sum += vizFreq[i]; cnt++; }
-      const m = cnt ? (sum / cnt / 255) : 0;
-      const lv = Math.max(m, (vizBorderLvl || 0) - 0.06);
-      vizBorderLvl = lv;
-      const s = Math.max(.06, lv).toFixed(3);
-      for (const b of vb.children) {
-        try { b.style.transform = "scaleY(" + s + ")"; } catch (e) {}
-      }
+      kids[i].style.transform = "rotate(" + vizAngle[i] + "deg) scaleY(" + Math.max(.06, lv).toFixed(3) + ")";
     }
   } catch (e) {}
   vizRaf = requestAnimationFrame(vizTick);
@@ -1533,16 +1502,12 @@ function vizStart() {
   vizBuild();
   const box = vizBox();
   if (box) box.classList.remove("hidden");
-  const vb = document.getElementById("fp-viz-border");
-  if (vb) vb.classList.remove("hidden");
   vizRaf = requestAnimationFrame(vizTick);
 }
 function vizStop(silent) {
   if (vizRaf) { try { cancelAnimationFrame(vizRaf); } catch (e) {} vizRaf = 0; }
   const box = vizBox();
   if (box) box.classList.add("hidden");
-  const vb = document.getElementById("fp-viz-border");
-  if (vb) vb.classList.add("hidden");
   if (!silent) vizFlat();
 }
 
