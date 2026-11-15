@@ -1638,9 +1638,12 @@ input[type="range"] {
 /* Visualizzatore audio a cornice attorno alla copertina (barre come unghie sui 4 lati) */
 #fp-viz {
   position: absolute;
-  inset: 0;
-  z-index: 10;
+  inset: -14px;
+  z-index: 15;
   pointer-events: none;
+}
+#fp-cover-wrap {
+  overflow: visible;
 }
 #fp-viz-side {
   position: absolute;
