@@ -1639,13 +1639,9 @@ input[type="range"] {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 2;
+  z-index: 5;
   overflow: hidden;
   border-radius: 18px;
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: exclude;
-  mask-composite: exclude;
 }
 .fp-viz-border-bar {
   position: absolute;
