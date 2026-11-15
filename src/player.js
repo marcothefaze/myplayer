@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "93";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v183";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "94";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v184";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -504,7 +504,7 @@ function toast(msg) {
    (richiesta di Marco). I colori sono triplette "r, g, b" usate con
    rgb()/rgba() nelle variabili CSS --album-c1 / --album-c2. */
 const ALBUM_COLORS = {
-  "Non è SSG":               { c1: "120, 70, 40",   c2: "160, 100, 55" },
+  "Non è SSG":               { c1: "120, 70, 40",   c2: "160, 100, 55",  c3: "255, 215, 0" },
   "Preferiti":               { c1: "255, 107, 157", c2: "247, 168, 196" },
   "Testamento":        { c1: "90, 145, 220",  c2: "230, 190, 90" },
   "Giorni Migliori":   { c1: "40, 190, 255",  c2: "185, 240, 255" },
@@ -1415,6 +1415,7 @@ let eqAnalyser = null;
 let vizRaf = 0;
 let vizFreq = null;
 const vizLvl = new Float32Array(VIZ_BARS);
+let vizBorderLvl = 0;
 
 function vizEnabled() {
   try {
@@ -1433,6 +1434,18 @@ function vizBuild() {
     try { box.appendChild(document.createElement("i")); }
     catch (e) { return; }
   }
+  /* Cornice di barre attorno alla copertina (top, bottom, left, right) */
+  const vb = document.getElementById("fp-viz-border");
+  if (vb && !vb.children.length) {
+    for (const side of ["top","bottom","left","right"]) {
+      try {
+        const b = document.createElement("div");
+        b.className = "fp-viz-border-bar";
+        b.id = "fp-viz-border-bar-" + side;
+        vb.appendChild(b);
+      } catch (e) { return; }
+    }
+  }
 }
 function vizFlat() {
   const box = vizBox();
@@ -1441,6 +1454,13 @@ function vizFlat() {
   for (let i = 0; i < kids.length; i++) {
     try { kids[i].style.transform = "scaleY(.06)"; } catch (e) {}
     vizLvl[i] = 0;
+  }
+  /* Resetta anche le barre della cornice */
+  const vb = document.getElementById("fp-viz-border");
+  if (vb) {
+    for (const b of vb.children) {
+      try { b.style.transform = "scaleY(.06)"; } catch (e) {}
+    }
   }
 }
 function vizTick() {
@@ -1459,6 +1479,21 @@ function vizTick() {
       const lv = Math.max(v, (vizLvl[i] || 0) - 0.06);   // attacco rapido, caduta morbida
       vizLvl[i] = lv;
       kids[i].style.transform = "scaleY(" + Math.max(.06, lv).toFixed(3) + ")";
+    }
+  } catch (e) {}
+  /* Animazione cornice di barre attorno alla copertina */
+  try {
+    const vb = document.getElementById("fp-viz-border");
+    if (vb && vb.children.length) {
+      let sum = 0, cnt = 0;
+      for (let i = 1; i < vizFreq.length && cnt < 8; i++) { sum += vizFreq[i]; cnt++; }
+      const m = cnt ? (sum / cnt / 255) : 0;
+      const lv = Math.max(m, (vizBorderLvl || 0) - 0.06);
+      vizBorderLvl = lv;
+      const s = Math.max(.06, lv).toFixed(3);
+      for (const b of vb.children) {
+        try { b.style.transform = "scaleY(" + s + ")"; } catch (e) {}
+      }
     }
   } catch (e) {}
   vizRaf = requestAnimationFrame(vizTick);
@@ -1498,12 +1533,16 @@ function vizStart() {
   vizBuild();
   const box = vizBox();
   if (box) box.classList.remove("hidden");
+  const vb = document.getElementById("fp-viz-border");
+  if (vb) vb.classList.remove("hidden");
   vizRaf = requestAnimationFrame(vizTick);
 }
 function vizStop(silent) {
   if (vizRaf) { try { cancelAnimationFrame(vizRaf); } catch (e) {} vizRaf = 0; }
   const box = vizBox();
   if (box) box.classList.add("hidden");
+  const vb = document.getElementById("fp-viz-border");
+  if (vb) vb.classList.add("hidden");
   if (!silent) vizFlat();
 }
 
@@ -4453,6 +4492,8 @@ const SKY = (function () {
       st.setProperty("--brand-glow", "rgba(" + gl[0] + "," + gl[1] + "," + gl[2] + ",.35)");
       st.setProperty("--play-c1", pc1[0] + ", " + pc1[1] + ", " + pc1[2]);
       st.setProperty("--play-c2", pc2[0] + ", " + pc2[1] + ", " + pc2[2]);
+      const c3c = ALBUM_COLORS[albumTitle];
+      if (c3c && c3c.c3) st.setProperty("--album-c3", c3c.c3);
     } catch (e) {}
   }
 

@@ -31,6 +31,7 @@
   /* Colori pulsante play album home per momento della giornata (aggiornati da JS in applyBrandPhase) */
   --play-c1: 74, 60, 138;   // notte: viola scuro
   --play-c2: 45, 27, 110;   // notte: indaco
+  --album-c3: 255, 215, 0;   // nota oro per copertine (es. Non è SSG)
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -1631,6 +1632,42 @@ input[type="range"] {
    buchi né vuoti (le immagini quadrate restano identiche). */
 .fp-cover.ph { display: flex; align-items: center; justify-content: center; }
 .fp-cover.ph span.ph-title { font-size: 3rem; font-weight: 800; color: rgba(255, 255, 255, .7); }
+
+/* Cornice di barre di effetti attorno alla copertina (posizionate a contorno,
+   visibili solo quando c'è un brano in riproduzione) */
+#fp-viz-border {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  overflow: hidden;
+  border-radius: 18px;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: exclude;
+  mask-composite: exclude;
+}
+.fp-viz-border-bar {
+  position: absolute;
+  background: linear-gradient(to top, rgb(var(--album-c1)), rgb(var(--album-c2)));
+  box-shadow: 0 0 8px rgba(var(--album-c1), .5);
+}
+/* Top e bottom: barre orizzontali */
+#fp-viz-border-bar.top, #fp-viz-border-bar.bottom {
+  height: 4px;
+  left: 0;
+  right: 0;
+}
+#fp-viz-border-bar.top { top: 0; }
+#fp-viz-border-bar.bottom { bottom: 0; }
+/* Left e right: barre verticali */
+#fp-viz-border-bar.left, #fp-viz-border-bar.right {
+  width: 4px;
+  top: 0;
+  bottom: 0;
+}
+#fp-viz-border-bar.left { left: 0; }
+#fp-viz-border-bar.right { right: 0; }
 
 /* Videoclip dentro il riquadro copertina del full player: stesse dimensioni
    del riquadro, l'audio resta quello della canzone (video muto) */
