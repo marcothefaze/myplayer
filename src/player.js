@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "98";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v188";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "99";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v189";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -1429,14 +1429,19 @@ function vizBox() {
 function vizBuild() {
   const box = vizBox();
   if (!box || box.children.length) return;
-  const sides = ["top", "right", "bottom", "left"];
-  for (let s = 0; s < 4; s++) {
+  const spec = [
+    { side: 'fp-viz-top', bar: 'fp-viz-bar-t', isX: false },
+    { side: 'fp-viz-right', bar: 'fp-viz-bar-r', isX: true },
+    { side: 'fp-viz-bottom', bar: 'fp-viz-bar-b', isX: false },
+    { side: 'fp-viz-left', bar: 'fp-viz-bar-l', isX: true },
+  ];
+  for (const sp of spec) {
     try {
       const side = document.createElement("div");
-      side.className = "fp-viz-side fp-viz-" + sides[s];
+      side.className = "fp-viz-side " + sp.side;
       for (let i = 0; i < 7; i++) {
         const b = document.createElement("div");
-        b.className = "fp-viz-bar fp-viz-bar-" + sides[s];
+        b.className = "fp-viz-bar " + sp.bar;
         side.appendChild(b);
       }
       box.appendChild(side);
@@ -1448,7 +1453,7 @@ function vizFlat() {
   if (!box || !box.children) return;
   for (const side of box.children) {
     const kids = side.children;
-    const isX = side.classList.contains("fp-viz-left") || side.classList.contains("fp-viz-right");
+    const isX = side.className.indexOf("fp-viz-left") >= 0 || side.className.indexOf("fp-viz-right") >= 0;
     for (let i = 0; i < kids.length; i++) {
       try { kids[i].style.transform = isX ? "scaleX(.06)" : "scaleY(.06)"; } catch (e) {}
       vizLvl[i] = 0;
@@ -1468,7 +1473,7 @@ function vizTick() {
     let idx = 1;
     for (const side of box.children) {
       const kids = side.children;
-      const isX = side.classList.contains("fp-viz-left") || side.classList.contains("fp-viz-right");
+      const isX = side.className.indexOf("fp-viz-left") >= 0 || side.className.indexOf("fp-viz-right") >= 0;
       for (let i = 0; i < kids.length && idx < vizFreq.length; i++, idx++) {
         const v = (vizFreq[idx] || 0) / 255;
         const lv = Math.max(v, (vizLvl[i] || 0) - 0.06);

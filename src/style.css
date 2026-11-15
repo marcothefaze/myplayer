@@ -1635,32 +1635,31 @@ input[type="range"] {
 
 /* Cornice di barre di effetti attorno alla copertina (posizionate a contorno,
    visibili solo quando c'è un brano in riproduzione) */
-/* Visualizzatore audio a cornice radiale attorno alla copertina */
+/* Visualizzatore audio a cornice attorno alla copertina (barre come unghie sui 4 lati) */
 #fp-viz {
   position: absolute;
-  inset: -26px;
-  z-index: 0;
+  inset: 0;
+  z-index: 10;
   pointer-events: none;
 }
 #fp-viz-side {
   position: absolute;
-  inset: 0;
   display: flex;
 }
-.fp-viz-top { flex-direction: row; justify-content: space-between; padding: 0 8px; }
-.fp-viz-bottom { flex-direction: row; justify-content: space-between; padding: 0 8px; }
-.fp-viz-left { flex-direction: column; justify-content: space-between; padding: 8px 0; }
-.fp-viz-right { flex-direction: column; justify-content: space-between; padding: 8px 0; }
+.fp-viz-top { top: -9px; left: 8px; right: 8px; height: 22px; justify-content: space-between; align-items: flex-end; }
+.fp-viz-bottom { bottom: -9px; left: 8px; right: 8px; height: 22px; justify-content: space-between; align-items: flex-start; }
+.fp-viz-left { left: -9px; top: 8px; bottom: 8px; width: 22px; flex-direction: column; justify-content: space-between; align-items: flex-end; }
+.fp-viz-right { right: -9px; top: 8px; bottom: 8px; width: 22px; flex-direction: column; justify-content: space-between; align-items: flex-start; }
 .fp-viz-bar {
   border-radius: 2px;
   background: linear-gradient(to top, rgb(var(--album-c1)), rgb(var(--album-c2)));
   box-shadow: 0 0 6px rgba(var(--album-c1), .5);
   will-change: transform;
 }
-.fp-viz-bar-t { width: 4px; height: 28px; transform-origin: bottom center; transform: scaleY(.06); }
-.fp-viz-bar-b { width: 4px; height: 28px; transform-origin: top center; transform: scaleY(.06); }
-.fp-viz-bar-l { width: 28px; height: 4px; transform-origin: left center; transform: scaleX(.06); }
-.fp-viz-bar-r { width: 28px; height: 4px; transform-origin: right center; transform: scaleX(.06); }
+.fp-viz-bar-t { width: 16px; height: 4px; transform-origin: bottom center; transform: scaleY(.06); }
+.fp-viz-bar-b { width: 16px; height: 4px; transform-origin: top center; transform: scaleY(.06); }
+.fp-viz-bar-l { width: 4px; height: 16px; transform-origin: right center; transform: scaleX(.06); }
+.fp-viz-bar-r { width: 4px; height: 16px; transform-origin: left center; transform: scaleX(.06); }
 
 /* Videoclip dentro il riquadro copertina del full player: stesse dimensioni
    del riquadro, l'audio resta quello della canzone (video muto) */
