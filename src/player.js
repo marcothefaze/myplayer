@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "105";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v195";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "106";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v196";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -2874,7 +2874,9 @@ function bgFrozenCheck(t0, src0) {
   } catch (e) {}
 }
 
-// A fine brano: ripeti singolo, altrimenti passa al successivo
+// A fine brano: ripeti singolo, altrimenti passa al successivo. Se la coda
+// è esaurita e non c'è repeat/shuffle, aggiunge automaticamente il brano
+// successivo dell'album corrente per non bloccare mai la riproduzione.
 audio.addEventListener("ended", () => {
   if (state.repeat === "one") {
     audio.currentTime = 0;
@@ -2888,8 +2890,26 @@ audio.addEventListener("ended", () => {
   } else if (state.repeat === "all" || state.shuffle) {
     state.queuePos = 0;
     playSong(state.queue[0]);
+  } else {
+    // Coda finita: aggiungi il brano successivo dell'album corrente
+    let nextIdx = null;
+    const curIdx = currentIndex();
+    if (curIdx >= 0) {
+      for (const album of state.albums) {
+        const p = album.songs.indexOf(curIdx);
+        if (p >= 0 && p + 1 < album.songs.length) {
+          nextIdx = album.songs[p + 1];
+          break;
+        }
+      }
+    }
+    if (nextIdx !== null && state.queue.indexOf(nextIdx) < 0) {
+      state.queue.push(nextIdx);
+      state.queuePos = state.queue.indexOf(nextIdx);
+      playSong(state.queue[state.queuePos]);
+    }
+    // se non trova successivo si ferma: è la fine naturale della raccolta
   }
-  // altrimenti si ferma in fondo alla playlist
 });
 
 audio.addEventListener("timeupdate", updateProgress);

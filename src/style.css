@@ -1638,37 +1638,35 @@ input[type="range"] {
 /* Visualizzatore audio a cornice attorno alla copertina (barre come unghie sui 4 lati) */
 #fp-viz {
   position: absolute;
-  inset: -14px;
+  inset: 0;
   z-index: 15;
   pointer-events: none;
-}
-#fp-cover-wrap {
-  overflow: visible;
 }
 #fp-viz-side {
   position: absolute;
   display: flex;
 }
-.fp-viz-top { top: -10px; left: 6px; right: 6px; height: 18px; justify-content: space-between; align-items: flex-end; }
-.fp-viz-bottom { bottom: -10px; left: 6px; right: 6px; height: 18px; justify-content: space-between; align-items: flex-start; }
-.fp-viz-left { left: -10px; top: 6px; bottom: 6px; width: 18px; flex-direction: column; justify-content: space-between; align-items: flex-end; }
-.fp-viz-right { right: -10px; top: 6px; bottom: 6px; width: 18px; flex-direction: column; justify-content: space-between; align-items: flex-start; }
+.fp-viz-top { top: -12px; left: 6px; right: 6px; height: 16px; justify-content: space-between; align-items: flex-end; }
+.fp-viz-bottom { bottom: -12px; left: 6px; right: 6px; height: 16px; justify-content: space-between; align-items: flex-start; }
+.fp-viz-left { left: -12px; top: 6px; bottom: 6px; width: 16px; flex-direction: column; justify-content: space-between; align-items: flex-end; }
+.fp-viz-right { right: -12px; top: 6px; bottom: 6px; width: 16px; flex-direction: column; justify-content: space-between; align-items: flex-start; }
 .fp-viz-bar {
   border-radius: 2px;
   background: linear-gradient(to top, rgb(var(--album-c1)), rgb(var(--album-c2)));
-  box-shadow: 0 0 6px rgba(var(--album-c1), .5);
+  box-shadow: 0 0 8px rgba(var(--album-c1), .7);
   will-change: transform;
   opacity: 1;
-  animation: fp-viz-pulse 1.4s ease-in-out infinite;
 }
-.fp-viz-bar-t { width: 12px; height: 3px; transform-origin: bottom center; transform: scaleY(.06); }
-.fp-viz-bar-b { width: 12px; height: 3px; transform-origin: top center; transform: scaleY(.06); }
-.fp-viz-bar-l { width: 3px; height: 12px; transform-origin: right center; transform: scaleX(.06); }
-.fp-viz-bar-r { width: 3px; height: 12px; transform-origin: left center; transform: scaleX(.06); }
+.fp-viz-bar-t { width: 10px; height: 3px; transform-origin: bottom center; transform: scaleY(.06); }
+.fp-viz-bar-b { width: 10px; height: 3px; transform-origin: top center; transform: scaleY(.06); }
+.fp-viz-bar-l { width: 3px; height: 10px; transform-origin: right center; transform: scaleX(.06); }
+.fp-viz-bar-r { width: 3px; height: 10px; transform-origin: left center; transform: scaleX(.06); }
 @keyframes fp-viz-pulse {
-  0%, 100% { transform: scaleY(.06) scaleX(.06); opacity: .7; }
-  50% { transform: scaleY(.6) scaleX(.6); opacity: 1; }
+  0%, 100% { opacity: .5; transform: scaleY(.06) scaleX(.06); }
+  50% { opacity: 1; transform: scaleY(.6) scaleX(.6); }
 }
+.fp-viz-bar-t, .fp-viz-bar-b { animation: fp-viz-pulse 1.4s ease-in-out infinite; }
+.fp-viz-bar-l, .fp-viz-bar-r { animation: fp-viz-pulse 1.4s ease-in-out infinite; }
 
 /* Videoclip dentro il riquadro copertina del full player: stesse dimensioni
    del riquadro, l'audio resta quello della canzone (video muto) */
