@@ -1658,11 +1658,17 @@ input[type="range"] {
   background: linear-gradient(to top, rgb(var(--album-c1)), rgb(var(--album-c2)));
   box-shadow: 0 0 6px rgba(var(--album-c1), .5);
   will-change: transform;
+  opacity: 1;
+  animation: fp-viz-pulse 1.4s ease-in-out infinite;
 }
 .fp-viz-bar-t { width: 12px; height: 3px; transform-origin: bottom center; transform: scaleY(.06); }
 .fp-viz-bar-b { width: 12px; height: 3px; transform-origin: top center; transform: scaleY(.06); }
 .fp-viz-bar-l { width: 3px; height: 12px; transform-origin: right center; transform: scaleX(.06); }
 .fp-viz-bar-r { width: 3px; height: 12px; transform-origin: left center; transform: scaleX(.06); }
+@keyframes fp-viz-pulse {
+  0%, 100% { transform: scaleY(.06) scaleX(.06); opacity: .7; }
+  50% { transform: scaleY(.6) scaleX(.6); opacity: 1; }
+}
 
 /* Videoclip dentro il riquadro copertina del full player: stesse dimensioni
    del riquadro, l'audio resta quello della canzone (video muto) */
