@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "96";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v186";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "97";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v187";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -1415,7 +1415,6 @@ let eqAnalyser = null;
 let vizRaf = 0;
 let vizFreq = null;
 const vizLvl = new Float32Array(VIZ_BARS);
-const vizAngle = new Float32Array(VIZ_BARS);
 
 function vizEnabled() {
   try {
@@ -1429,22 +1428,31 @@ function vizBox() {
 }
 function vizBuild() {
   const box = vizBox();
-  if (!box || !box.children || box.children.length) return;
-  for (let i = 0; i < VIZ_BARS; i++) {
+  if (!box || box.children.length) return;
+  const sides = ["top", "right", "bottom", "left"];
+  for (let s = 0; s < 4; s++) {
     try {
-      const b = document.createElement("i");
-      vizAngle[i] = (i * 360 / VIZ_BARS);
-      box.appendChild(b);
+      const side = document.createElement("div");
+      side.className = "fp-viz-side fp-viz-" + sides[s];
+      for (let i = 0; i < 7; i++) {
+        const b = document.createElement("div");
+        b.className = "fp-viz-bar fp-viz-bar-" + sides[s];
+        side.appendChild(b);
+      }
+      box.appendChild(side);
     } catch (e) { return; }
   }
 }
 function vizFlat() {
   const box = vizBox();
   if (!box || !box.children) return;
-  const kids = box.children;
-  for (let i = 0; i < kids.length; i++) {
-    try { kids[i].style.transform = "rotate(" + vizAngle[i] + "deg) scaleY(.06)"; } catch (e) {}
-    vizLvl[i] = 0;
+  for (const side of box.children) {
+    const kids = side.children;
+    const isX = side.classList.contains("fp-viz-left") || side.classList.contains("fp-viz-right");
+    for (let i = 0; i < kids.length; i++) {
+      try { kids[i].style.transform = isX ? "scaleX(.06)" : "scaleY(.06)"; } catch (e) {}
+      vizLvl[i] = 0;
+    }
   }
 }
 function vizTick() {
@@ -1456,13 +1464,18 @@ function vizTick() {
   try {
     eqAnalyser.getByteFrequencyData(vizFreq);
     const box = vizBox();
-    const kids = box ? box.children : [];
-    const n = Math.min(kids.length, VIZ_BARS);
-    for (let i = 0; i < n; i++) {
-      const v = (vizFreq[i + 1] || 0) / 255;   // salta la bin 0 (componente continua)
-      const lv = Math.max(v, (vizLvl[i] || 0) - 0.06);   // attacco rapido, caduta morbida
-      vizLvl[i] = lv;
-      kids[i].style.transform = "rotate(" + vizAngle[i] + "deg) scaleY(" + Math.max(.06, lv).toFixed(3) + ")";
+    if (!box) return vizStop(true);
+    let idx = 1;
+    for (const side of box.children) {
+      const kids = side.children;
+      const isX = side.classList.contains("fp-viz-left") || side.classList.contains("fp-viz-right");
+      for (let i = 0; i < kids.length && idx < vizFreq.length; i++, idx++) {
+        const v = (vizFreq[idx] || 0) / 255;
+        const lv = Math.max(v, (vizLvl[i] || 0) - 0.06);
+        vizLvl[i] = lv;
+        const s = Math.max(.06, lv).toFixed(3);
+        try { kids[i].style.transform = isX ? "scaleX(" + s + ")" : "scaleY(" + s + ")"; } catch (e) {}
+      }
     }
   } catch (e) {}
   vizRaf = requestAnimationFrame(vizTick);
