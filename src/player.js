@@ -12,8 +12,8 @@
 
 /* ---------- 1. CONFIGURAZIONE ---------- */
 
-const APP_VERSION = "107";   // cambia l'URL di playlist.json: niente cache stantia
-const APP_BUILD = "v197";   // versione in console (brand-sub nascosto): bumpare a ogni release
+const APP_VERSION = "108";   // cambia l'URL di playlist.json: niente cache stantia
+const APP_BUILD = "v198";   // versione in console (brand-sub nascosto): bumpare a ogni release
 console.log("SSG Universe " + APP_BUILD);
 const PLAYLIST_URL = "playlist.json?v=" + APP_VERSION;
 const BASE_PATH = "../";          // index.html sta in /src, i file in /
@@ -865,9 +865,15 @@ window.addEventListener("pageshow", () => {
    avanza muta). Costa una lettura di stato. */
 setInterval(() => {
   try {
-    if (document.hidden || !audio || audio.paused) return;
+    if (!audio || audio.paused) return;
+    // In background iOS sospende l'AudioContext: lo risvegliamo sempre,
+    // anche se la scheda è nascosta, altrimenti al rientro c'è silenzio.
     if (typeof eqCtx !== "undefined" && eqCtx && eqCtx.state === "suspended" && eqCtx.resume) {
       eqCtx.resume().catch(() => {});
+    }
+    // Se l'app dice che suona ma l'elemento è fermo, prova a ripartire
+    if (!audio.paused && document.body.classList.contains("is-playing")) {
+      try { audio.play().catch(() => {}); } catch (e) {}
     }
   } catch (e) {}
 }, 5000);
@@ -2485,8 +2491,30 @@ function riprovaPlay(myToken) {
 async function playSong(songIdx, openFull) {
   if (songIdx < 0) return;
   const pos = state.queue.indexOf(songIdx);
-  state.queuePos = pos >= 0 ? pos : 0;
-  if (pos < 0) state.queue[0] = songIdx;
+  if (pos >= 0) {
+    state.queuePos = pos;
+  } else {
+    // Il brano non è in coda: popola la coda con i brani dell'album corrente
+    // partendo da questo brano, così skippando avanti si va in ordine nell'album
+    let albIdx = -1;
+    for (let a = 0; a < state.albums.length; a++) {
+      if (state.albums[a].songs.indexOf(songIdx) >= 0) { albIdx = a; break; }
+    }
+    if (albIdx >= 0) {
+      const albSongs = state.albums[albIdx].songs;
+      const pInAlb = albSongs.indexOf(songIdx);
+      if (pInAlb >= 0) {
+        state.queue = albSongs.slice(pInAlb).concat(albSongs.slice(0, pInAlb));
+        state.queuePos = 0;
+      } else {
+        state.queue = [songIdx];
+        state.queuePos = 0;
+      }
+    } else {
+      state.queue = [songIdx];
+      state.queuePos = 0;
+    }
+  }
 
   const song = state.songs[songIdx];
   document.body.classList.add("has-track");   // fa comparire il miniplayer
