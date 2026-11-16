@@ -1638,7 +1638,7 @@ input[type="range"] {
 /* Visualizzatore audio a cornice attorno alla copertina (barre come unghie sui 4 lati) */
 #fp-viz {
   position: absolute;
-  inset: 0;
+  inset: -18px;
   z-index: 15;
   pointer-events: none;
 }
@@ -1657,16 +1657,14 @@ input[type="range"] {
   will-change: transform;
   opacity: 1;
 }
-.fp-viz-bar-t { width: 10px; height: 3px; transform-origin: bottom center; transform: scaleY(.06); }
-.fp-viz-bar-b { width: 10px; height: 3px; transform-origin: top center; transform: scaleY(.06); }
-.fp-viz-bar-l { width: 3px; height: 10px; transform-origin: right center; transform: scaleX(.06); }
-.fp-viz-bar-r { width: 3px; height: 10px; transform-origin: left center; transform: scaleX(.06); }
+.fp-viz-bar-t { width: 14px; height: 4px; transform-origin: bottom center; transform: scaleY(.06); }
+.fp-viz-bar-b { width: 14px; height: 4px; transform-origin: top center; transform: scaleY(.06); }
+.fp-viz-bar-l { width: 4px; height: 14px; transform-origin: right center; transform: scaleX(.06); }
+.fp-viz-bar-r { width: 4px; height: 14px; transform-origin: left center; transform: scaleX(.06); }
 @keyframes fp-viz-pulse {
-  0%, 100% { opacity: .5; transform: scaleY(.06) scaleX(.06); }
-  50% { opacity: 1; transform: scaleY(.6) scaleX(.6); }
+  0%, 100% { opacity: .6; transform: scaleY(.06) scaleX(.06); }
+  50% { opacity: 1; transform: scaleY(1) scaleX(1); }
 }
-.fp-viz-bar-t, .fp-viz-bar-b { animation: fp-viz-pulse 1.4s ease-in-out infinite; }
-.fp-viz-bar-l, .fp-viz-bar-r { animation: fp-viz-pulse 1.4s ease-in-out infinite; }
 
 /* Videoclip dentro il riquadro copertina del full player: stesse dimensioni
    del riquadro, l'audio resta quello della canzone (video muto) */
